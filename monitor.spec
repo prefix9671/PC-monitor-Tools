@@ -1,11 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_data_files, copy_metadata
+from PyInstaller.utils.hooks import collect_data_files, copy_metadata, collect_submodules
 
 datas = [('app.py', '.'), ('Monitor.ps1', '.'), ('config.py', '.'), ('data_loader.py', '.'), ('parsers.py', '.'), ('dashboards', 'dashboards')]
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit')
-# datas += collect_data_files('pandas') # Optional, usually picked up automatically
-# datas += collect_data_files('plotly') # Optional
+
+hidden_imports = ['streamlit', 'plotly', 'pandas']
+hidden_imports += collect_submodules('streamlit')
 
 block_cipher = None
 
@@ -14,7 +15,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=datas,
-    hiddenimports=['streamlit', 'plotly', 'pandas'],
+    hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
