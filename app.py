@@ -18,7 +18,7 @@ from dashboards.custom import render_custom_dashboard
 st.set_page_config(page_title="System Resource Monitor", page_icon="🖥️", layout="wide")
 
 st.title("🖥️ System Resource Dashboard")
-st.markdown("##### 🚀 Executive Summary for Engineering Leads")
+st.markdown(f"##### 🚀 Executive Summary (Last Build: `{LAST_BUILD}`)")
 
 # 사이드바: 파일 선택
 with st.sidebar:
