@@ -1,27 +1,28 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Get current date and time for versioning
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
-set TIMESTAMP=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2% %datetime:~8,2%:%datetime:~10,2%
+:: 1. Get current date (fallback if wmic fails)
+echo. | date > nul
+for /f "tokens=1-3 delims=-/. " %%a in ("%date%") do (
+    set "DATE_STAMP=%%a%%b%%c"
+)
+:: Remove potential spaces or non-digits
+set "DATE_STAMP=%DATE_STAMP: =%"
+
+:: 2. Find appropriate revision
+set "REV=1"
+:check_rev
+set "BASENAME=SystemResourceMonitor%DATE_STAMP%_rev%REV%"
+if exist "dist\%BASENAME%.exe" (
+    set /a "REV+=1"
+    goto check_rev
+)
 
 echo ========================================
-echo   System Resource Monitor Build Script
-echo   Build Time: %TIMESTAMP%
+echo   Building and Renaming to: %BASENAME%.exe
 echo ========================================
 
-:: 1. Update Build Date in config.py
-echo Updating build info in config.py...
-powershell -Command "(Get-Content config.py) -replace 'LAST_BUILD = \".*\"', 'LAST_BUILD = \"%TIMESTAMP%\"' | Set-Content config.py"
-
-:: 2. Cleanup old build files
-echo Cleaning up previous build artifacts...
-if exist dist\SystemResourceMonitor.exe taskkill /F /IM SystemResourceMonitor.exe /T 2>nul
-if exist build rd /s /q build
-if exist dist rd /s /q dist
-
-:: 3. Run PyInstaller
-echo Running PyInstaller...
+:: 3. Run PyInstaller (using existing spec)
 pyinstaller --clean monitor.spec
 
 if %ERRORLEVEL% NEQ 0 (
@@ -30,14 +31,20 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-:: 4. Git Push
+:: 4. Rename output file
+:: monitor.spec produces SystemResourceMonitor.exe based on its content
+if exist "dist\SystemResourceMonitor.exe" (
+    echo Renaming dist\SystemResourceMonitor.exe to dist\%BASENAME%.exe
+    move "dist\SystemResourceMonitor.exe" "dist\%BASENAME%.exe"
+)
+
+:: 5. Git Push
 echo Pushing to GitHub...
 git add .
-git commit -m "Build update: %TIMESTAMP%"
+git commit -m "Build update: %BASENAME%"
 git push
 
 echo ========================================
-echo   Build Completed Successfully!
-echo   Location: dist/SystemResourceMonitor.exe
+echo   Build Completed: dist/%BASENAME%.exe
 echo ========================================
 pause
