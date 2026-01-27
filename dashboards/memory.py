@@ -5,8 +5,8 @@ import streamlit as st
 import pandas as pd
 from config import COLOR_MEM, COLOR_SWAP, COLOR_PROCESS
 
-def render_memory_dashboard(st, df, parse_process_column, extract_process_time_series):
-    st.subheader("Memory Analysis (512GB Capacity)")
+def render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem):
+    st.subheader(f"Memory Analysis ({total_mem}GB Capacity)")
     
     # 1. Memory Graph
     fig_mem = go.Figure()

@@ -156,7 +156,7 @@ if df is not None:
     if menu == "📊 CPU Dashboard":
         render_cpu_dashboard(st, df)
     elif menu == "🧠 Memory Dashboard":
-        render_memory_dashboard(st, df, parse_process_column, extract_process_time_series)
+        render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem_gb)
     elif menu == "💾 Storage (D:)":
         render_storage_dashboard(st, df, parse_process_column)
     elif menu == "📈 Custom Graph":
