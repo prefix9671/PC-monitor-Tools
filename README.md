@@ -13,9 +13,10 @@ A comprehensive system resource monitoring tool for Windows 11 workstations, fea
     - Built with [Streamlit](https://streamlit.io/) and [Plotly](https://plotly.com/).
     - Modular design for easy extensibility.
     - Multi-file and folder log loading support.
-    - Dynamic memory sizing based on log data.
+    - **Advanced Memory Analysis**: TOP 3 peak usage tracking and selectable TOP 5 process trend analysis over time.
+    - **Dynamic Sizing**: Automatically calculates system-wide total memory from log data.
 - **Admin Execution**: Built-in support to launch the PowerShell collector with Administrator privileges directly from the UI.
-- **Configurable**: Adjustable monitoring interval and target drives.
+- **Configurable**: Adjustable monitoring interval (down to 2s) and target drives (e.g., C:, D:, E:).
 
 ## Project Structure
 
