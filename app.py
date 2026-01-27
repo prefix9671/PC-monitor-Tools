@@ -18,7 +18,7 @@ from dashboards.custom import render_custom_dashboard
 st.set_page_config(page_title="System Resource Monitor", page_icon="🖥️", layout="wide")
 
 st.title("🖥️ System Resource Dashboard")
-st.markdown("##### 🚀 Executive Summary for Engineering Leads")
+st.markdown("---")
 
 # 사이드바: 파일 선택
 with st.sidebar:
@@ -103,16 +103,13 @@ if df is not None:
     max_mem_gb = df['Used(GB)'].max()
     max_mem_pct = df['Usage(%)'].max()
     
-    # CSV에서 TotalMem(GB) 가져오기 (없을 경우 대비하여 fallback 유지)
-    if 'TotalMem(GB)' in df.columns:
-        total_mem_gb = int(df['TotalMem(GB)'].iloc[0])
-    else:
-        # 구버전 로그 대응용 역산 로직 (Fallback)
-        try:
-            valid_rows = df[df['Usage(%)'] > 0]
-            total_mem_gb = round((valid_rows['Used(GB)'] / (valid_rows['Usage(%)'] / 100)).median())
-        except:
-            total_mem_gb = 512
+    # CSV에서 메모리 정보 가져오기
+    physical_mem_gb = df['PhysicalMem(GB)'].iloc[0] if 'PhysicalMem(GB)' in df.columns else "N/A"
+    os_total_mem_gb = df['OSTotalMem(GB)'].iloc[0] if 'OSTotalMem(GB)' in df.columns else "N/A"
+    total_mem_gb = os_total_mem_gb # KPI에서 사용할 용량은 OS 가용 기준
+    
+    st.info(f"💾 **물리 장착 메모리**: {physical_mem_gb} GB | **OS 사용 가능 메모리**: {os_total_mem_gb} GB")
+    st.caption("※ 실제 사용률(%)은 OS 사용 가능 메모리 기준으로 계산되었습니다.")
 
     # 2. 지속 증가 시간 (단순화: Min -> Max 도달 시간)
     min_mem_idx = df['Used(GB)'].idxmin()
