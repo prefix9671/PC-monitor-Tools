@@ -5,7 +5,18 @@ datas = [('app.py', '.'), ('Monitor.ps1', '.'), ('config.py', '.'), ('data_loade
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit')
 
-hidden_imports = ['streamlit', 'plotly', 'pandas']
+hidden_imports = [
+    'streamlit',
+    'streamlit.runtime',
+    'streamlit.runtime.scriptrunner',
+    'streamlit.runtime.scriptrunner.magic_funcs',
+    'streamlit.runtime.scriptrunner.script_runner',
+    'streamlit.runtime.scriptrunner.exec_code',
+    'streamlit.runtime.state',
+    'streamlit.runtime.state.session_state',
+    'plotly',
+    'pandas'
+]
 hidden_imports += collect_submodules('streamlit')
 
 block_cipher = None
