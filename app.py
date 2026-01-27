@@ -99,23 +99,20 @@ if df is not None:
     # ---------------------------------------------------------
     st.markdown("---")
     
-    # 1. Max Memory 계산
+    # 1. Memory 관련 정보 추출
     max_mem_gb = df['Used(GB)'].max()
     max_mem_pct = df['Usage(%)'].max()
     
-    # Calculate Total Memory (Inverse of Usage calculation)
-    # Total = Used / (Usage/100)
-    # Use the max usage point for best accuracy (avoid div by zero or small number errors)
-    try:
-        valid_rows = df[df['Usage(%)'] > 0]
-        if not valid_rows.empty:
-            # Calculate for all rows and take median to smooth out rounding errors
-            total_mem_series = valid_rows['Used(GB)'] / (valid_rows['Usage(%)'] / 100)
-            total_mem_gb = round(total_mem_series.median())
-        else:
-            total_mem_gb = 0
-    except:
-        total_mem_gb = 512 # Fallback if calc fails
+    # CSV에서 TotalMem(GB) 가져오기 (없을 경우 대비하여 fallback 유지)
+    if 'TotalMem(GB)' in df.columns:
+        total_mem_gb = int(df['TotalMem(GB)'].iloc[0])
+    else:
+        # 구버전 로그 대응용 역산 로직 (Fallback)
+        try:
+            valid_rows = df[df['Usage(%)'] > 0]
+            total_mem_gb = round((valid_rows['Used(GB)'] / (valid_rows['Usage(%)'] / 100)).median())
+        except:
+            total_mem_gb = 512
 
     # 2. 지속 증가 시간 (단순화: Min -> Max 도달 시간)
     min_mem_idx = df['Used(GB)'].idxmin()

@@ -18,14 +18,15 @@ while ($true) {
     $CurrentDate = Get-Date -Format "yyyy-MM-dd"
     $LogPath = Join-Path $LogFolder "System_Log_$CurrentDate.csv"
 
-    # 1. 시스템 정보
+    # 1. 시스템 정보 (Total Memory는 한 번만 계산)
     $ipAddress = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" } | Select-Object -First 1).IPAddress -or "N/A"
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $totalMemGB = [Math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 0)
 
-    # 2. 헤더 생성 (내장 그래픽 iGPU 필드 추가)
+    # 2. 헤더 생성 (TotalMem(GB) 필드 추가)
     if (-not (Test-Path $LogPath)) {
         $driveHeaders = foreach ($d in $TargetDrives) { "$d`_Usage(%),$d`_Read(MB/s),$d`_Write(MB/s)" }
-        $header = "Timestamp,IP_Address,CPU(%),CPU_Temp(C),DGPU(%),DGPU_Temp(C),IGPU(%),Used(GB),Usage(%),NonPagedPool(MB),Swap_Usage(%),$($driveHeaders -join ","),Top5_Memory_MB,Top5_Disk_IO_Global(MB/s)"
+        $header = "Timestamp,IP_Address,TotalMem(GB),CPU(%),CPU_Temp(C),DGPU(%),DGPU_Temp(C),IGPU(%),Used(GB),Usage(%),NonPagedPool(MB),Swap_Usage(%),$($driveHeaders -join ","),Top5_Memory_MB,Top5_Disk_IO_Global(MB/s)"
         Set-Content -Path $LogPath -Value $header -Encoding UTF8
     }
 
@@ -95,7 +96,7 @@ while ($true) {
     else { "No_Active_IO" }
 
     # 8. 최종 데이터 기록
-    $logEntry = "$timestamp,$ipAddress,$cpu,$cpuTemp,$dgpuUsage,$dgpuTemp,$igpuUsage,$usedGB,$memUsagePct,$nonPagedMB,$pfUsagePct,$driveDataStr,""$topMemLog"",""$topDiskLog"""
+    $logEntry = "$timestamp,$ipAddress,$totalMemGB,$cpu,$cpuTemp,$dgpuUsage,$dgpuTemp,$igpuUsage,$usedGB,$memUsagePct,$nonPagedMB,$pfUsagePct,$driveDataStr,""$topMemLog"",""$topDiskLog"""
     Add-Content -Path $LogPath -Value $logEntry
     
     # 실시간 콘솔 출력
