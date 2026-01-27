@@ -41,7 +41,7 @@ while ($true) {
     # 4-1. NVIDIA 외장 그래픽 (DGPU)
     $dgpuUsage = "0"; $dgpuTemp = "0"
     try {
-        $gpuRaw = nvidia-smi --query-gpu=utilization.gpu, temperature.gpu --format=csv, noheader, nounits 2>$null
+        $gpuRaw = nvidia-smi --query-gpu="utilization.gpu,temperature.gpu" --format="csv,noheader,nounits" 2>$null
         if ($gpuRaw) {
             $gpuParts = $gpuRaw -split ','
             $dgpuUsage = $gpuParts[0].Trim()

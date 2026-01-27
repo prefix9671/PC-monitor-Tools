@@ -15,6 +15,6 @@ def render_custom_dashboard(st, df):
     if selected_cols:
         fig_custom = px.line(df, x='Timestamp', y=selected_cols, title="Custom Time Series Analysis")
         fig_custom.update_layout(hovermode="x unified")
-        st.plotly_chart(fig_custom, use_container_width=True)
+        st.plotly_chart(fig_custom, width='stretch')
     else:
         st.info("Please select at least one metric.")

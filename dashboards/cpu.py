@@ -21,7 +21,7 @@ def render_cpu_dashboard(st, df):
         hovermode="x unified",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     # 통계 지표
     col1, col2 = st.columns(2)

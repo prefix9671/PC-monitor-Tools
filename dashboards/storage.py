@@ -11,7 +11,7 @@ def render_storage_dashboard(st, df, parse_process_column):
     
     if d_cols:
         fig_io = px.line(df, x='Timestamp', y=d_cols, title="D: Drive Read/Write Throughput (MB/s)")
-        st.plotly_chart(fig_io, use_container_width=True)
+        st.plotly_chart(fig_io, width='stretch')
     else:
         st.error("D: drive columns not found in log.")
         
@@ -30,6 +30,6 @@ def render_storage_dashboard(st, df, parse_process_column):
             # 막대 그래프 순서 반전 (Top이 위로) 및 색상 적용
             fig_disk_bar.update_layout(yaxis={'categoryorder':'total ascending'})
             fig_disk_bar.update_traces(marker_color='#333333') # Dark Grey/Black for Disk
-            st.plotly_chart(fig_disk_bar, use_container_width=True)
+            st.plotly_chart(fig_disk_bar, width='stretch')
         else:
             st.info("No significant disk activity detected.")

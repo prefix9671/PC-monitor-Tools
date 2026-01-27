@@ -6,7 +6,7 @@ import subprocess
 import pandas as pd
 from config import DEFAULT_LOG_DIR
 from data_loader import load_data
-from parsers import parse_process_column
+from parsers import parse_process_column, extract_process_time_series
 from dashboards.cpu import render_cpu_dashboard
 from dashboards.memory import render_memory_dashboard
 from dashboards.storage import render_storage_dashboard
@@ -162,7 +162,7 @@ if df is not None:
     if menu == "📊 CPU Dashboard":
         render_cpu_dashboard(st, df)
     elif menu == "🧠 Memory Dashboard":
-        render_memory_dashboard(st, df, parse_process_column)
+        render_memory_dashboard(st, df, parse_process_column, extract_process_time_series)
     elif menu == "💾 Storage (D:)":
         render_storage_dashboard(st, df, parse_process_column)
     elif menu == "📈 Custom Graph":

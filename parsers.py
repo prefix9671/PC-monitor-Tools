@@ -28,3 +28,33 @@ def parse_process_column(df_col):
         pd.DataFrame(list(process_stats.items()), columns=['Process', 'Max_Value'])
         .sort_values('Max_Value', ascending=False)
     )
+
+def extract_process_time_series(df, col_name):
+    """
+    Extracts time-series data for individual processes from a summary column.
+    Returns a long-format DataFrame with ['Timestamp', 'Process', 'Value'].
+    """
+    rows = []
+    if col_name not in df.columns:
+        return pd.DataFrame(columns=['Timestamp', 'Process', 'Value'])
+        
+    for _, row_val in df[['Timestamp', col_name]].dropna().iterrows():
+        ts = row_val['Timestamp']
+        data_str = row_val[col_name]
+        
+        if data_str == "No_Active_IO" or not isinstance(data_str, str):
+            continue
+            
+        for item in data_str.split('|'):
+            try:
+                if ':' in item:
+                    name, val_str = item.split(':', 1)
+                    val_match = re.search(r"([\d\.]+)", val_str)
+                    if val_match:
+                        val = float(val_match.group(1))
+                        rows.append({'Timestamp': ts, 'Process': name.strip(), 'Value': val})
+            except:
+                continue
+                
+    return pd.DataFrame(rows)
+
