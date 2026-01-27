@@ -14,12 +14,18 @@ Write-Host "Starting Hybrid Resource Monitoring (Interval: $($IntervalSeconds)s)
 Write-Host "Detecting Hardware (NVIDIA/Intel/AMD)..." -ForegroundColor Yellow
 
 while ($true) {
-    # 0. 날짜 기반 로그 분할
+    # 0. 날짜 기반 로그 분할 및 드라이브 보정
     $CurrentDate = Get-Date -Format "yyyy-MM-dd"
     $LogPath = Join-Path $LogFolder "System_Log_$CurrentDate.csv"
+    
+    if ($TargetDrives.Count -eq 1) {
+        # 문자열 하나로 들어왔을 때 (예: "C:,D:") 분리 처리
+        $TargetDrives = $TargetDrives[0] -split ',' | ForEach-Object { $_.Trim().Trim('"').Trim("'") } | Where-Object { $_ -ne "" }
+    }
 
-    # 1. 시스템 정보 (메모리 정보는 실행 시 또는 필요 시 한 번만 계산)
-    $ipAddress = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" } | Select-Object -First 1).IPAddress -or "N/A"
+    # 1. 시스템 정보
+    $ipObj = Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" } | Select-Object -First 1
+    $ipAddress = if ($ipObj) { $ipObj.IPAddress } else { "N/A" }
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     
     # 물리 장착 메모리 (DIMM 기준)
@@ -29,7 +35,7 @@ while ($true) {
 
     # 2. 헤더 생성
     if (-not (Test-Path $LogPath)) {
-        $driveHeaders = foreach ($d in $TargetDrives) { "$d`_Usage(%),$d`_Read(MB/s),$d`_Write(MB/s)" }
+        $driveHeaders = foreach ($d in $TargetDrives) { "$d`_Usage(%),$d`_Read(MB/s),$d`_Write(MB/s),$d`_Active(%)" }
         $header = "Timestamp,IP_Address,PhysicalMem(GB),OSTotalMem(GB),CPU(%),CPU_Temp(C),DGPU(%),DGPU_Temp(C),IGPU(%),Used(GB),Usage(%),NonPagedPool(MB),Swap_Usage(%),$($driveHeaders -join ","),Top5_Memory_MB,Top5_Disk_IO_Global(MB/s)"
         Set-Content -Path $LogPath -Value $header -Encoding UTF8
     }
@@ -77,11 +83,19 @@ while ($true) {
     $driveDetails = foreach ($d in $TargetDrives) {
         $logicDisk = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$d'"
         $usage = if ($logicDisk) { [Math]::Round((($logicDisk.Size - $logicDisk.FreeSpace) / $logicDisk.Size) * 100, 2) } else { "N/A" }
-        $diskStats = Get-Counter "\LogicalDisk($d)\Disk Read Bytes/sec", "\LogicalDisk($d)\Disk Write Bytes/sec" -ErrorAction SilentlyContinue
+        
+        # Disk Performance Counters (Read, Write, % Idle)
+        $diskStats = Get-Counter "\LogicalDisk($d)\Disk Read Bytes/sec", "\LogicalDisk($d)\Disk Write Bytes/sec", "\LogicalDisk($d)\% Idle Time" -ErrorAction SilentlyContinue
+        
         $readMB = if ($diskStats) { [Math]::Round($diskStats.CounterSamples[0].CookedValue / 1MB, 2) } else { 0 }
-        $writeMB = if ($diskStats) { [Math]::Round($diskStats.CounterSamples[1].MiddleValue / 1MB, 2) } else { 0 } # Corrected CookedValue index if needed, but let's stick to safe
         $writeMB = if ($diskStats) { [Math]::Round($diskStats.CounterSamples[1].CookedValue / 1MB, 2) } else { 0 }
-        "$usage,$readMB,$writeMB"
+        
+        # Calculate Active Time % (100 - % Idle Time)
+        $idlePct = if ($diskStats) { $diskStats.CounterSamples[2].CookedValue } else { 100 }
+        if ($idlePct -gt 100) { $idlePct = 100 } # Cap at 100
+        $activePct = [Math]::Round(100 - $idlePct, 1)
+
+        "$usage,$readMB,$writeMB,$activePct"
     }
     $driveDataStr = $driveDetails -join ","
 

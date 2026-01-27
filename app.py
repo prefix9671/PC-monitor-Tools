@@ -37,9 +37,8 @@ with st.sidebar:
         
         script_path = os.path.join(base_path, "Monitor.ps1")
         
-        # Parse drives for PowerShell array format: "C:","D:"
-        drives_list = [d.strip() for d in drives_input.split(',')]
-        drives_arg = ",".join([f'"{d}"' for d in drives_list])
+        # Pass drives as a single quoted string; Monitor.ps1 will handle splitting if needed.
+        drives_arg = f'"{drives_input}"'
         
         try:
             # Use PowerShell Start-Process to run as admin
@@ -82,12 +81,20 @@ with st.sidebar:
     
     if df is not None:
         st.success(f"Loaded: {len(df)} rows")
-        # 시간 필터링
+        # 시간 필터링 (데이터가 1개 이상일 때만 슬라이더 표시)
         min_time, max_time = df['Timestamp'].min(), df['Timestamp'].max()
-        time_range = st.slider("Time Range", min_value=min_time.to_pydatetime(), max_value=max_time.to_pydatetime(), value=(min_time.to_pydatetime(), max_time.to_pydatetime()))
         
-        # 데이터 필터링 적용
-        df = df[(df['Timestamp'] >= pd.to_datetime(time_range[0])) & (df['Timestamp'] <= pd.to_datetime(time_range[1]))]
+        if min_time < max_time:
+            time_range = st.slider(
+                "Time Range", 
+                min_value=min_time.to_pydatetime(), 
+                max_value=max_time.to_pydatetime(), 
+                value=(min_time.to_pydatetime(), max_time.to_pydatetime())
+            )
+            # 데이터 필터링 적용
+            df = df[(df['Timestamp'] >= pd.to_datetime(time_range[0])) & (df['Timestamp'] <= pd.to_datetime(time_range[1]))]
+        else:
+            st.info("💡 Only one data point available, time filtering skipped.")
 
 # ==========================================
 # 2. 메인 대시보드 UI
@@ -99,17 +106,19 @@ if df is not None:
     # ---------------------------------------------------------
     st.markdown("---")
     
-    # 1. Memory 관련 정보 추출
-    max_mem_gb = df['Used(GB)'].max()
-    max_mem_pct = df['Usage(%)'].max()
-    
     # CSV에서 메모리 정보 가져오기
     physical_mem_gb = df['PhysicalMem(GB)'].iloc[0] if 'PhysicalMem(GB)' in df.columns else "N/A"
     os_total_mem_gb = df['OSTotalMem(GB)'].iloc[0] if 'OSTotalMem(GB)' in df.columns else "N/A"
     total_mem_gb = os_total_mem_gb # KPI에서 사용할 용량은 OS 가용 기준
     
-    st.info(f"💾 **물리 장착 메모리**: {physical_mem_gb} GB | **OS 사용 가능 메모리**: {os_total_mem_gb} GB")
-    st.caption("※ 실제 사용률(%)은 OS 사용 가능 메모리 기준으로 계산되었습니다.")
+    st.markdown(f"#### 🖥️ 시스템 사양 정보")
+    st.write(f"- **물리 장착 메모리**: {physical_mem_gb} GB")
+    st.write(f"- **OS 사용 가능 메모리**: {os_total_mem_gb} GB")
+    st.write("※ 실제 사용 가능 메모리 %로 계산하였습니다.")
+    st.markdown("---")
+
+    max_mem_gb = df['Used(GB)'].max()
+    max_mem_pct = df['Usage(%)'].max()
 
     # 2. 지속 증가 시간 (단순화: Min -> Max 도달 시간)
     min_mem_idx = df['Used(GB)'].idxmin()

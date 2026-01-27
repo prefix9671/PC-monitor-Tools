@@ -3,17 +3,29 @@ import plotly.express as px
 import streamlit as st
 
 def render_storage_dashboard(st, df, parse_process_column):
-    st.subheader("D: Drive I/O Analysis (NVMe/Data)")
+    st.subheader("💾 Storage Performance Analysis")
     
-    # D드라이브 읽기/쓰기 라인 차트
-    # 컬럼명이 정확한지 확인 (공백 처리됨)
-    d_cols = [c for c in df.columns if c.startswith('D_') and 'MB/s' in c]
+    # 1. Disk Active Time (Load)
+    active_cols = [c for c in df.columns if 'Active(%)' in c]
+    if active_cols:
+        fig_load = px.line(df, x='Timestamp', y=active_cols, title="Disk Active Time (Load %)")
+        fig_load.update_layout(yaxis=dict(range=[0, 100]), hovermode="x unified")
+        st.plotly_chart(fig_load, width='stretch')
+    else:
+        st.info("No Disk Active Time data available.")
+
+    st.divider()
+
+    # 2. I/O Throughput (Read/Write)
+    # Find all MB/s columns excluding Top5 global stats
+    io_cols = [c for c in df.columns if 'MB/s' in c and 'Top5' not in c]
     
-    if d_cols:
-        fig_io = px.line(df, x='Timestamp', y=d_cols, title="D: Drive Read/Write Throughput (MB/s)")
+    if io_cols:
+        fig_io = px.line(df, x='Timestamp', y=io_cols, title="Drive Read/Write Throughput (MB/s)")
+        fig_io.update_layout(hovermode="x unified")
         st.plotly_chart(fig_io, width='stretch')
     else:
-        st.error("D: drive columns not found in log.")
+        st.error("No Disk I/O data found in log.")
         
     st.divider()
     

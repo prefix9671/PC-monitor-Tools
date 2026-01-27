@@ -107,4 +107,8 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
                 st.dataframe(top_mem_df.head(10))
         else:
             st.warning("No process data available.")
+            with st.expander("💀 Debug: Raw Data Inspection"):
+                st.write("First 10 rows of 'Top5_Memory_MB':")
+                st.write(df['Top5_Memory_MB'].head(10))
+                st.write("Column Type:", df['Top5_Memory_MB'].dtype)
 
