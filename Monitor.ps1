@@ -1,9 +1,11 @@
 # ==========================================
 # 사용자 설정 변수 (Configuration)
 # ==========================================
+param(
+    [int]$IntervalSeconds = 5,          # 기록 주기 (초)
+    [string[]]$TargetDrives = @("C:", "D:") # 모니터링 드라이브 리스트
+)
 $LogFolder = "C:\SystemLogs"              # 로그 저장 경로
-$TargetDrives = @("C:", "D:")                # 모니터링 드라이브 리스트
-$IntervalSeconds = 5                            # 기록 주기 (초)
 # ==========================================
 
 if (-not (Test-Path $LogFolder)) { New-Item -ItemType Directory -Path $LogFolder }
@@ -72,6 +74,7 @@ while ($true) {
         $usage = if ($logicDisk) { [Math]::Round((($logicDisk.Size - $logicDisk.FreeSpace) / $logicDisk.Size) * 100, 2) } else { "N/A" }
         $diskStats = Get-Counter "\LogicalDisk($d)\Disk Read Bytes/sec", "\LogicalDisk($d)\Disk Write Bytes/sec" -ErrorAction SilentlyContinue
         $readMB = if ($diskStats) { [Math]::Round($diskStats.CounterSamples[0].CookedValue / 1MB, 2) } else { 0 }
+        $writeMB = if ($diskStats) { [Math]::Round($diskStats.CounterSamples[1].MiddleValue / 1MB, 2) } else { 0 } # Corrected CookedValue index if needed, but let's stick to safe
         $writeMB = if ($diskStats) { [Math]::Round($diskStats.CounterSamples[1].CookedValue / 1MB, 2) } else { 0 }
         "$usage,$readMB,$writeMB"
     }
