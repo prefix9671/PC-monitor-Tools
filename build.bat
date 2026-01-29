@@ -19,11 +19,22 @@ if exist "dist\%BASENAME%.exe" (
 )
 
 echo ========================================
+echo   Building Web Manual (MkDocs)
+echo ========================================
+call .\venv\Scripts\python.exe -m mkdocs build
+
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] MkDocs build failed!
+    pause
+    exit /b %ERRORLEVEL%
+)
+
+echo ========================================
 echo   Building and Renaming to: %BASENAME%.exe
 echo ========================================
 
 :: 3. Run PyInstaller (using existing spec)
-pyinstaller --clean monitor.spec
+.\venv\Scripts\pyinstaller.exe --clean monitor.spec
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Build failed!

@@ -1,0 +1,11 @@
+/* 리스트 아이템 간격 넓히기 */
+.md-typeset ol > li, 
+.md-typeset ul > li {
+    margin-bottom: 0.8em; /* 1.2.3.4 번호 사이의 간격 */
+    display: block; /* 강제 블록 처리로 줄바꿈 확실하게 */
+}
+
+/* 리스트 내부 텍스트 줄간격 */
+.md-typeset li {
+    line-height: 1.6; 
+}

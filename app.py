@@ -1,9 +1,9 @@
 # app.py
 import streamlit as st
 import os
-import sys
-import subprocess
+import webbrowser
 import pandas as pd
+from datetime import datetime, timedelta
 from config import DEFAULT_LOG_DIR
 from data_loader import load_data
 from parsers import parse_process_column, extract_process_time_series
@@ -95,6 +95,16 @@ with st.sidebar:
             df = df[(df['Timestamp'] >= pd.to_datetime(time_range[0])) & (df['Timestamp'] <= pd.to_datetime(time_range[1]))]
         else:
             st.info("💡 Only one data point available, time filtering skipped.")
+            
+        st.divider()
+        if st.button("📖 웹 매뉴얼 열기 (MkDocs)", use_container_width=True):
+            manual_path = os.path.abspath("site/index.html")
+            if os.path.exists(manual_path):
+                webbrowser.open_new_tab(f"file:///{manual_path}")
+            else:
+                st.error("매뉴얼 사이트가 빌드되지 않았습니다.")
+        
+        st.caption("© 2026 System Resource Monitor - v1.1.0")
 
 # ==========================================
 # 2. 메인 대시보드 UI
@@ -169,7 +179,7 @@ if df is not None:
     elif menu == "💾 Storage (D:)":
         render_storage_dashboard(st, df, parse_process_column)
     elif menu == "📈 Custom Graph":
-        render_custom_dashboard(st, df)
+        render_custom_dashboard(st, df, parse_process_column)
 
 else:
     st.info(f"👈 Please upload a log file or ensure files exist in {DEFAULT_LOG_DIR}")

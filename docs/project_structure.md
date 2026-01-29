@@ -1,36 +1,45 @@
 # 프로젝트 구조 (Project Structure)
 
-이 문서는 **System Resource Monitor** 프로젝트의 파일 구조를 개략적으로 설명합니다.
+이 문서는 **System Resource Monitor** 프로젝트의 파일 구조 및 주요 구성 요소에 대한 최신 정보를 제공합니다.
 
 ## 루트 디렉토리 (Root Directory)
 
 | 파일/디렉토리 | 설명 |
 | :--- | :--- |
-| `app.py` | Streamlit 대시보드 애플리케이션의 메인 진입점입니다. 사이드바, 네비게이션을 설정하고 선택된 대시보드 모듈을 로드합니다. |
-| `Monitor.ps1` | 데이터 수집기 역할을 하는 고성능 PowerShell 스크립트입니다. CPU, 메모리, 디스크, GPU 지표를 수집하여 로그 파일로 저장합니다 (기본값: `C:\SystemLogs`). |
-| `config.py` | 애플리케이션 전체에서 사용되는 설정 상수 및 구성 요소(예: 파일 경로, 기본 설정 등)를 포함합니다. |
-| `data_loader.py` | `Monitor.ps1`이 생성한 CSV 로그 파일을 로딩하고 파싱하는 처리를 담당합니다. 성능을 위한 캐싱 메커니즘을 포함합니다. |
-| `parsers.py` | 로그의 특정 데이터 형식(예: 타임스탬프, 수치 값)을 파싱하기 위한 유틸리티 함수들입니다. |
-| `run_app.py` | PyInstaller 빌드 프로세스를 위한 진입점 역할을 하는 래퍼 스크립트입니다. 독립형 실행 파일을 생성할 때 사용됩니다. |
-| `monitor.spec` | 애플리케이션 빌드 및 번들링 방법(의존성 및 데이터 파일 포함)을 정의하는 PyInstaller 명세 파일입니다. |
-| `requirements.txt` | 프로젝트 실행에 필요한 Python 의존성 라이브러리 목록입니다 (예: `streamlit`, `pandas`, `plotly`). |
-| `build.bat` | 빌드 프로세스를 간소화하기 위한 배치 스크립트입니다. |
-| `dashboards/` | 모듈화된 대시보드 뷰를 포함하는 디렉토리입니다. |
-| `docs/` | 프로젝트 문서를 포함하는 디렉토리입니다. |
+| `app.py` | Streamlit 대시보드의 메인 진입점. UI 레이아웃, 사이드바 제어 및 모듈 렌더링을 담당합니다. |
+| `Monitor.ps1` | 실시간 데이터 수집기(PowerShell). CPU, 메모리, GPU, 디스크 성능을 수집해 CSV로 저장합니다. |
+| `excel_exporter.py` | **[NEW]** 선택한 지표 및 상위 프로세스 정보를 엑셀(`.xlsx`) 파일로 변환하는 모듈입니다. |
+| `mkdocs.yml` | **[NEW]** MkDocs Material 웹 매뉴얼 사이트의 설정 및 테마 구성을 정의하는 파일입니다. |
+| `site/` | **[NEW]** `mkdocs build` 명령어를 통해 생성된 정적 웹 매뉴얼 사이트 결과물입니다. |
+| `config.py` | 로그 디렉토리 및 애플리케이션 상수 설정을 포함합니다. |
+| `data_loader.py` | 수집된 CSV 로그를 효율적으로 로딩하고 캐싱하는 데이터 처리 모듈입니다. |
+| `parsers.py` | 로그 데이터 가공 및 상위 점유 프로세스 정보 추출을 위한 유틸리티입니다. |
+| `run_app.py` | PyInstaller 빌드 시 실행 파일을 구동하기 위한 래퍼 스크립트입니다. |
+| `monitor.spec` | **[UPDATE]** `site/` 폴더와 `excel_exporter`를 포함하도록 업데이트된 빌드 명세 파일입니다. |
+| `build.bat` | **[UPDATE]** 웹 매뉴얼 빌드와 PyInstaller 빌드를 한 번에 수행하는 자동화 스크립트입니다. |
+| `requirements.txt` | `openpyxl`, `mkdocs-material` 등 확장된 의존성 라이브러리 목록입니다. |
+| `dashboards/` | CPU, 메모리, 저장공간 등 각 대시보드 화면을 담당하는 모듈 폴더입니다. |
+| `docs/` | 매뉴얼 원본 마크다운, 이미지 및 스타일시트를 포함하는 문서 폴더입니다. |
 
 ## 대시보드 디렉토리 (`dashboards/`)
 
-이 디렉토리는 대시보드의 각 섹션을 담당하는 개별 Python 모듈들을 포함합니다.
-
 | 파일 | 설명 |
 | :--- | :--- |
-| `cpu.py` | CPU 모니터링 대시보드를 렌더링하며, CPU 사용량 및 온도를 시각화합니다. |
-| `memory.py` | 메모리 모니터링 대시보드를 렌더링하며, 물리/스왑 메모리 사용량 및 상위 점유 프로세스를 보여줍니다. |
-| `storage.py` | 스토리지 모니터링 대시보드를 렌더링하며, 설정된 드라이브의 디스크 I/O 및 사용량 통계를 표시합니다. |
-| `custom.py` | 사용자 정의 또는 실험적인 대시보드 뷰를 위한 모듈입니다 (현재는 기본 또는 플레이스홀더). |
+| `cpu.py` | CPU 사용률 및 온도 추이를 시각화합니다. |
+| `memory.py` | 메모리 사용량 점유율 및 상위 Memory Offender를 분석합니다. |
+| `storage.py` | 각 드라이브별 I/O 스피드와 상위 Disk I/O 프로세스를 시각화합니다. |
+| `custom.py` | **[UPDATE]** 사용자가 직접 지표를 선택하고, 시작 시간을 지정하여 엑셀로 내보내는 통합 분석 뷰입니다. |
 
-## 데이터 흐름 (Data Flow)
+## 문서 디렉토리 (`docs/`)
 
-1.  **데이터 수집**: `Monitor.ps1`이 백그라운드에서 실행(또는 UI를 통해 트리거)되며 지표를 `C:\SystemLogs`(또는 설정된 경로)의 CSV 파일로 기록합니다.
-2.  **데이터 로딩**: `app.py`는 `data_loader.py`를 사용하여 이 CSV 파일들을 읽어옵니다.
-3.  **시각화**: `app.py`는 `dashboards/`의 모듈들을 임포트하여 Streamlit과 Plotly를 사용해 로드된 데이터를 시각화합니다.
+-   `index.md`: 웹 매뉴얼 사이트의 메인 홈 페이지.
+-   `user_manual.md`: **[UPDATE]** 기능 상세 가이드 및 툴바 조작법이 포함된 통합 매뉴얼 원본.
+-   `stylesheets/extra.css`: 웹 매뉴얼의 가독성 향상(리스트 간격 등)을 위한 커스텀 스타일.
+-   `images/`: 매뉴얼에 사용되는 대시보드 및 툴바 스크린샷 이미지들.
+
+## 데이터 및 제어 흐름 (Data & Control Flow)
+
+1.  **데이터 수집**: 사용자가 UI에서 'Start Monitor'를 누르면 `Monitor.ps1`이 실행되어 CSV 로그를 생성합니다.
+2.  **데이터 조회**: `app.py`에서 로그를 선택하면 `data_loader.py`와 `parsers.py`가 데이터를 정제합니다.
+3.  **결과 출력**: `dashboards/` 모듈들이 Plotly 차트를 생성하고, `excel_exporter.py`가 필요시 엑셀 보고서를 작성합니다.
+4.  **매뉴얼 서빙**: `build.bat` 실행 시 MkDocs가 `docs/`를 `site/`로 빌드하여 실행 파일 내에서 웹 기반 매뉴얼을 볼 수 있게 합니다.

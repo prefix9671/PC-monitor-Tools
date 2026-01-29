@@ -1,0 +1,54 @@
+site_name: System Resource Monitor Manual
+site_url: https://example.com/system-resource-monitor
+
+theme:
+  name: material
+  language: ko
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra:
+  search:
+    tokenizer: ko
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - 사용 매뉴얼: user_manual.md
+  - 프로젝트 구조: project_structure.md
