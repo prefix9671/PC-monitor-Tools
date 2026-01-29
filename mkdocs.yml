@@ -1,5 +1,6 @@
 site_name: System Resource Monitor Manual
 site_url: https://example.com/system-resource-monitor
+use_directory_urls: false
 
 theme:
   name: material

@@ -1,6 +1,8 @@
 # app.py
 import streamlit as st
 import os
+import sys
+from pathlib import Path
 import webbrowser
 import pandas as pd
 from datetime import datetime, timedelta
@@ -98,11 +100,21 @@ with st.sidebar:
             
         st.divider()
         if st.button("📖 웹 매뉴얼 열기 (MkDocs)", use_container_width=True):
-            manual_path = os.path.abspath("site/index.html")
-            if os.path.exists(manual_path):
-                webbrowser.open_new_tab(f"file:///{manual_path}")
+            # PyInstaller 환경(`sys.frozen`) 여부 확인
+            if getattr(sys, 'frozen', False):
+                # exe 실행 시 임시 폴더(_MEIPASS) 내의 site 폴더 참조
+                base_path = sys._MEIPASS
             else:
-                st.error("매뉴얼 사이트가 빌드되지 않았습니다.")
+                # 개발 환경에서는 현재 스크립트 위치 기준
+                base_path = os.path.dirname(os.path.abspath(__file__))
+
+            manual_path = os.path.join(base_path, "site", "index.html")
+
+            if os.path.exists(manual_path):
+                # Windows 경로(\)를 브라우저용 URI(/)로 자동 변환
+                webbrowser.open_new_tab(Path(manual_path).as_uri())
+            else:
+                st.error(f"매뉴얼 사이트를 찾을 수 없습니다: {manual_path}")
         
         st.caption("© 2026 System Resource Monitor - v1.1.0")
 

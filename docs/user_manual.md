@@ -92,7 +92,9 @@
 ![메모리 대시보드](images/memory_dashboard.png)
 
 ### 💾 Storage Dashboard
-디스크 읽기/쓰기 속도가 얼마나 빠른지 실시간으로 보여줍니다. 대용량 파일 복사 시의 성능 변화를 관찰하기 좋습니다.
+선택된 드라이브의 사용률과 프로그램 IO 사용량을 모니터링할 수 있습니다. 디스크 읽기/쓰기 속도가 얼마나 빠른지 실시간으로 보여주며, 대용량 파일 복사 시의 성능 변화를 관찰하기 좋습니다.
+
+![Storage Monitoring](images/storage_dashboard.png)
 
 ---
 

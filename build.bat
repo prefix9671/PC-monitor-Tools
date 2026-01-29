@@ -58,4 +58,4 @@ git push
 echo ========================================
 echo   Build Completed: dist/%BASENAME%.exe
 echo ========================================
-pause
+:: pause
