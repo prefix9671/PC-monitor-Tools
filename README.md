@@ -37,6 +37,8 @@ sys_resource_monitor/
     └── custom.py
 ```
 
+자세한 프로젝트 구조 및 설명은 [docs/project_structure.md](docs/project_structure.md) 파일을 참고하세요.
+
 ## Installation
 
 1.  **Clone the repository**:
