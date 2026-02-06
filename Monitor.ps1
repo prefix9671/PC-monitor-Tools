@@ -2,7 +2,7 @@
 # 사용자 설정 변수 (Configuration)
 # ==========================================
 param(
-    [int]$IntervalSeconds = 5,          # 기록 주기 (초)
+    [int]$IntervalSeconds = 30,          # 기록 주기 (초)
     [string[]]$TargetDrives = @("C:", "D:") # 모니터링 드라이브 리스트
 )
 $LogFolder = "C:\SystemLogs"              # 로그 저장 경로

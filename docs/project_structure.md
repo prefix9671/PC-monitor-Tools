@@ -32,8 +32,8 @@
 
 ## 문서 디렉토리 (`docs/`)
 
--   `index.md`: 웹 매뉴얼 사이트의 메인 홈 페이지.
--   `user_manual.md`: **[UPDATE]** 기능 상세 가이드 및 툴바 조작법이 포함된 통합 매뉴얼 원본.
+-   `index.md`: **[UPDATE]** 웹 매뉴얼 사이트의 메인 홈 페이지. `pymdownx.snippets`를 사용하여 `user_manual.md` 내용을 그대로 표시합니다.
+-   `user_manual.md`: **[UPDATE]** 기능 상세 가이드 및 툴바 조작법이 포함된 통합 매뉴얼 원본. (실제 수정은 이 파일에서 수행)
 -   `stylesheets/extra.css`: 웹 매뉴얼의 가독성 향상(리스트 간격 등)을 위한 커스텀 스타일.
 -   `images/`: 매뉴얼에 사용되는 대시보드 및 툴바 스크린샷 이미지들.
 

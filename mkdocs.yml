@@ -50,6 +50,5 @@ extra_css:
   - stylesheets/extra.css
 
 nav:
-  - Home: index.md
-  - 사용 매뉴얼: user_manual.md
+  - 사용 매뉴얼: index.md
   - 프로젝트 구조: project_structure.md
