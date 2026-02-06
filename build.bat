@@ -49,13 +49,25 @@ if exist "dist\SystemResourceMonitor.exe" (
     move "dist\SystemResourceMonitor.exe" "dist\%BASENAME%.exe"
 )
 
-:: 5. Git Push
+:: 5. Copy Monitor.ps1 to dist
+echo Copying Monitor.ps1 to dist...
+copy "Monitor.ps1" "dist\"
+
+:: 6. Zip Manual (site folder) to dist
+echo Zipping Manual...
+if exist "dist\Manual.zip" del "dist\Manual.zip"
+powershell -Command "Compress-Archive -Path 'site\*' -DestinationPath 'dist\Manual.zip' -Force"
+
+:: 7. Git Push
 echo Pushing to GitHub...
 git add .
 git commit -m "Build update: %BASENAME%"
 git push
 
 echo ========================================
-echo   Build Completed: dist/%BASENAME%.exe
+echo   Build Completed: 
+echo   - dist/%BASENAME%.exe
+echo   - dist/Monitor.ps1
+echo   - dist/Manual.zip
 echo ========================================
 :: pause
