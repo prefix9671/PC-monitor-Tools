@@ -49,8 +49,13 @@ start_monitor.bat
 2. 실행 시 자동으로 웹 브라우저가 열리며 대시보드가 표시됩니다.
 3. 좌측 사이드바에서 로그 파일이 있는 `C:\SystemLogs` 폴더가 자동 선택됩니다. ("Select from..." 메뉴)
 
-**개발 환경 실행 시:**
+**개발 환경 실행 시 (venv 사용):**
 ```bash
+# 방법 1: 가상환경 파이썬 직접 실행 (권장)
+.\venv\Scripts\python -m streamlit run app.py
+
+# 방법 2: 가상환경 활성화 후 실행
+.\venv\Scripts\Activate.ps1
 python -m streamlit run app.py
 ```
 
