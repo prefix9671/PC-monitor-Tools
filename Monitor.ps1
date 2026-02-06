@@ -33,77 +33,25 @@ while ($true) {
     # OS 사용 가능 메모리
     $osTotalMemGB = [Math]::Round(((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB), 2)
 
-    # 2. 헤더 생성
+    # 3. 헤더 생성 (프로세스 로그 전용 + 시스템 정적 정보)
     if (-not (Test-Path $LogPath)) {
-        $driveHeaders = foreach ($d in $TargetDrives) { "$d`_Usage(%),$d`_Read(MB/s),$d`_Write(MB/s),$d`_Active(%)" }
-        $header = "Timestamp,IP_Address,PhysicalMem(GB),OSTotalMem(GB),CPU(%),CPU_Temp(C),DGPU(%),DGPU_Temp(C),IGPU(%),Used(GB),Usage(%),NonPagedPool(MB),Swap_Usage(%),$($driveHeaders -join ","),Top5_Memory_MB,Top5_Disk_IO_Global(MB/s)"
+        # 헤더: 시간, IP, 물리메모리, OS메모리, Top5 메모리, Top5 디스크
+        $header = "Timestamp,IP_Address,PhysicalMem(GB),OSTotalMem(GB),Top5_Memory_MB,Top5_Disk_IO_Global(MB/s)"
         Set-Content -Path $LogPath -Value $header -Encoding UTF8
     }
 
-    # 3. CPU 사용량 및 온도 (Intel/AMD 범용)
-    $cpu = [Math]::Round(((Get-Counter '\Processor(_Total)\% Processor Time' -SampleInterval 1).CounterSamples.CookedValue), 2)
-    try {
-        $tempK = (Get-CimInstance -Namespace root/wmi -ClassName MsAcpi_ThermalZoneTemperature -ErrorAction SilentlyContinue).CurrentTemperature
-        $cpuTemp = if ($tempK) { [Math]::Round(($tempK / 10) - 273.15, 1) } else { "N/A" }
-    }
-    catch { $cpuTemp = "N/A" }
+    # 3-1. 시스템 정적 정보 다시 계산 (또는 루프 밖으로 뺄 수 있지만 안전하게 매번 확인)
+    # 물리 장착 메모리 (DIMM 기준)
+    $physicalMemGB = [Math]::Round(((Get-CimInstance Win32_PhysicalMemory | Measure-Object Capacity -Sum).Sum / 1GB), 0)
+    # OS 사용 가능 메모리
+    $osTotalMemGB = [Math]::Round(((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB), 2)
 
-    # 4. GPU 모니터링 (Hybrid: NVIDIA + iGPU)
-    # 4-1. NVIDIA 외장 그래픽 (DGPU)
-    $dgpuUsage = "0"; $dgpuTemp = "0"
-    try {
-        $gpuRaw = nvidia-smi --query-gpu="utilization.gpu,temperature.gpu" --format="csv,noheader,nounits" 2>$null
-        if ($gpuRaw) {
-            $gpuParts = $gpuRaw -split ','
-            $dgpuUsage = $gpuParts[0].Trim()
-            $dgpuTemp = $gpuParts[1].Trim()
-        }
-    }
-    catch { }
-
-    # 4-2. 인텔/AMD 내장 그래픽 (IGPU) - 성능 카운터 기반
-    $igpuUsage = 0
-    try {
-        $gpuCounters = Get-Counter '\GPU Engine(*)\Utilization Percentage' -ErrorAction SilentlyContinue
-        if ($gpuCounters) {
-            $igpuUsage = [Math]::Round(($gpuCounters.CounterSamples.CookedValue | Measure-Object -Maximum).Maximum, 1)
-        }
-    }
-    catch { $igpuUsage = "N/A" }
-
-    # 5. 메모리 계층 정보
-    $os = Get-CimInstance Win32_OperatingSystem
-    $usedGB = [Math]::Round(($os.TotalVisibleMemorySize - $os.FreePhysicalMemory) / 1MB, 2)
-    $memUsagePct = [Math]::Round(($usedGB / ([Math]::Round($os.TotalVisibleMemorySize / 1MB, 2))) * 100, 2)
-    $nonPagedMB = [Math]::Round(((Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory).PoolNonpagedBytes / 1MB), 2)
-    $pf = Get-CimInstance Win32_PageFileUsage
-    $pfUsagePct = if ($pf) { [Math]::Round(($pf.CurrentUsage / $pf.AllocatedBaseSize) * 100, 2) } else { 0 }
-
-    # 6. 드라이브 성능
-    $driveDetails = foreach ($d in $TargetDrives) {
-        $logicDisk = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$d'"
-        $usage = if ($logicDisk) { [Math]::Round((($logicDisk.Size - $logicDisk.FreeSpace) / $logicDisk.Size) * 100, 2) } else { "N/A" }
-        
-        # Disk Performance Counters (Read, Write, % Idle)
-        $diskStats = Get-Counter "\LogicalDisk($d)\Disk Read Bytes/sec", "\LogicalDisk($d)\Disk Write Bytes/sec", "\LogicalDisk($d)\% Idle Time" -ErrorAction SilentlyContinue
-        
-        $readMB = if ($diskStats) { [Math]::Round($diskStats.CounterSamples[0].CookedValue / 1MB, 2) } else { 0 }
-        $writeMB = if ($diskStats) { [Math]::Round($diskStats.CounterSamples[1].CookedValue / 1MB, 2) } else { 0 }
-        
-        # Calculate Active Time % (100 - % Idle Time)
-        $idlePct = if ($diskStats) { $diskStats.CounterSamples[2].CookedValue } else { 100 }
-        if ($idlePct -gt 100) { $idlePct = 100 } # Cap at 100
-        $activePct = [Math]::Round(100 - $idlePct, 1)
-
-        "$usage,$readMB,$writeMB,$activePct"
-    }
-    $driveDataStr = $driveDetails -join ","
-
-    # 7. 상위 프로세스 식별
+    # 4. 상위 프로세스 식별 (메모리)
     $topMemLog = ((Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 5 | ForEach-Object {
                 "$($_.ProcessName):$([Math]::Round($_.WorkingSet64 / 1MB, 0))MB"
             }) -join " | ")
 
+    # 5. 상위 프로세스 식별 (디스크 IO)
     $diskCounters = Get-Counter '\Process(*)\IO Data Bytes/sec' -ErrorAction SilentlyContinue
     $diskSamples = $diskCounters.CounterSamples | Where-Object { $_.InstanceName -notmatch "^(_total|idle|system)$" -and $_.CookedValue -gt 10KB }
     $topDiskLog = if ($diskSamples) {
@@ -113,12 +61,12 @@ while ($true) {
     }
     else { "No_Active_IO" }
 
-    # 8. 최종 데이터 기록
-    $logEntry = "$timestamp,$ipAddress,$physicalMemGB,$osTotalMemGB,$cpu,$cpuTemp,$dgpuUsage,$dgpuTemp,$igpuUsage,$usedGB,$memUsagePct,$nonPagedMB,$pfUsagePct,$driveDataStr,""$topMemLog"",""$topDiskLog"""
+    # 6. 데이터 기록
+    $logEntry = "$timestamp,$ipAddress,$physicalMemGB,$osTotalMemGB,""$topMemLog"",""$topDiskLog"""
     Add-Content -Path $LogPath -Value $logEntry
     
-    # 실시간 콘솔 출력
-    Write-Host "[$timestamp] CPU: $cpu% | DGPU: $dgpuUsage% | IGPU: $igpuUsage% | Mem: $memUsagePct%" -ForegroundColor Green
+    # 실시간 콘솔 출력 (간소화)
+    Write-Host "[$timestamp] Process Logged. (Top Mem: $(($topMemLog -split '\|')[0]))" -ForegroundColor Green
     
-    Start-Sleep -Seconds ($IntervalSeconds - 1)
+    Start-Sleep -Seconds $IntervalSeconds
 }

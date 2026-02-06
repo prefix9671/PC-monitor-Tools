@@ -49,9 +49,10 @@ if exist "dist\SystemResourceMonitor.exe" (
     move "dist\SystemResourceMonitor.exe" "dist\%BASENAME%.exe"
 )
 
-:: 5. Copy Monitor.ps1 to dist
-echo Copying Monitor.ps1 to dist...
+:: 5. Copy Monitor.ps1 and start_monitor.bat to dist
+echo Copying scripts...
 copy "Monitor.ps1" "dist\"
+copy "start_monitor.bat" "dist\"
 
 :: 6. Zip Manual (site folder) to dist
 echo Zipping Manual...
@@ -61,12 +62,13 @@ powershell -Command "Compress-Archive -Path 'site\*' -DestinationPath 'dist\Manu
 :: 7. Git Push
 echo Pushing to GitHub...
 git add .
-git commit -m "Build update: %BASENAME%"
+git commit -m "Build update: %BASENAME% with Hybrid Monitor"
 git push
 
 echo ========================================
 echo   Build Completed: 
 echo   - dist/%BASENAME%.exe
+echo   - dist/start_monitor.bat
 echo   - dist/Monitor.ps1
 echo   - dist/Manual.zip
 echo ========================================
