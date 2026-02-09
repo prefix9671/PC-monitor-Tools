@@ -1,45 +1,159 @@
-# 프로젝트 구조 (Project Structure)
+﻿# 프로젝트 구조 및 함수 트리
 
-이 문서는 **System Resource Monitor** 프로젝트의 파일 구조 및 주요 구성 요소에 대한 최신 정보를 제공합니다.
+이 문서는 `System Resource Monitor`의 현재 코드 구조를 빠르게 파악하고, 수정 시 영향 범위를 줄이기 위한 **유지보수 기준 문서**입니다.
 
-## 루트 디렉토리 (Root Directory)
+업데이트 기준: 2026-02-09
 
-| 파일/디렉토리 | 설명 |
-| :--- | :--- |
-| `app.py` | Streamlit 대시보드의 메인 진입점. UI 레이아웃, 사이드바 제어 및 모듈 렌더링을 담당합니다. |
-| `Monitor.ps1` | 실시간 데이터 수집기(PowerShell). CPU, 메모리, GPU, 디스크 성능을 수집해 CSV로 저장합니다. |
-| `excel_exporter.py` | **[NEW]** 선택한 지표 및 상위 프로세스 정보를 엑셀(`.xlsx`) 파일로 변환하는 모듈입니다. |
-| `mkdocs.yml` | **[NEW]** MkDocs Material 웹 매뉴얼 사이트의 설정 및 테마 구성을 정의하는 파일입니다. |
-| `site/` | **[NEW]** `mkdocs build` 명령어를 통해 생성된 정적 웹 매뉴얼 사이트 결과물입니다. |
-| `config.py` | 로그 디렉토리 및 애플리케이션 상수 설정을 포함합니다. |
-| `data_loader.py` | 수집된 CSV 로그를 효율적으로 로딩하고 캐싱하는 데이터 처리 모듈입니다. |
-| `parsers.py` | 로그 데이터 가공 및 상위 점유 프로세스 정보 추출을 위한 유틸리티입니다. |
-| `run_app.py` | PyInstaller 빌드 시 실행 파일을 구동하기 위한 래퍼 스크립트입니다. |
-| `monitor.spec` | **[UPDATE]** `site/` 폴더와 `excel_exporter`를 포함하도록 업데이트된 빌드 명세 파일입니다. |
-| `build.bat` | **[UPDATE]** 웹 매뉴얼 빌드와 PyInstaller 빌드를 한 번에 수행하는 자동화 스크립트입니다. |
-| `requirements.txt` | `openpyxl`, `mkdocs-material` 등 확장된 의존성 라이브러리 목록입니다. |
-| `dashboards/` | CPU, 메모리, 저장공간 등 각 대시보드 화면을 담당하는 모듈 폴더입니다. |
-| `docs/` | 매뉴얼 원본 마크다운, 이미지 및 스타일시트를 포함하는 문서 폴더입니다. |
+## 1. 상위 디렉토리 구조
 
-## 대시보드 디렉토리 (`dashboards/`)
+```text
+PC-monitor-Tools/
+├─ app.py
+├─ data_loader.py
+├─ parsers.py
+├─ excel_exporter.py
+├─ config.py
+├─ run_app.py
+├─ dashboards/
+│  ├─ cpu.py
+│  ├─ memory.py
+│  ├─ storage.py
+│  └─ custom.py
+├─ docs/
+│  ├─ index.md
+│  ├─ project_structure.md
+│  ├─ user_manual.md
+│  └─ optimization_proposal.md
+├─ mkdocs.yml
+├─ requirements.txt
+├─ Monitor.ps1
+├─ start_monitor.bat
+├─ build.bat
+└─ monitor.spec
+```
 
-| 파일 | 설명 |
-| :--- | :--- |
-| `cpu.py` | CPU 사용률 및 온도 추이를 시각화합니다. |
-| `memory.py` | 메모리 사용량 점유율 및 상위 Memory Offender를 분석합니다. |
-| `storage.py` | 각 드라이브별 I/O 스피드와 상위 Disk I/O 프로세스를 시각화합니다. |
-| `custom.py` | **[UPDATE]** 사용자가 직접 지표를 선택하고, 시작 시간을 지정하여 엑셀로 내보내는 통합 분석 뷰입니다. |
+## 2. 모듈 역할 요약
 
-## 문서 디렉토리 (`docs/`)
+| 파일/디렉토리 | 역할 |
+|---|---|
+| `app.py` | Streamlit 메인 엔트리. 파일 선택, 시간 필터, 탭 라우팅, KPI 렌더를 담당 |
+| `data_loader.py` | CSV/Parquet 로딩, 파일 타입별 정규화, 병합(`merge_asof`), 캐시 처리 |
+| `parsers.py` | Top5 문자열 컬럼 파싱(프로세스별 최대값/시계열) |
+| `excel_exporter.py` | 선택된 컬럼과 Top5 컬럼을 엑셀로 내보내기 |
+| `dashboards/` | CPU/Memory/Storage/Custom 시각화 화면 모듈 |
+| `docs/` | MkDocs 원본 문서 |
+| `mkdocs.yml` | 문서 사이트 네비게이션/테마 설정 |
+| `Monitor.ps1` | 수집 스크립트(로그 생성) |
+| `start_monitor.bat` | 모니터링 스크립트 실행 진입점 |
+| `build.bat`, `monitor.spec` | 배포 빌드 자동화(PyInstaller) |
 
--   `index.md`: **[UPDATE]** 웹 매뉴얼 사이트의 메인 홈 페이지. `pymdownx.snippets`를 사용하여 `user_manual.md` 내용을 그대로 표시합니다.
--   `user_manual.md`: **[UPDATE]** 기능 상세 가이드 및 툴바 조작법이 포함된 통합 매뉴얼 원본. (실제 수정은 이 파일에서 수행)
--   `stylesheets/extra.css`: 웹 매뉴얼의 가독성 향상(리스트 간격 등)을 위한 커스텀 스타일.
--   `images/`: 매뉴얼에 사용되는 대시보드 및 툴바 스크린샷 이미지들.
+## 3. 실행/데이터 흐름
 
-## 데이터 및 제어 흐름 (Data & Control Flow)
+1. 로그 수집: `Monitor.ps1`가 CSV 로그 생성
+2. UI 진입: `app.py` 실행 후 로그 파일 선택
+3. 데이터 준비: `load_data()`가 파일을 병렬 처리 후 시간축 기준 병합
+4. 시각화: 대시보드 함수가 Plotly figure 생성 후 렌더
+5. 내보내기: CSV/Excel 다운로드
 
-1.  **데이터 수집**: 사용자가 UI에서 'Start Monitor'를 누르면 `Monitor.ps1`이 실행되어 CSV 로그를 생성합니다.
-2.  **데이터 조회**: `app.py`에서 로그를 선택하면 `data_loader.py`와 `parsers.py`가 데이터를 정제합니다.
-3.  **결과 출력**: `dashboards/` 모듈들이 Plotly 차트를 생성하고, `excel_exporter.py`가 필요시 엑셀 보고서를 작성합니다.
-4.  **매뉴얼 서빙**: `build.bat` 실행 시 MkDocs가 `docs/`를 `site/`로 빌드하여 실행 파일 내에서 웹 기반 매뉴얼을 볼 수 있게 합니다.
+## 4. 함수 트리 (핵심)
+
+아래 트리는 실제 코드 기준으로 작성했습니다. 
+각 함수에 **상세 주석(목적/성능/주의점)**을 포함했습니다.
+
+### 4.1 `data_loader.py`
+
+```text
+data_loader.py
+├─ _is_parquet_cache_valid(csv_path, parquet_path)
+├─ _downcast_numeric(df)
+├─ load_data(files)                    # @st.cache_data
+└─ process_single_file(f)
+```
+
+| 함수 | 상세 주석 |
+|---|---|
+| `_is_parquet_cache_valid(csv_path, parquet_path)` | 목적: CSV보다 최신인 Parquet만 캐시로 사용. 성능: 불필요한 CSV 재파싱 방지. 주의: 파일 수정시간이 동일/역전된 환경에서는 캐시 재생성이 발생 가능 |
+| `_downcast_numeric(df)` | 목적: `float64/int64`를 더 작은 dtype으로 축소. 성능: 메모리와 직렬화(Plotly JSON) 부담 완화. 주의: 극단적으로 큰 정수 범위가 필요한 경우 downcast 결과 확인 필요 |
+| `load_data(files)` | 목적: 파일들을 병렬 처리한 뒤 logman/process 데이터를 합치고 시계열 정렬. 핵심: `ThreadPoolExecutor`, `merge_asof`, 파생 컬럼(`Used(GB)`, `Usage(%)`) 계산. 주의: 병합 tolerance(35초)는 수집 주기 변경 시 함께 검토 |
+| `process_single_file(f)` | 목적: 단일 파일 타입 판별 후 정규화 처리. logman 파일은 컬럼 rename/타입 변환, process 파일은 Timestamp 정규화. 성능: `pyarrow` 우선 + Parquet 캐시 저장. 주의: 컬럼명 패턴이 바뀌면 정규식 매핑 로직 업데이트 필요 |
+
+### 4.2 `dashboards/storage.py`
+
+```text
+dashboards/storage.py
+├─ _downsample_for_plot(df, value_cols, max_points=6000)
+├─ _collect_drive_columns(columns, prefixes)
+└─ render_storage_dashboard(st, df, parse_process_column)
+```
+
+| 함수 | 상세 주석 |
+|---|---|
+| `_downsample_for_plot(df, value_cols, max_points=6000)` | 목적: 대용량 시계열의 전송량을 제한하면서 형태 보존. 방식: 버킷 단위로 `first/last + 로컬 min/max` 인덱스를 유지. 효과: JSON payload를 크게 줄여 렌더 대기시간 단축. 주의: `max_points`를 낮출수록 미세 진동이 생략될 수 있음 |
+| `_collect_drive_columns(columns, prefixes)` | 목적: `DiskTime_`, `DiskRead_`, `DiskWrite_` 중 실제 드라이브(`_[A-Z]:`) 컬럼만 선별. 주의: 컬럼 네이밍 규칙이 바뀌면 정규식(`DRIVE_COL_PATTERN`) 수정 필요 |
+| `render_storage_dashboard(...)` | 목적: Storage 화면 전체 렌더. 포함 기능: (1) Active Time 라인차트, (2) I/O Throughput 라인차트, (3) Top5 Disk I/O 바차트. 성능 옵션: `Chart Quality(Fast/Balanced/Detailed/Original)` 제공, large dataset에서 원본 모드는 느릴 수 있음 경고 표시 |
+
+#### Storage 품질 모드 주석
+
+| 모드 | 목표 포인트 수 | 사용 시점 |
+|---|---:|---|
+| `Fast` | 12,000 | 원격 접속/저사양 장비에서 빠른 탐색 |
+| `Balanced` (기본) | 30,000 | 일반 분석 기본값 |
+| `Detailed` | 60,000 | 형상 확인이 중요한 장애 분석 |
+| `Original (slow)` | 제한 없음 | 최종 검증(속도보다 원본 재현 우선) |
+
+### 4.3 `parsers.py`
+
+```text
+parsers.py
+├─ parse_process_column(df_col)
+└─ extract_process_time_series(df, col_name)
+```
+
+| 함수 | 상세 주석 |
+|---|---|
+| `parse_process_column(df_col)` | 목적: `procA:123 | procB:45` 형태 문자열을 파싱해 프로세스별 최대값 산출. 주의: 동일 시점에 동일 프로세스 중복 등장 시 합산 후 최대 비교 |
+| `extract_process_time_series(df, col_name)` | 목적: 요약 문자열 컬럼을 시계열 long-format(`Timestamp, Process, Value`)으로 변환. 주의: 데이터량이 큰 경우 후속 필터링(Top N, 시간구간)을 함께 사용 권장 |
+
+### 4.4 `dashboards/*.py`
+
+```text
+dashboards/cpu.py
+└─ render_cpu_dashboard(st, df)
+
+dashboards/memory.py
+└─ render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem)
+
+dashboards/custom.py
+└─ render_custom_dashboard(st, df, parse_process_column)
+```
+
+| 함수 | 상세 주석 |
+|---|---|
+| `render_cpu_dashboard` | CPU 사용률/온도 2축 시각화 및 요약 지표 출력 |
+| `render_memory_dashboard` | 메모리/스왑 추이, Top 메모리 프로세스, 프로세스별 시계열 제공 |
+| `render_custom_dashboard` | 사용자 선택 컬럼 시계열 + 엑셀 내보내기 UI |
+
+### 4.5 기타 함수
+
+```text
+excel_exporter.py
+├─ parse_top5_string(data_str)
+└─ generate_excel(df, selected_cols)
+
+run_app.py
+└─ resolve_path(path)
+```
+
+## 5. 문서 유지보수 규칙
+
+1. 함수 시그니처가 바뀌면 이 문서의 함수 트리를 같은 커밋에서 같이 수정
+2. 성능 관련 파라미터(`max_points`, cache 조건, merge tolerance) 변경 시 "상세 주석" 섹션 갱신
+3. 신규 대시보드 파일 추가 시 `dashboards/*.py` 섹션에 함수/역할 추가
+4. 배포 흐름 변경 시 `build.bat`, `monitor.spec`, `run_app.py` 설명 동기화
+
+## 6. 빠른 점검 체크리스트
+
+- `data_loader.py` 변경 후: Parquet 캐시 유효성/병합 결과 확인
+- `dashboards/storage.py` 변경 후: 1일/3일 로그 각각에서 렌더 속도와 형상 확인
+- `parsers.py` 변경 후: Top5 문자열 이상치(`no_active_io`, 빈 문자열) 회귀 확인
+- 문서 변경 후: `mkdocs build`로 링크/렌더 확인

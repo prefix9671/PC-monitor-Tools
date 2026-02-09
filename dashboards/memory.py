@@ -20,31 +20,35 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
         fill='tozeroy'
     ))
 
-    # Swap Line
-    fig_mem.add_trace(go.Scatter(
-        x=df['Timestamp'], y=df['Swap_Usage(%)'], 
-        name='Swap Usage (%)', 
-        mode='lines',
-        line=dict(color=COLOR_SWAP, width=2)
-    ))
+    # Swap Line (Optional)
+    if 'Swap_Usage(%)' in df.columns:
+        fig_mem.add_trace(go.Scatter(
+            x=df['Timestamp'], y=df['Swap_Usage(%)'], 
+            name='Swap Usage (%)', 
+            mode='lines',
+            line=dict(color=COLOR_SWAP, width=2)
+        ))
 
-    # Swap Start Annotation
-    swap_start = df[df['Swap_Usage(%)'] > 1]['Timestamp'].min()
-    if pd.notnull(swap_start):
-        fig_mem.add_vline(x=swap_start, line_width=2, line_dash="dash", line_color="red", annotation_text="Swap Started")
-        fig_mem.add_vrect(x0=swap_start, x1=df['Timestamp'].max(), fillcolor="red", opacity=0.1, layer="below", line_width=0)
+        # Swap Start Annotation
+        swap_start = df[df['Swap_Usage(%)'] > 1]['Timestamp'].min()
+        if pd.notnull(swap_start):
+            fig_mem.add_vline(x=swap_start, line_width=2, line_dash="dash", line_color="red", annotation_text="Swap Started")
+            fig_mem.add_vrect(x0=swap_start, x1=df['Timestamp'].max(), fillcolor="red", opacity=0.1, layer="below", line_width=0)
 
     # Min/Max Annotations
-    if not df.empty:
-        min_mem_idx = df['Used(GB)'].idxmin()
-        max_mem_idx = df['Used(GB)'].idxmax()
-        if max_mem_idx > min_mem_idx:
-             # Min point
-            fig_mem.add_annotation(x=df.loc[min_mem_idx, 'Timestamp'], y=df.loc[min_mem_idx, 'Usage(%)'],
-                                text="Start", showarrow=True, arrowhead=1)
-            # Max point
-            fig_mem.add_annotation(x=df.loc[max_mem_idx, 'Timestamp'], y=df.loc[max_mem_idx, 'Usage(%)'],
-                                text="Peak", showarrow=True, arrowhead=1)
+    if not df.empty and 'Used(GB)' in df.columns and df['Used(GB)'].notna().any():
+        try:
+            min_mem_idx = df['Used(GB)'].idxmin()
+            max_mem_idx = df['Used(GB)'].idxmax()
+            if pd.notna(min_mem_idx) and pd.notna(max_mem_idx) and max_mem_idx > min_mem_idx:
+                # Min point
+                fig_mem.add_annotation(x=df.loc[min_mem_idx, 'Timestamp'], y=df.loc[min_mem_idx, 'Usage(%)'],
+                                    text="Start", showarrow=True, arrowhead=1)
+                # Max point
+                fig_mem.add_annotation(x=df.loc[max_mem_idx, 'Timestamp'], y=df.loc[max_mem_idx, 'Usage(%)'],
+                                    text="Peak", showarrow=True, arrowhead=1)
+        except Exception:
+            pass
 
     fig_mem.update_layout(
         title="Physical Memory (Blue) vs Swap (Orange)",

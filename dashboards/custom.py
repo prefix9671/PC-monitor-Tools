@@ -68,7 +68,7 @@ def render_custom_dashboard(st, df, parse_process_column):
                                      labels={'Max_Value': 'Memory (MB)'}, text_auto='.0f')
                 fig_mem_bar.update_layout(yaxis={'categoryorder':'total ascending'})
                 fig_mem_bar.update_traces(marker_color='#1f77b4') # Blue
-                st.plotly_chart(fig_mem_bar, use_container_width=True)
+                st.plotly_chart(fig_mem_bar, width='stretch')
             else:
                 st.info("No memory process data.")
         else:

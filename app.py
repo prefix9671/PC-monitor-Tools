@@ -28,34 +28,50 @@ with st.sidebar:
     st.header("🎮 Control Panel")
     
     # Configuration Inputs
-    interval_sec = st.number_input("Interval (Seconds)", min_value=2, value=5, help="Minimum 2s (1s for CPU sampling)")
+    col_conf1, col_conf2 = st.columns(2)
+    with col_conf1:
+        logman_interval = st.number_input("Global Interval (s)", min_value=1, value=1, help="Logman Interval (CPU/Disk/Mem Peaks)")
+    with col_conf2:
+        process_interval = st.number_input("Process Interval (s)", min_value=5, value=30, help="PowerShell Interval (Top 5 Process Detail)")
     drives_input = st.text_input("Target Drives (e.g. C:,D:)", value="C:,D:")
     
     if st.button("Start Monitor (Admin)"):
-        # Resolve path to Monitor.ps1
+        # Resolve path to start_monitor.bat
         if getattr(sys, 'frozen', False):
             base_path = sys._MEIPASS
         else:
             base_path = os.path.dirname(os.path.abspath(__file__))
         
-        script_path = os.path.join(base_path, "Monitor.ps1")
-        
-        # Pass drives as a single quoted string; Monitor.ps1 will handle splitting if needed.
-        drives_arg = f'"{drives_input}"'
+        script_path = os.path.join(base_path, "start_monitor.bat")
         
         try:
-            # Use PowerShell Start-Process to run as admin
-            # Powershell argument syntax: -TargetDrives "C:","D:"
-            args = f"-IntervalSeconds {interval_sec} -TargetDrives {drives_arg}"
-            cmd = f"Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -File \"{script_path}\" {args}' -Verb RunAs"
+            # Arguments must be string, separated by space
+            args_str = f"{logman_interval} {process_interval}"
+            
+            cmd = f"Start-Process -FilePath \"{script_path}\" -ArgumentList \"{args_str}\" -Verb RunAs"
             
             subprocess.Popen(
                 ["powershell", "-Command", cmd],
                 shell=True
             )
-            st.success(f"Started! ({interval_sec}s, {drives_input})")
+            st.success(f"Started Hybrid Monitor! (Global: {logman_interval}s, Process: {process_interval}s)")
+            st.info("A command window will appear. Close it to stop monitoring.")
         except Exception as e:
             st.error(f"Failed: {e}")
+
+    if st.button("Stop Monitor (Logman Only)"):
+        try:
+            # Stop and Delete Logman Session using PowerShell RunAs Admin
+            stop_cmd = "logman stop Global_Peak_Log; logman delete Global_Peak_Log"
+            full_cmd = f"Start-Process powershell -ArgumentList '-NoProfile -Command \"{stop_cmd}\"' -Verb RunAs"
+            
+            subprocess.Popen(
+                ["powershell", "-Command", full_cmd],
+                shell=True
+            )
+            st.warning("Sent Stop command to Logman.")
+        except Exception as e:
+            st.error(f"Failed to stop: {e}")
 
     st.divider()
     st.header("📂 Log File Selection")
@@ -100,7 +116,7 @@ with st.sidebar:
             st.info("💡 Only one data point available, time filtering skipped.")
             
         st.divider()
-        if st.button("📖 웹 매뉴얼 열기 (MkDocs)", use_container_width=True):
+        if st.button("📖 웹 매뉴얼 열기 (MkDocs)", width='stretch'):
             # PyInstaller 환경(`sys.frozen`) 여부 확인
             if getattr(sys, 'frozen', False):
                 # exe 실행 시 임시 폴더(_MEIPASS) 내의 site 폴더 참조
@@ -117,6 +133,18 @@ with st.sidebar:
             else:
                 st.error(f"매뉴얼 사이트를 찾을 수 없습니다: {manual_path}")
         
+        # CSV Export
+        st.divider()
+        st.markdown("### 💾 Export Data")
+        if df is not None:
+             csv_data = df.to_csv(index=False).encode('utf-8-sig')
+             st.download_button(
+                 label="Download Merged CSV",
+                 data=csv_data,
+                 file_name=f"Merged_Log_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                 mime="text/csv"
+             )
+
         st.caption("© 2026 System Resource Monitor - v1.1.0")
 
 # ==========================================
@@ -130,27 +158,50 @@ if df is not None:
     st.markdown("---")
     
     # CSV에서 메모리 정보 가져오기
-    physical_mem_gb = df['PhysicalMem(GB)'].iloc[0] if 'PhysicalMem(GB)' in df.columns else "N/A"
-    os_total_mem_gb = df['OSTotalMem(GB)'].iloc[0] if 'OSTotalMem(GB)' in df.columns else "N/A"
-    total_mem_gb = os_total_mem_gb # KPI에서 사용할 용량은 OS 가용 기준
+    # Ensure values are float before formatting
+    try:
+        if 'PhysicalMem(GB)' in df.columns and pd.notna(df['PhysicalMem(GB)'].iloc[0]):
+            physical_mem_gb = f"{float(df['PhysicalMem(GB)'].iloc[0]):.2f}"
+        else: 
+            physical_mem_gb = "N/A"
+            
+        if 'OSTotalMem(GB)' in df.columns and pd.notna(df['OSTotalMem(GB)'].iloc[0]):
+            os_total_mem_gb = f"{float(df['OSTotalMem(GB)'].iloc[0]):.2f}"
+        else:
+            os_total_mem_gb = "N/A"
+    except:
+        physical_mem_gb = "N/A"
+        os_total_mem_gb = "N/A"
     
     st.markdown(f"#### 🖥️ 시스템 사양 정보")
     st.write(f"- **물리 장착 메모리**: {physical_mem_gb} GB")
     st.write(f"- **OS 사용 가능 메모리**: {os_total_mem_gb} GB")
     st.write("※ 실제 사용 가능 메모리 %로 계산하였습니다.")
+    
+    total_mem_gb = os_total_mem_gb
     st.markdown("---")
 
-    max_mem_gb = df['Used(GB)'].max()
-    max_mem_pct = df['Usage(%)'].max()
+    max_mem_gb = f"{df['Used(GB)'].max():.2f}" if 'Used(GB)' in df.columns else "0.00"
+    max_mem_pct = f"{df['Usage(%)'].max():.2f}" if 'Usage(%)' in df.columns else "0.00"
 
     # 2. 지속 증가 시간 (단순화: Min -> Max 도달 시간)
-    min_mem_idx = df['Used(GB)'].idxmin()
-    max_mem_idx = df['Used(GB)'].idxmax()
-    if max_mem_idx > min_mem_idx:
-        duration = df.loc[max_mem_idx, 'Timestamp'] - df.loc[min_mem_idx, 'Timestamp']
-        trend_str = f"↗ {str(duration).split('.')[0]} duration"
-    else:
-        trend_str = "- Stable or Fluctuating"
+    trend_str = "- Stable or Fluctuating"
+    
+    if 'Used(GB)' in df.columns and df['Used(GB)'].notna().any():
+        try:
+            min_mem_idx = df['Used(GB)'].idxmin()
+            max_mem_idx = df['Used(GB)'].idxmax()
+            
+            # idxmin can return NaN if all are NaN, but we checked notna().any()
+            # However, if idxmin/max returns an index that is not in df (unlikely)
+            if pd.notna(min_mem_idx) and pd.notna(max_mem_idx):
+                t_min = df.loc[min_mem_idx, 'Timestamp']
+                t_max = df.loc[max_mem_idx, 'Timestamp']
+                if t_max > t_min:
+                    duration = t_max - t_min
+                    trend_str = f"↗ {str(duration).split('.')[0]} duration"
+        except Exception:
+            pass
 
     # 3. Top Offender Process
     top_offender = "N/A"
@@ -176,7 +227,7 @@ if df is not None:
     kpi3.metric(
         label="🔥 Top Offender Process",
         value=top_offender,
-        delta=f"{top_offender_val:.1f} GB Max",
+        delta=f"{top_offender_val:.2f} GB Max",
         delta_color="inverse"
     )
     st.markdown("---")

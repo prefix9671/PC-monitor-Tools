@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_data_files, copy_metadata, collect_submodules
 
-datas = [('app.py', '.'), ('Monitor.ps1', '.'), ('config.py', '.'), ('data_loader.py', '.'), ('parsers.py', '.'), ('excel_exporter.py', '.'), ('dashboards', 'dashboards'), ('site', 'site')]
+datas = [('app.py', '.'), ('Monitor.ps1', '.'), ('start_monitor.bat', '.'), ('config.py', '.'), ('data_loader.py', '.'), ('parsers.py', '.'), ('excel_exporter.py', '.'), ('dashboards', 'dashboards'), ('site', 'site')]
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit')
 

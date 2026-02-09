@@ -1,12 +1,15 @@
 site_name: System Resource Monitor Manual
 site_url: https://example.com/system-resource-monitor
 use_directory_urls: false
+exclude_docs: |
+  project_structure.md
+  optimization_proposal.md
+  user_manual.md
 
 theme:
   name: material
   language: ko
   palette:
-    # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: indigo
@@ -14,8 +17,6 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-
-    # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: indigo
@@ -24,7 +25,6 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - navigation.tabs
     - navigation.top
     - search.suggest
     - search.highlight
@@ -50,5 +50,4 @@ extra_css:
   - stylesheets/extra.css
 
 nav:
-  - 사용 매뉴얼: index.md
-  - 프로젝트 구조: project_structure.md
+  - 사용자 매뉴얼: index.md

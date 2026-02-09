@@ -6,6 +6,10 @@ from config import COLOR_CPU
 def render_cpu_dashboard(st, df):
     st.subheader("CPU Performance & Thermal")
     
+    if 'CPU(%)' not in df.columns:
+        st.error(f"❌ CPU Data not found. Available columns: {list(df.columns)}")
+        return
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Timestamp'], y=df['CPU(%)'], name='CPU Usage (%)', line=dict(color=COLOR_CPU, width=2)))
     
@@ -25,7 +29,13 @@ def render_cpu_dashboard(st, df):
     
     # 통계 지표
     col1, col2 = st.columns(2)
-    col1.metric("Max CPU Usage", f"{df['CPU(%)'].max()}%")
-    col1.metric("Avg CPU Usage", f"{round(df['CPU(%)'].mean(), 2)}%")
-    if 'CPU_Temp(C)' in df.columns:
-        col2.metric("Max CPU Temp", f"{df['CPU_Temp(C)'].max()}°C")
+    
+    cpu_max = df['CPU(%)'].max()
+    cpu_mean = df['CPU(%)'].mean()
+    
+    col1.metric("Max CPU Usage", f"{cpu_max:.2f}%")
+    col1.metric("Avg CPU Usage", f"{cpu_mean:.2f}%")
+    
+    if 'CPU_Temp(C)' in df.columns and df['CPU_Temp(C)'].notna().any():
+        temp_max = df['CPU_Temp(C)'].max()
+        col2.metric("Max CPU Temp", f"{temp_max:.1f}°C")
