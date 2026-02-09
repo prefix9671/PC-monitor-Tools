@@ -7,18 +7,25 @@ setlocal enabledelayedexpansion
 set "LOG_DIR=C:\SystemLogs"
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
-:: Get Date for filenames
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
-set "DATE_STAMP=%datetime:~0,8%"
-set "TIME_STAMP=%datetime:~8,6%"
+:: Get Date for filenames using PowerShell (more robust than wmic)
+for /f %%a in ('powershell -Command "Get-Date -Format yyyyMMdd"') do set DATE_STAMP=%%a
+for /f %%a in ('powershell -Command "Get-Date -Format HHmmss"') do set TIME_STAMP=%%a
 
+:: accept intervals from arguments
+:: %1: Logman Interval (Global), default 1
+:: %2: PowerShell Interval (Process), default 30
 set "LOGMAN_SESSION=Global_Peak_Log"
 set "LOGMAN_FILE=%LOG_DIR%\Global_Usage_%DATE_STAMP%_%TIME_STAMP%"
+set "LOGMAN_INTERVAL=%~1"
+if "%LOGMAN_INTERVAL%"=="" set "LOGMAN_INTERVAL=1"
+
+set "PROCESS_INTERVAL=%~2"
+if "%PROCESS_INTERVAL%"=="" set "PROCESS_INTERVAL=30"
 
 :: ==========================================
-:: 1. Start Logman (Global Counters @ 1s)
+:: 1. Start Logman (Global Counters)
 :: ==========================================
-echo Starting Logman (High Frequency Monitor)...
+echo Starting Logman (High Frequency Monitor: %LOGMAN_INTERVAL%s)...
 
 :: Check if session exists and stop it
 logman stop %LOGMAN_SESSION% >nul 2>&1
@@ -26,14 +33,9 @@ logman delete %LOGMAN_SESSION% >nul 2>&1
 
 :: Create new counter
 :: Capture: CPU, Available Mem, Disk Time, Disk Queue
-logman create counter %LOGMAN_SESSION% -si 1 -o "%LOGMAN_FILE%" -f csv -v mmddhhmm ^
--c "\Processor(_Total)\%% Processor Time" ^
--c "\Memory\Available MBytes" ^
--c "\Memory\Committed Bytes" ^
--c "\LogicalDisk(_Total)\%% Disk Time" ^
--c "\LogicalDisk(_Total)\Current Disk Queue Length" ^
--c "\LogicalDisk(_Total)\Disk Read Bytes/sec" ^
--c "\LogicalDisk(_Total)\Disk Write Bytes/sec"
+:: NOTE: Use single -c followed by list of counters
+logman create counter %LOGMAN_SESSION% -si %LOGMAN_INTERVAL% -o "%LOGMAN_FILE%" -f csv -v mmddhhmm ^
+-c "\Processor(_Total)\%% Processor Time" "\Memory\Available MBytes" "\Memory\Committed Bytes" "\LogicalDisk(*)\%% Disk Time" "\LogicalDisk(*)\Current Disk Queue Length" "\LogicalDisk(*)\Disk Read Bytes/sec" "\LogicalDisk(*)\Disk Write Bytes/sec"
 
 logman start %LOGMAN_SESSION%
 if %ERRORLEVEL% NEQ 0 (
@@ -43,9 +45,9 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 :: ==========================================
-:: 2. Start PowerShell (Process Details @ 30s)
+:: 2. Start PowerShell (Process Details)
 :: ==========================================
-echo Starting PowerShell Monitor (Process Details)...
+echo Starting PowerShell Monitor (Process Details: %PROCESS_INTERVAL%s)...
 
 :: Resolve path to Monitor.ps1 (handles dev vs exe environment)
 if exist "%~dp0Monitor.ps1" (
@@ -55,7 +57,7 @@ if exist "%~dp0Monitor.ps1" (
 )
 
 :: Run PowerShell in a new window, keep it open
-start "Process Monitor" powershell -NoProfile -ExecutionPolicy Bypass -Command "& '%SCRIPT_PATH%' -IntervalSeconds 30"
+start "Process Monitor" powershell -NoProfile -ExecutionPolicy Bypass -Command "& '%SCRIPT_PATH%' -IntervalSeconds %PROCESS_INTERVAL%"
 
 :: ==========================================
 :: 3. Cleanup on Exit
