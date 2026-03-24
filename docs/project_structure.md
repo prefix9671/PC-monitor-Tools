@@ -18,6 +18,7 @@ PC-monitor-Tools/
 ├─ verify_dashboards.py      # [NEW] Headless UI 자체 검증 TDD 스크립트
 ├─ collectors/
 │  ├─ __init__.py
+│  ├─ core.py                # 모니터링 메인 엔진
 │  ├─ models.py
 │  ├─ sampler.py
 │  ├─ aggregator.py
@@ -76,7 +77,47 @@ PC-monitor-Tools/
 아래 트리는 실제 코드 기준으로 작성했습니다. 
 각 함수에 **상세 주석(목적/성능/주의점)**을 포함했습니다.
 
-### 4.1 `data_loader.py`
+### 4.1 Python Collector & CLI (수집 엔진 계층)
+
+```text
+cli.py
+└─ main()                           # argparse 기반 터미널 엔트리포인트
+
+collectors/core.py
+└─ class MonitorEngine
+   ├─ __init__(output_dir, interval, window)
+   └─ run(max_iterations)           # 무한 루프 1초 샘플링 / 5초 집계 제어
+
+collectors/models.py
+├─ class MetricSample               # 1초 샘플링 데이터 구조체 (dataclass)
+└─ class WindowState                # 5초 윈도우 상태 및 누적 데이터 관리
+
+collectors/sampler.py
+└─ class Sampler
+   ├─ _get_drive_mapping()          # PowerShell Get-Partition 파싱 및 단일 영문자 검증
+   ├─ _get_disk_io_rates()          # psutil 기반 드라이브별 I/O 스피드 누적치 계산
+   ├─ sample()                      # CPU, Mem, IO 및 Process 정보 1회 추출
+   └─ format_top_n()
+
+collectors/aggregator.py
+└─ class Aggregator
+   └─ aggregate(window_state)       # 5초 윈도우 내 누적 샘플의 평균(Avg) 및 피크(Peak) 계산
+
+collectors/writers.py
+└─ class OutputsWriter
+   ├─ write_csv(report_type, row)   # resource, process CSV 일 단위 분할(Append) 저장
+   └─ write_summary(text)
+```
+
+| 모듈 / 클래스 | 역할 및 상세 주석 |
+|---|---|
+| `cli.py` | 목적: 터미널에서 파라미터(`interval`, `window`)를 입력받아 파이썬 수집기를 가동. TDD 자가 테스트를 위한 `iterations` 인자 지원. |
+| `MonitorEngine` (`core.py`) | 목적: 시스템 시계(time.monotonic)를 기준으로 시간 지연(Drift)을 능동 연산하여 실행 주기를 정확히 방어하며, 5초 경계 도달 시 파이프라인(Sampling -> Aggregation -> Writing)을 순차 실행. |
+| `Sampler` | 목적: OS 커널 지표 1초 추출. 핵심 사항: 윈도우 제어 문자(`\x00`) 오염을 차단하기 위해 논리 드라이브명을 정규화(`isalpha()`)하여 필터링. |
+| `Aggregator` | 목적: 단기 스파이크로 인한 노이즈를 줄이고 대시보드가 소화할 수 있는 5초 단위 파생 지표(`CPU_Avg(%)`, `DiskRead Peak`)를 생성. |
+| `OutputsWriter`| 목적: 생성된 데이터를 `C:\SystemLogs` 경로의 날짜별(`YYYYMMDD`) 파일로 롤링 아카이브(Append) 처리. |
+
+### 4.2 `data_loader.py`
 
 ```text
 data_loader.py
@@ -93,7 +134,7 @@ data_loader.py
 | `load_data(files)` | 목적: Python Collector가 생성한 `resource` 밎 `process` 데이터를 합치고 시계열 정렬. 핵심: `pd.merge`를 활용한 Exact Match 수행. *기존의 `merge_asof` 로직은 5초 동기화 체계 도입으로 완전히 제거됨.* |
 | `process_single_file(f)` | 목적: 단일 파일 구조(`CPU_Avg(%)` 포함 여부 등)를 판별하여 데이터 프레임 반환. 성능: `pyarrow` 엔진 우선 처리. |
 
-### 4.2 `dashboards/storage.py`
+### 4.3 `dashboards/storage.py`
 
 ```text
 dashboards/storage.py
@@ -117,7 +158,7 @@ dashboards/storage.py
 | `Detailed` | 60,000 | 형상 확인이 중요한 장애 분석 |
 | `Original (slow)` | 제한 없음 | 최종 검증(속도보다 원본 재현 우선) |
 
-### 4.3 `parsers.py`
+### 4.4 `parsers.py`
 
 ```text
 parsers.py
@@ -130,7 +171,7 @@ parsers.py
 | `parse_process_column(df_col)` | 목적: `procA:123 | procB:45` 형태 문자열을 파싱해 프로세스별 최대값 산출. 주의: 동일 시점에 동일 프로세스 중복 등장 시 합산 후 최대 비교 |
 | `extract_process_time_series(df, col_name)` | 목적: 요약 문자열 컬럼을 시계열 long-format(`Timestamp, Process, Value`)으로 변환. 주의: 데이터량이 큰 경우 후속 필터링(Top N, 시간구간)을 함께 사용 권장 |
 
-### 4.4 `dashboards/*.py`
+### 4.5 `dashboards/*.py`
 
 ```text
 dashboards/cpu.py
@@ -149,7 +190,7 @@ dashboards/custom.py
 | `render_memory_dashboard` | 메모리/스왑 추이, Top 메모리 프로세스, 프로세스별 시계열 제공 |
 | `render_custom_dashboard` | 사용자 선택 컬럼 시계열 + 엑셀 내보내기 UI |
 
-### 4.5 기타 함수
+### 4.6 기타 함수
 
 ```text
 excel_exporter.py
