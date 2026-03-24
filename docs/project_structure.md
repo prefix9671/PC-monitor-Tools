@@ -15,6 +15,7 @@ PC-monitor-Tools/
 ├─ config.py
 ├─ run_app.py
 ├─ cli.py
+├─ verify_dashboards.py      # [NEW] Headless UI 자체 검증 TDD 스크립트
 ├─ collectors/
 │  ├─ __init__.py
 │  ├─ models.py
@@ -45,6 +46,7 @@ PC-monitor-Tools/
 
 | 파일/디렉토리 | 역할 |
 |---|---|
+| `verify_dashboards.py`| UI 없이 `MagicMock`을 이용해 대시보드 모듈(CPU, Mem, Storage 등)이 크래시 없이 작동하는지 데이터상 1줄로 초고속 자가 검증하는 헤드리스 TDD 스크립트 |  
 | `app.py` | Streamlit 메인 엔트리. 날짜 기반 로그 자동 선택(최근 7일), 시간 필터, 탭 라우팅, KPI 렌더를 담당 |
 | `cli.py` | Python 시스템 리소스 수집기 CLI 도구 및 메인 실행부 |
 | `collectors/core.py` | 모니터링 메인 루프 (1초 샘플링, 5초 집계) 코어 로직 |

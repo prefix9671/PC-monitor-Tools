@@ -46,6 +46,17 @@ def generate_excel(df, selected_cols):
     
     # 컬럼 순서 조정 (Timestamp를 '값'으로 표시하거나 유지)
     export_df.rename(columns={'Timestamp': '시간(Timestamp)'}, inplace=True)
+    
+    def sanitize_str(val):
+        if isinstance(val, str):
+            # Remove control characters except \n, \t, \r
+            return ''.join(c for c in val if ord(c) >= 32 or ord(c) in (9, 10, 13))
+        return val
+
+    # Sanitize dataframe columns and string data
+    export_df.columns = [sanitize_str(c) for c in export_df.columns]
+    for col in export_df.select_dtypes(include=['object']):
+        export_df[col] = export_df[col].apply(sanitize_str)
 
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         export_df.to_excel(writer, index=False, sheet_name='System_Resource_Report')

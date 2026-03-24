@@ -21,15 +21,26 @@ class Sampler:
             for line in out.splitlines():
                 line = line.strip()
                 if line.startswith("DiskNumber"):
-                    current_disk = line.split(":")[1].strip()
+                    parts = line.split(":", 1)
+                    if len(parts) > 1:
+                        # Extract only digits
+                        disk_num = ''.join(c for c in parts[1] if c.isdigit())
+                        if disk_num:
+                            current_disk = disk_num
                 elif line.startswith("DriveLetter") and current_disk is not None:
-                    letter = line.split(":")[1].strip()
-                    if letter:
-                        phys = f"PhysicalDrive{current_disk}"
-                        if phys in mapping:
-                            mapping[phys] += f",{letter}:"
-                        else:
-                            mapping[phys] = f"{letter}:"
+                    parts = line.split(":", 1)
+                    if len(parts) > 1:
+                        letter = parts[1].strip()
+                        # Ensure letter is a single valid alphabet character A-Z
+                        valid_letters = [c.upper() for c in letter if c.isalpha()]
+                        if len(valid_letters) == 1:
+                            valid_letter = valid_letters[0]
+                            phys = f"PhysicalDrive{current_disk}"
+                            if phys in mapping:
+                                if f"{valid_letter}:" not in mapping[phys]:
+                                    mapping[phys] += f",{valid_letter}:"
+                            else:
+                                mapping[phys] = f"{valid_letter}:"
         except Exception:
             pass
         return mapping

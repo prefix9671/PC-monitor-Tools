@@ -63,6 +63,21 @@ def load_data(files):
         
     return None
 
+def _clean_column_names(df):
+    import re
+    def _clean(c):
+        if not isinstance(c, str): return c
+        c = c.replace('\x00', '')
+        m = re.search(r'_(.*?)([A-Z]:(?:,[A-Z]:)*|PhysicalDrive\d+)(.*?)\(', c)
+        if m and ('DiskTime_' in c or 'DiskRead_' in c or 'DiskWrite_' in c) and '(' in c:
+            base = c.split('_')[0]
+            unit = '(' + c.split('(')[1]
+            drive = m.group(2)
+            return f"{base}_{drive}{unit}"
+        return c
+    df.columns = [_clean(c) for c in df.columns]
+    return df
+
 def process_single_file(f):
     try:
         is_local_file = isinstance(f, str)
@@ -74,7 +89,7 @@ def process_single_file(f):
                 try:
                     df = pd.read_parquet(parquet_path)
                     rtype = 'resource' if 'CPU_Avg(%)' in df.columns else 'process'
-                    return (rtype, df)
+                    return (rtype, _clean_column_names(df))
                 except:
                     pass
 
@@ -100,6 +115,7 @@ def process_single_file(f):
             return None # Ignore unrecognized CSVs
             
         df = _downcast_numeric(df)
+        df = _clean_column_names(df)
         
         if is_local_file:
             try:

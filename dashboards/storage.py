@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import plotly.express as px
 
-DRIVE_COL_PATTERN = re.compile(r"_([A-Z]:|PhysicalDrive\d+)")
+DRIVE_COL_PATTERN = re.compile(r"_([A-Z]:(?:,[A-Z]:)*|PhysicalDrive\d+)")
 DEFAULT_MAX_PLOT_POINTS = 30000
 
 

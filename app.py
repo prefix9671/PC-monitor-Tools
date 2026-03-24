@@ -243,14 +243,14 @@ if df is not None:
     st.markdown("---")
 
     # 탭 메뉴 구성
-    tab_list = ["📊 CPU Dashboard", "🧠 Memory Dashboard", "💾 Storage (D:)", "📈 Custom Graph"]
+    tab_list = ["📊 CPU Dashboard", "🧠 Memory Dashboard", "💾 Storage Dashboard", "📈 Custom Graph"]
     menu = st.selectbox("Select Dashboard View", tab_list)
 
     if menu == "📊 CPU Dashboard":
         render_cpu_dashboard(st, df)
     elif menu == "🧠 Memory Dashboard":
         render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem_gb)
-    elif menu == "💾 Storage (D:)":
+    elif menu == "💾 Storage Dashboard":
         render_storage_dashboard(st, df, parse_process_column)
     elif menu == "📈 Custom Graph":
         render_custom_dashboard(st, df, parse_process_column)
