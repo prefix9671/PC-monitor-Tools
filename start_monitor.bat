@@ -19,8 +19,8 @@ if %errorLevel% NEQ 0 (
 )
 
 :: Run the Python Collector Python script
-echo Launching collector_main.py...
-.\venv\Scripts\python.exe collector_main.py
+echo Launching cli.py...
+.\venv\Scripts\python.exe cli.py start
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Collector exited with an error.

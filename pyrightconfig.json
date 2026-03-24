@@ -1,0 +1,12 @@
+{
+    "exclude": [
+        "**/__pycache__",
+        "**/venv",
+        "**/logs",
+        "**/data",
+        "**/site",
+        "**/dist",
+        "**/build",
+        "C:/SystemLogs"
+    ]
+}

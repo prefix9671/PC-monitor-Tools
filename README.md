@@ -28,7 +28,7 @@ Windows 11 워크스테이션을 위한 고성능, 정밀 시스템 리소스 �
 ```cmd
 start_monitor.bat
 ```
-- Python `psutil` 기반 수집기(`collector_main.py`)가 실행됩니다.
+- Python `psutil` 기반 수집기(`cli.py start`)가 실행됩니다.
 - 로그 파일은 `C:\SystemLogs` 폴더에 자동 저장됩니다.
     - 리소스 로그: `resource_YYYYMMDD.csv`
     - 프로세스 로그: `process_YYYYMMDD.csv`
@@ -58,8 +58,8 @@ python -m streamlit run app.py
 ```
 PC-monitor-Tools/
 ├── app.py                  # Streamlit 메인 애플리케이션 (날짜 기반 로그 선택, 시각화)
-├── collector_main.py       # Python psutil 수집기 메인 루프
-├── collectors/             # 수집 엔진 모듈 (샘플러, 집계기, 파일 라이터)
+├── cli.py                  # Python psutil 수집기 CLI 제어 도구
+├── collectors/             # 수집 엔진 모듈 (core.py, 샘플러, 집계기, 파일 라이터)
 ├── data_loader.py          # 신규 CSV 로딩 및 Exact Merge 로직
 ├── parsers.py              # 로그 파싱 유틸리티
 ├── dashboards/             # 대시보드 모듈 (CPU, Memory, Storage, Custom)

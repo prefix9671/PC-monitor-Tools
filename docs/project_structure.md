@@ -14,7 +14,7 @@ PC-monitor-Tools/
 ├─ excel_exporter.py
 ├─ config.py
 ├─ run_app.py
-├─ collector_main.py
+├─ cli.py
 ├─ collectors/
 │  ├─ __init__.py
 │  ├─ models.py
@@ -46,7 +46,8 @@ PC-monitor-Tools/
 | 파일/디렉토리 | 역할 |
 |---|---|
 | `app.py` | Streamlit 메인 엔트리. 날짜 기반 로그 자동 선택(최근 7일), 시간 필터, 탭 라우팅, KPI 렌더를 담당 |
-| `collector_main.py` | Python 시스템 리소스 수집기 메인 루프 (1초 샘플링, 5초 집계) |
+| `cli.py` | Python 시스템 리소스 수집기 CLI 도구 및 메인 실행부 |
+| `collectors/core.py` | 모니터링 메인 루프 (1초 샘플링, 5초 집계) 코어 로직 |
 | `collectors/` | `psutil` 기반 수집 엔진, 물리→논리 드라이브 매핑, 5초 윈도우 집계 로직, CSV 로깅 처리 |
 | `data_loader.py` | 신규 수집 포맷(`resource_*.csv`, `process_*.csv`) 로딩 및 Exact Merge 처리 |
 | `parsers.py` | Top5 문자열 컬럼 파싱(프로세스별 최대값/시계열) |
@@ -54,12 +55,12 @@ PC-monitor-Tools/
 | `dashboards/` | CPU/Memory/Storage/Custom 시각화 화면 모듈 (5초 집계값 렌더링) |
 | `docs/` | MkDocs 원본 문서 |
 | `mkdocs.yml` | 문서 사이트 네비게이션/테마 설정 |
-| `start_monitor.bat`, `Monitor.ps1` | `collector_main.py` 실행을 위한 래퍼(Wrapper) 쉘 스크립트 |
+| `start_monitor.bat`, `Monitor.ps1` | `cli.py start` 실행을 위한 래퍼(Wrapper) 쉘 스크립트 |
 | `build.bat`, `monitor.spec` | 배포 빌드 자동화(PyInstaller) |
 
 ## 3. 실행/데이터 흐름 및 수집 아키텍처
 
-1. **데이터 수집 (`collector_main.py`)**: 
+1. **데이터 수집 (`cli.py` -> `collectors/core.py`)**: 
    - 1초 주기로 `psutil`을 통해 OS 리소스를 샘플링 (`collectors/sampler.py`).
    - 시작 시 `PowerShell Get-Partition`을 호출하여 물리 디스크(`PhysicalDriveX`)와 논리 드라이브 문자(`C:`, `D:`)의 매핑 테이블을 구축.
    - 5초 윈도우(`AGGREGATION_WINDOW_SEC`) 동안 데이터를 누적한 뒤 도메인별(CPU Average, IO Peak 등)로 집계 (`collectors/aggregator.py`).

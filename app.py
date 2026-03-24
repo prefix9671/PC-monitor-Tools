@@ -52,6 +52,10 @@ with st.sidebar:
             st.error(f"Failed: {e}")
 
     st.divider()
+    if st.button("Refresh Log Data 🔄", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+        
     st.header("📂 Log File Selection")
     
     # 1. 기본 경로 탐색
