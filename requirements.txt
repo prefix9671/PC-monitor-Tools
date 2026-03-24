@@ -4,3 +4,4 @@ plotly
 pyinstaller
 openpyxl
 mkdocs-material
+psutil

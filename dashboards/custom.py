@@ -5,15 +5,17 @@ from excel_exporter import generate_excel
 
 def render_custom_dashboard(st, df, parse_process_column):
     st.subheader("🛠️ Custom Visualization")
+    st.caption("ℹ️ 사용자 정의 차트에 표시되는 기본 데이터는 5초 단위 집계값(Avg/Peak) 기준입니다.")
     
     # 1. 시계열 그래프 섹션
     st.markdown("### 📈 Time Series Multi-Select")
     # 제외할 컬럼 (문자열 등)
-    exclude_cols = ['Timestamp', 'IP_Address', 'Top5_Memory_MB', 'Top5_Disk_IO_Global(MB/s)']
+    exclude_cols = ['Timestamp', 'IP_Address', 'Top5_Memory_MB', 'Top5_Disk_IO_Global(MB/s)', 'Top5_CPU(%)', 'Top5_Disk_Read_MBs', 'Top5_Disk_Write_MBs']
     available_cols = [c for c in df.columns if c not in exclude_cols]
     
     # 체크박스/멀티셀렉트로 선택
-    selected_cols = st.multiselect("Select Metrics to Plot (Y-Axis)", available_cols, default=['CPU(%)', 'Usage(%)'])
+    default_cols = [c for c in ['CPU_Avg(%)', 'Mem_Usage_Avg(%)'] if c in available_cols]
+    selected_cols = st.multiselect("Select Metrics to Plot (Y-Axis)", available_cols, default=default_cols)
     
     if selected_cols:
         fig_custom = px.line(df, x='Timestamp', y=selected_cols, title="Custom Time Series Analysis")

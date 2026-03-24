@@ -6,15 +6,20 @@ import pandas as pd
 from config import COLOR_MEM, COLOR_SWAP, COLOR_PROCESS
 
 def render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem):
-    st.subheader(f"Memory Analysis ({total_mem}GB Capacity)")
+    st.subheader(f"Memory Analysis (OS Default Capacity)")
+    st.caption("ℹ️ 현재 표시되는 메모리 트렌드 및 프로세스 사용량은 5초 단위 집계값(Avg/Peak)입니다.")
     
     # 1. Memory Graph
     fig_mem = go.Figure()
 
+    if 'Mem_Usage_Avg(%)' not in df.columns:
+        st.error(f"❌ Memory Data not found. Available columns: {list(df.columns)}")
+        return
+
     # Memory Area
     fig_mem.add_trace(go.Scatter(
-        x=df['Timestamp'], y=df['Usage(%)'], 
-        name='Physical Memory (%)', 
+        x=df['Timestamp'], y=df['Mem_Usage_Avg(%)'], 
+        name='Physical Memory Avg (%)', 
         mode='lines',
         line=dict(color=COLOR_MEM, width=2),
         fill='tozeroy'
@@ -36,16 +41,16 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
             fig_mem.add_vrect(x0=swap_start, x1=df['Timestamp'].max(), fillcolor="red", opacity=0.1, layer="below", line_width=0)
 
     # Min/Max Annotations
-    if not df.empty and 'Used(GB)' in df.columns and df['Used(GB)'].notna().any():
+    if not df.empty and 'Mem_Used(GB)' in df.columns and df['Mem_Used(GB)'].notna().any():
         try:
-            min_mem_idx = df['Used(GB)'].idxmin()
-            max_mem_idx = df['Used(GB)'].idxmax()
+            min_mem_idx = df['Mem_Used(GB)'].idxmin()
+            max_mem_idx = df['Mem_Used(GB)'].idxmax()
             if pd.notna(min_mem_idx) and pd.notna(max_mem_idx) and max_mem_idx > min_mem_idx:
                 # Min point
-                fig_mem.add_annotation(x=df.loc[min_mem_idx, 'Timestamp'], y=df.loc[min_mem_idx, 'Usage(%)'],
+                fig_mem.add_annotation(x=df.loc[min_mem_idx, 'Timestamp'], y=df.loc[min_mem_idx, 'Mem_Usage_Avg(%)'],
                                     text="Start", showarrow=True, arrowhead=1)
                 # Max point
-                fig_mem.add_annotation(x=df.loc[max_mem_idx, 'Timestamp'], y=df.loc[max_mem_idx, 'Usage(%)'],
+                fig_mem.add_annotation(x=df.loc[max_mem_idx, 'Timestamp'], y=df.loc[max_mem_idx, 'Mem_Usage_Avg(%)'],
                                     text="Peak", showarrow=True, arrowhead=1)
         except Exception:
             pass

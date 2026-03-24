@@ -28,14 +28,9 @@ with st.sidebar:
     st.header("🎮 Control Panel")
     
     # Configuration Inputs
-    col_conf1, col_conf2 = st.columns(2)
-    with col_conf1:
-        logman_interval = st.number_input("Global Interval (s)", min_value=1, value=1, help="Logman Interval (CPU/Disk/Mem Peaks)")
-    with col_conf2:
-        process_interval = st.number_input("Process Interval (s)", min_value=5, value=30, help="PowerShell Interval (Top 5 Process Detail)")
-    drives_input = st.text_input("Target Drives (e.g. C:,D:)", value="C:,D:")
+    st.info("💡 Python Collector runs with a fixed 1s Sampling / 5s Aggregation interval.")
     
-    if st.button("Start Monitor (Admin)"):
+    if st.button("Start Monitor"):
         # Resolve path to start_monitor.bat
         if getattr(sys, 'frozen', False):
             base_path = sys._MEIPASS
@@ -45,45 +40,52 @@ with st.sidebar:
         script_path = os.path.join(base_path, "start_monitor.bat")
         
         try:
-            # Arguments must be string, separated by space
-            args_str = f"{logman_interval} {process_interval}"
-            
-            cmd = f"Start-Process -FilePath \"{script_path}\" -ArgumentList \"{args_str}\" -Verb RunAs"
+            cmd = f"Start-Process -FilePath \"{script_path}\" -Verb RunAs"
             
             subprocess.Popen(
                 ["powershell", "-Command", cmd],
                 shell=True
             )
-            st.success(f"Started Hybrid Monitor! (Global: {logman_interval}s, Process: {process_interval}s)")
+            st.success(f"Started Python Monitor (5s Peak/Avg)!")
             st.info("A command window will appear. Close it to stop monitoring.")
         except Exception as e:
             st.error(f"Failed: {e}")
-
-    if st.button("Stop Monitor (Logman Only)"):
-        try:
-            # Stop and Delete Logman Session using PowerShell RunAs Admin
-            stop_cmd = "logman stop Global_Peak_Log; logman delete Global_Peak_Log"
-            full_cmd = f"Start-Process powershell -ArgumentList '-NoProfile -Command \"{stop_cmd}\"' -Verb RunAs"
-            
-            subprocess.Popen(
-                ["powershell", "-Command", full_cmd],
-                shell=True
-            )
-            st.warning("Sent Stop command to Logman.")
-        except Exception as e:
-            st.error(f"Failed to stop: {e}")
 
     st.divider()
     st.header("📂 Log File Selection")
     
     # 1. 기본 경로 탐색
-    log_files = []
+    log_groups = set()
     if os.path.exists(DEFAULT_LOG_DIR):
-        log_files = [f for f in os.listdir(DEFAULT_LOG_DIR) if f.endswith('.csv')]
-        log_files.sort(reverse=True) # 최신순 정렬
+        for f in os.listdir(DEFAULT_LOG_DIR):
+            if (f.startswith('resource_') or f.startswith('process_')) and f.endswith('.csv'):
+                try:
+                    date_str = f.split('_')[1].split('.')[0]
+                    log_groups.add(date_str)
+                except IndexError:
+                    pass
+                
+    log_groups = sorted(list(log_groups), reverse=True)
     
     uploaded_files = st.file_uploader("Upload Log CSV(s)", type=['csv'], accept_multiple_files=True)
-    selected_files = st.multiselect(f"Select from {DEFAULT_LOG_DIR}", log_files)
+    
+    # 기본값으로 오늘 기준 최근 1주일(7일) 이내의 로그 자동 선택
+    default_dates = []
+    today = datetime.now().date()
+    week_ago = today - timedelta(days=7)
+    
+    for d_str in log_groups:
+        try:
+            d_date = datetime.strptime(d_str, "%Y%m%d").date()
+            if week_ago <= d_date <= today:
+                default_dates.append(d_str)
+        except ValueError:
+            pass
+            
+    if not default_dates and log_groups:
+        default_dates = [log_groups[0]]
+        
+    selected_dates = st.multiselect(f"Select Record Date from {DEFAULT_LOG_DIR}", log_groups, default=default_dates)
 
     # 데이터 로드
     df = None
@@ -92,8 +94,12 @@ with st.sidebar:
     if uploaded_files:
         target_files.extend(uploaded_files)
     
-    if selected_files:
-        target_files.extend([os.path.join(DEFAULT_LOG_DIR, f) for f in selected_files])
+    if selected_dates:
+        for d in selected_dates:
+            res_file = os.path.join(DEFAULT_LOG_DIR, f"resource_{d}.csv")
+            proc_file = os.path.join(DEFAULT_LOG_DIR, f"process_{d}.csv")
+            if os.path.exists(res_file): target_files.append(res_file)
+            if os.path.exists(proc_file): target_files.append(proc_file)
         
     if target_files:
         df = load_data(target_files)
@@ -181,16 +187,16 @@ if df is not None:
     total_mem_gb = os_total_mem_gb
     st.markdown("---")
 
-    max_mem_gb = f"{df['Used(GB)'].max():.2f}" if 'Used(GB)' in df.columns else "0.00"
-    max_mem_pct = f"{df['Usage(%)'].max():.2f}" if 'Usage(%)' in df.columns else "0.00"
+    max_mem_gb = f"{df['Mem_Used(GB)'].max():.2f}" if 'Mem_Used(GB)' in df.columns else "0.00"
+    max_mem_pct = f"{df['Mem_Usage_Avg(%)'].max():.2f}" if 'Mem_Usage_Avg(%)' in df.columns else "0.00"
 
     # 2. 지속 증가 시간 (단순화: Min -> Max 도달 시간)
     trend_str = "- Stable or Fluctuating"
     
-    if 'Used(GB)' in df.columns and df['Used(GB)'].notna().any():
+    if 'Mem_Used(GB)' in df.columns and df['Mem_Used(GB)'].notna().any():
         try:
-            min_mem_idx = df['Used(GB)'].idxmin()
-            max_mem_idx = df['Used(GB)'].idxmax()
+            min_mem_idx = df['Mem_Used(GB)'].idxmin()
+            max_mem_idx = df['Mem_Used(GB)'].idxmax()
             
             # idxmin can return NaN if all are NaN, but we checked notna().any()
             # However, if idxmin/max returns an index that is not in df (unlikely)

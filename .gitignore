@@ -1,0 +1,11 @@
+dist/
+build/
+__pycache__/
+venv/
+*.pyc
+logs/
+data/
+site/
+.ipynb_checkpoints/
+*.exe
+C:\SystemLogs\

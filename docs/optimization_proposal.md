@@ -78,8 +78,11 @@ def load_data(files):
 2.  **Responsiveness**: The UI will feel faster as the total wait time is determined by the *longest* file group rather than the *sum* of all files.
 3.  **Scalability**: Works well whether you load 3 files or 30 files.
 
-## 4. Next Steps
-If you approve this structure, I will:
-1.  Refactor `data_loader.py` to extract `process_single_file`.
-2.  Implement `ThreadPoolExecutor` in `load_data`.
-3.  Attempt to use `engine='pyarrow'` (requires `pyarrow` library, I can check if installed or fallback).
+## 💻 2026-03-24 업데이트 (Python Native Collector 도입)
+
+기존 Logman/PowerShell 혼합 수집 방식에서 발생하던 병합 성능 문제와 `merge_asof` 로직의 한계를 극복하기 위해, **Python `psutil` 기반의 Native Collector** 아키텍처로 전면 개편되었습니다.
+
+### 주요 변경 사항
+1. **1초 샘플링 / 5초 집계 (Peak/Avg)** 로직으로 통일하여 Logman과 PowerShell의 수집 주기가 어긋나던 문제를 원천 해결.
+2. `data_loader.py` 내부의 복잡한 `merge_asof` 및 정규식 컬럼 파싱 로직을 제거하고, 정확한 `Timestamp` 기준의 `pd.merge` 체계로 단순화.
+3. 생성되는 CSV 포맷을 대시보드 구조에 완벽히 호환되도록 정규화(`resource_*.csv`, `process_*.csv`).

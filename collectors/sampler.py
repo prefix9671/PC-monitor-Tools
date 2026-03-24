@@ -1,0 +1,177 @@
+# collectors/sampler.py
+import psutil
+import time
+from collectors.models import MetricSample
+
+class Sampler:
+    def __init__(self, top_n=5):
+        self.top_n = top_n
+        self.last_disk_io = None
+        self.last_disk_time = None
+        self.drive_mapping = self._get_drive_mapping()
+
+    def _get_drive_mapping(self):
+        mapping = {}
+        try:
+            import subprocess
+            cmd = 'powershell -Command "Get-Partition | Select-Object DiskNumber, DriveLetter | Format-List"'
+            out = subprocess.check_output(cmd, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            
+            current_disk = None
+            for line in out.splitlines():
+                line = line.strip()
+                if line.startswith("DiskNumber"):
+                    current_disk = line.split(":")[1].strip()
+                elif line.startswith("DriveLetter") and current_disk is not None:
+                    letter = line.split(":")[1].strip()
+                    if letter:
+                        phys = f"PhysicalDrive{current_disk}"
+                        if phys in mapping:
+                            mapping[phys] += f",{letter}:"
+                        else:
+                            mapping[phys] = f"{letter}:"
+        except Exception:
+            pass
+        return mapping
+        
+        # Warmup CPU
+        psutil.cpu_percent(interval=None)
+        
+        # Warmup Disk IO
+        self._get_disk_io_rates()
+        time.sleep(0.1)
+        self._get_disk_io_rates()
+
+    def _get_disk_io_rates(self):
+        try:
+            current_io = psutil.disk_io_counters(perdisk=True)
+            current_time = time.monotonic()
+            
+            read_rates = {}
+            write_rates = {}
+            time_rates = {}
+            
+            if self.last_disk_io is not None and self.last_disk_time is not None:
+                dt = current_time - self.last_disk_time
+                if dt > 0:
+                    for disk_name, counters in current_io.items():
+                        if disk_name in self.last_disk_io:
+                            prev = self.last_disk_io[disk_name]
+                            
+                            read_bytes = counters.read_bytes - prev.read_bytes
+                            write_bytes = counters.write_bytes - prev.write_bytes
+                            # ms to seconds -> percentage (0-100)
+                            read_time_diff = counters.read_time - prev.read_time
+                            write_time_diff = counters.write_time - prev.write_time
+                            busy_time_ms = read_time_diff + write_time_diff
+                            
+                            mapped_name = self.drive_mapping.get(disk_name, disk_name)
+                            
+                            read_rates[mapped_name] = max(0, read_bytes / dt)
+                            write_rates[mapped_name] = max(0, write_bytes / dt)
+                            # Approximate disk time percentage using total read+write time ms, capped at 100
+                            time_pct = min(100.0, max(0.0, (busy_time_ms / (dt * 1000.0)) * 100.0))
+                            time_rates[mapped_name] = time_pct
+                            
+            self.last_disk_io = current_io
+            self.last_disk_time = current_time
+            return read_rates, write_rates, time_rates
+        except Exception:
+            return {}, {}, {}
+
+    def format_top_n(self, procs, key, is_mb=False):
+        # Sort and take top N
+        sorted_procs = sorted(procs, key=lambda p: p.get(key, 0), reverse=True)[:self.top_n]
+        tokens = []
+        for p in sorted_procs:
+            val = p.get(key, 0)
+            if is_mb:
+                val = val / (1024 * 1024)
+            # Match existing format: Name:123.4 | Name2:56.7
+            tokens.append(f"{p['name']}:{val:.1f}")
+        return " | ".join(tokens)
+
+    def sample(self) -> MetricSample:
+        now = time.time()
+        
+        # CPU & Mem
+        cpu_total = psutil.cpu_percent(interval=None)
+        mem = psutil.virtual_memory()
+        mem_used_gb = mem.used / (1024**3)
+        mem_usage_pct = mem.percent
+        
+        # Disk IO
+        read_rates, write_rates, time_rates = self._get_disk_io_rates()
+        
+        # Processes
+        proc_list = []
+        for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info', 'io_counters']):
+            try:
+                info = p.info
+                name = info['name'] or f"Unknown_{info['pid']}"
+                cpu = info.get('cpu_percent', 0.0) or 0.0
+                mem_bytes = info['memory_info'].rss if info.get('memory_info') else 0
+                
+                read_bytes = 0
+                write_bytes = 0
+                # Using simple total IO counters. To get exact rate per second for process, we'd need to state-track every PID.
+                # For simplicity and performance, we'll use raw sums or approximate. 
+                # Actually, PSUtil process CPU is already interval-based because of process_iter re-use ?
+                # Wait, psutil process io_counters is cumulative. Thus doing TopN by absolute read/write over process lifetime.
+                # To do rate, we'd need a cache. Let's do a quick cache.
+                if hasattr(self, '_proc_io_cache') is False:
+                    self._proc_io_cache = {}
+                
+                io = info.get('io_counters')
+                if io:
+                    pid = info['pid']
+                    curr_read = io.read_bytes
+                    curr_write = io.write_bytes
+                    
+                    if pid in self._proc_io_cache:
+                        prev_read, prev_write, prev_time = self._proc_io_cache[pid]
+                        dt = now - prev_time
+                        if dt > 0:
+                            read_bytes = max(0, curr_read - prev_read) / dt
+                            write_bytes = max(0, curr_write - prev_write) / dt
+                    
+                    self._proc_io_cache[pid] = (curr_read, curr_write, now)
+                
+                proc_list.append({
+                    'pid': info['pid'],
+                    'name': name,
+                    'cpu': cpu,
+                    'mem_mb': mem_bytes / (1024 * 1024),
+                    'read_rate': read_bytes,
+                    'write_rate': write_bytes
+                })
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+                
+        # Cleanup IO cache for dead processes
+        if hasattr(self, '_proc_io_cache'):
+            current_pids = set(p['pid'] for p in proc_list)
+            stale_pids = set(self._proc_io_cache.keys()) - current_pids
+            for pid in stale_pids:
+                del self._proc_io_cache[pid]
+                
+        # Format Top 5 (keep as dicts here, format later in aggregator)
+        # Wait, the spec says "process topN is window peak based". So we return dicts.
+        sorted_by_cpu = sorted(proc_list, key=lambda x: x['cpu'], reverse=True)[:self.top_n]
+        sorted_by_mem = sorted(proc_list, key=lambda x: x['mem_mb'], reverse=True)[:self.top_n]
+        sorted_by_read = sorted(proc_list, key=lambda x: x['read_rate'], reverse=True)[:self.top_n]
+        sorted_by_write = sorted(proc_list, key=lambda x: x['write_rate'], reverse=True)[:self.top_n]
+
+        return MetricSample(
+            timestamp=now,
+            cpu_total=cpu_total,
+            mem_used_gb=mem_used_gb,
+            mem_usage_pct=mem_usage_pct,
+            disk_time_by_drive=time_rates,
+            disk_read_by_drive=read_rates,
+            disk_write_by_drive=write_rates,
+            top_cpu_processes=sorted_by_cpu,
+            top_mem_processes=sorted_by_mem,
+            top_disk_read_processes=sorted_by_read,
+            top_disk_write_processes=sorted_by_write
+        )

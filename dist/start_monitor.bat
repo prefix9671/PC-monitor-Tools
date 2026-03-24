@@ -12,12 +12,12 @@ for /f %%a in ('powershell -Command "Get-Date -Format yyyyMMdd"') do set DATE_ST
 for /f %%a in ('powershell -Command "Get-Date -Format HHmmss"') do set TIME_STAMP=%%a
 
 :: accept intervals from arguments
-:: %1: Logman Interval (Global), default 1
+:: %1: Logman Interval (Global), default 5
 :: %2: PowerShell Interval (Process), default 30
 set "LOGMAN_SESSION=Global_Peak_Log"
 set "LOGMAN_FILE=%LOG_DIR%\Global_Usage_%DATE_STAMP%_%TIME_STAMP%"
 set "LOGMAN_INTERVAL=%~1"
-if "%LOGMAN_INTERVAL%"=="" set "LOGMAN_INTERVAL=1"
+if "%LOGMAN_INTERVAL%"=="" set "LOGMAN_INTERVAL=5"
 
 set "PROCESS_INTERVAL=%~2"
 if "%PROCESS_INTERVAL%"=="" set "PROCESS_INTERVAL=30"
@@ -65,7 +65,7 @@ start "Process Monitor" powershell -NoProfile -ExecutionPolicy Bypass -Command "
 echo.
 echo ========================================================
 echo  Monitoring Running...
-echo  - Logman: 1s interval (Global)
+echo  - Logman: 5s interval (Global)
 echo  - PowerShell: 30s interval (Process)
 echo  Press any key to STOP monitoring and exit.
 echo ========================================================

@@ -59,11 +59,7 @@ echo Zipping Manual...
 if exist "dist\Manual.zip" del "dist\Manual.zip"
 powershell -Command "Compress-Archive -Path 'site\*' -DestinationPath 'dist\Manual.zip' -Force"
 
-:: 7. Git Push
-echo Pushing to GitHub...
-git add .
-git commit -m "Build update: %BASENAME% with Hybrid Monitor"
-git push
+
 
 echo ========================================
 echo   Build Completed: 

@@ -1,30 +1,23 @@
 # 시스템 리소스 모니터 (System Resource Monitor)
 
 Windows 11 워크스테이션을 위한 고성능, 정밀 시스템 리소스 모니터링 도구입니다.
-**Logman(1초 단위)**과 **PowerShell(30초 단위)**을 결합한 하이브리드 모니터링 방식을 사용하여, 시스템 전반의 미세한 피크와 상세 프로세스 점유율을 동시에 추적합니다.
+**Python `psutil`** 기반의 네이티브 수집기를 사용하여 **1초 샘플링 / 5초 Peak·Avg 집계** 방식으로 시스템 전반의 미세한 피크와 상세 프로세스 점유율을 동시에 추적합니다.
 
 ## ✨ 주요 기능 (Features)
 
-### 1. 하이브리드 모니터링 (Hybrid Monitoring)
-- **고정밀 모니터 (Logman)**
-    - **주기**: **1초** (초정밀)
-    - **대상**: 전체 CPU, 가용 메모리, 디스크 I/O (읽기/쓰기), 디스크 큐 길이.
-    - **목적**: 순간적인 시스템 부하(튀는 현상)를 놓치지 않고 포착.
-- **프로세스 상세 모니터 (PowerShell)**
-    - **주기**: **30초** (사용자 설정 가능)
-    - **대상**: 메모리 점유 상위 5개 프로세스, 디스크 I/O 상위 5개 프로세스.
-    - **목적**: 부하를 유발하는 구체적인 원인(프로세스) 식별.
+### 1. Python 네이티브 모니터링 (psutil Collector)
+- **샘플링 주기**: **1초** (고정밀)
+- **집계 주기**: **5초** (Peak/Average)
+- **대상**: 전체 CPU, 메모리(사용량 GB / %), 드라이브별 디스크 I/O(읽기/쓰기 B/s), 디스크 Active Time(%).
+- **프로세스 추적**: CPU/메모리/디스크 I/O 상위 5개 프로세스를 5초 윈도우 기준 Peak값으로 기록.
+- **드라이브 매핑**: 수집기 시작 시 Windows 파티션 정보를 자동 조회하여 `PhysicalDriveX` → 실제 드라이브 문자(`C:`, `D:`)로 변환.
 
-### 2. 하드웨어 지원
-- **CPU**: 사용량(%) 및 온도(°C).
-- **GPU**: NVIDIA 외장 그래픽(`nvidia-smi`) 및 Intel/AMD 내장 그래픽(성능 카운터) 동시 지원.
-- **Storage**: 드라이브별 사용량 및 실시간 I/O 성능.
-
-### 3. 인터랙티브 대시보드
+### 2. 인터랙티브 대시보드
 - **기술 스택**: Python [Streamlit](https://streamlit.io/) + [Plotly](https://plotly.com/).
 - **기능**:
-    - **데이터 통합**: 서로 다른 주기의 두 로그 파일(Logman, PowerShell)을 자동으로 병합하여 시각화.
-    - **시각화**: 1초 단위의 정밀한 타임라인 그래프 위에 상위 프로세스 정보를 오버레이.
+    - **날짜 기반 자동 로드**: 오늘 기준 최근 1주일(7일) 이내의 로그를 자동 선택하여 즉시 표시.
+    - **데이터 통합**: `resource_*.csv`와 `process_*.csv`를 Timestamp 기준 Exact Merge로 완벽 병합.
+    - **시각화**: 5초 단위의 정밀한 타임라인 그래프 위에 상위 프로세스 정보를 오버레이.
     - **편의성**: 관리자 권한으로 모니터링 시작, 로그 파일 자동 탐색.
 
 ## 🚀 사용 방법 (Usage)
@@ -35,11 +28,12 @@ Windows 11 워크스테이션을 위한 고성능, 정밀 시스템 리소스 �
 ```cmd
 start_monitor.bat
 ```
-- **Logman**과 **PowerShell** 스크립트가 동시에 실행됩니다.
+- Python `psutil` 기반 수집기(`collector_main.py`)가 실행됩니다.
 - 로그 파일은 `C:\SystemLogs` 폴더에 자동 저장됩니다.
-    - 글로벌 로그: `Global_Usage_YYYYMMDD_HHMM.csv`
-    - 프로세스 로그: `System_Log_YYYY-MM-DD.csv`
-- 종료하려면 실행된 창에서 아무 키나 누르세요.
+    - 리소스 로그: `resource_YYYYMMDD.csv`
+    - 프로세스 로그: `process_YYYYMMDD.csv`
+    - 요약 로그: `summary_YYYYMMDD.log`
+- 종료하려면 실행된 창에서 <kbd>Ctrl</kbd> + <kbd>C</kbd>를 누르거나 창을 닫으세요.
 
 ### 2. 대시보드 실행 (분석)
 빌드된 실행 파일(`SystemResourceMonitor_....exe`) 또는 파이썬 스크립트를 실행합니다.
@@ -47,14 +41,14 @@ start_monitor.bat
 **실행 파일 사용 시:**
 1. `SystemResourceMonitor_xxxx_revX.exe` 실행.
 2. 실행 시 자동으로 웹 브라우저가 열리며 대시보드가 표시됩니다.
-3. 좌측 사이드바에서 로그 파일이 있는 `C:\SystemLogs` 폴더가 자동 선택됩니다. ("Select from..." 메뉴)
+3. 좌측 사이드바에서 최근 1주일 이내의 로그가 자동 선택됩니다.
 
-**개발 환경 실행 시 (venv 사용):**
+**개발 환경 실행 시 (시스템 진입점):**
 ```bash
-# 방법 1: 가상환경 파이썬 직접 실행 (권장)
+# 가상환경 파이썬 직접 실행 (권장)
 .\venv\Scripts\python -m streamlit run app.py
 
-# 방법 2: 가상환경 활성화 후 실행
+# 또는 가상환경 활성화 후 실행
 .\venv\Scripts\Activate.ps1
 python -m streamlit run app.py
 ```
@@ -62,13 +56,16 @@ python -m streamlit run app.py
 ## 📂 폴더 구조 (Project Structure)
 
 ```
-sys_resource_monitor/
-├── app.py                  # Streamlit 메인 애플리케이션 (데이터 병합 및 시각화)
-├── Monitor.ps1             # PowerShell 프로세스 상세 수집 스크립트
-├── start_monitor.bat       # [NEW] 모니터링 통합 실행 스크립트
-├── data_loader.py          # 하이브리드 데이터 로딩 및 병합 로직
+PC-monitor-Tools/
+├── app.py                  # Streamlit 메인 애플리케이션 (날짜 기반 로그 선택, 시각화)
+├── collector_main.py       # Python psutil 수집기 메인 루프
+├── collectors/             # 수집 엔진 모듈 (샘플러, 집계기, 파일 라이터)
+├── data_loader.py          # 신규 CSV 로딩 및 Exact Merge 로직
 ├── parsers.py              # 로그 파싱 유틸리티
-├── dashboards/             # 대시보드 모듈 (CPU, Memory, Storage 등)
+├── dashboards/             # 대시보드 모듈 (CPU, Memory, Storage, Custom)
+├── config.py               # 전역 설정 (로그 경로, 수집 주기 등)
+├── Monitor.ps1             # 수집기 실행 래퍼 (PowerShell)
+├── start_monitor.bat       # 수집기 실행 래퍼 (Batch)
 ├── monitor.spec            # PyInstaller 빌드 설정
 ├── build.bat               # 통합 빌드 스크립트
 └── requirements.txt        # Python 의존성
@@ -92,5 +89,7 @@ build.bat
 
 ## 📋 요구 사항 (Requirements)
 - **OS**: Windows 10/11
-- **권한**: 관리자 권한 (하드웨어 성능 카운터 및 Logman 접근용)
+- **권한**: 관리자 권한 (프로세스 정보 접근 및 디스크 카운터용)
 - **Python**: 3.9+ (개발 및 실행 시)
+- **주요 라이브러리**: `psutil`, `pandas`, `streamlit`, `plotly`
+

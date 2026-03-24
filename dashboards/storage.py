@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import plotly.express as px
 
-DRIVE_COL_PATTERN = re.compile(r"_[A-Z]:")
+DRIVE_COL_PATTERN = re.compile(r"_([A-Z]:|PhysicalDrive\d+)")
 DEFAULT_MAX_PLOT_POINTS = 30000
 
 
@@ -57,6 +57,7 @@ def _collect_drive_columns(columns, prefixes):
 
 def render_storage_dashboard(st, df, parse_process_column):
     st.subheader("Storage Performance Analysis")
+    st.caption("ℹ️ 현재 표시되는 저장장치 지표 및 프로세스 처리량은 5초 단위 집계값(Avg/Peak)입니다.")
 
     quality_options = {
         "Fast": 12000,
@@ -87,7 +88,7 @@ def render_storage_dashboard(st, df, parse_process_column):
             active_plot_df,
             x='Timestamp',
             y=active_cols,
-            title='Disk Active Time (Individual Drives %)',
+            title='Disk Active Time (5s Avg %)',
             render_mode='webgl'
         )
         fig_load.update_layout(yaxis=dict(range=[0, 100]), hovermode='x unified')
@@ -96,7 +97,7 @@ def render_storage_dashboard(st, df, parse_process_column):
         if len(active_plot_df) < len(plot_df):
             st.caption(f"Rendering optimized: {len(plot_df):,} -> {len(active_plot_df):,} points")
     else:
-        st.info('No Disk Drive (C:, D:, etc.) Active Time data available.')
+        st.info('No Disk Drive (C:, PhysicalDrive0, etc.) Active Time data available.')
 
     st.divider()
 
@@ -118,7 +119,7 @@ def render_storage_dashboard(st, df, parse_process_column):
             io_plot_df,
             x='Timestamp',
             y=io_display_cols,
-            title='Per-Drive Disk I/O Throughput (MB/s)',
+            title='I/O Throughput (5s Peak MB/s)',
             render_mode='webgl'
         )
         fig_io.update_layout(hovermode='x unified')
