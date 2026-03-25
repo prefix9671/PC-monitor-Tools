@@ -12,6 +12,8 @@
       
       
       
+        <link rel="next" href="reliability_report.html">
+      
       
         
       
@@ -473,6 +475,60 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reliability_report.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    신뢰성 보고서
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Update260324.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    업데이트 로그 (2026-03-24)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -702,19 +758,20 @@
 <p>로그 저장 위치: <code>C:\SystemLogs</code></p>
 </li>
 <li>주요 로그 파일:</li>
-<li><code>Global_Usage_*.csv</code> (고주기 시스템 지표)</li>
-<li><code>System_Log_*.csv</code> (프로세스 Top5 요약)</li>
+<li><code>resource_*.csv</code> (시스템 자원: CPU/Mem/Disk 5초 집계)</li>
+<li><code>process_*.csv</code> (프로세스별 자원 점유 Top5 요약)</li>
+<li><code>summary_*.log</code> (수집기 동작 상태 및 이슈 기록)</li>
 </ol>
 <p><img alt="메인 대시보드" src="images/main_dashboard.png" /></p>
 <h2 id="2">2. 화면 구성</h2>
 <h3 id="21-control-panel">2.1 Control Panel</h3>
 <p>왼쪽 사이드바에서 다음 항목을 설정합니다.</p>
 <ul>
-<li><code>Global Interval (s)</code>: 시스템 지표 수집 주기</li>
-<li><code>Process Interval (s)</code>: 프로세스 Top5 수집 주기</li>
-<li><code>Target Drives</code>: 스토리지 모니터링 대상 드라이브</li>
-<li><code>Start Monitor (Admin)</code>: 관리자 권한으로 수집 시작</li>
-<li><code>Stop Monitor (Logman Only)</code>: Logman 세션 중지</li>
+<li><strong>💡 수집 정책</strong>: 1초 샘플링 / 5초 평균 및 Peak 집계 (고정 방식)</li>
+<li><strong>Start Monitor</strong>: 관리자 권한으로 파이썬 실시간 수집기 가동</li>
+<li><strong>Refresh Log Data 🔄</strong>: 캐시를 비우고 수집 중인 최신 로그 즉시 반영</li>
+<li><strong>수집 중단</strong>: 백그라운드에서 실행된 파이썬 콘솔 창을 닫거나 <kbd>Ctrl</kbd> + <kbd>C</kbd> 입력</li>
+<li><strong>Target Drives</strong>: [자동] 시스템 파티션을 조회하여 <code>C:</code>, <code>D:</code>, <code>E:</code> 등을 자동 감지함</li>
 </ul>
 <h3 id="22-log-file-selection">2.2 Log File Selection</h3>
 <ul>
@@ -727,8 +784,8 @@
 <ul>
 <li>CPU Dashboard</li>
 <li>Memory Dashboard</li>
-<li>Storage (D:)</li>
-<li>Custom Graph</li>
+<li>Storage Dashboard (C:, D:, E: 등 통합 표시)</li>
+<li>Custom Graph (엑셀 내보내기 지원)</li>
 </ul>
 <p>그래프 우측 상단 툴바에서 확대/축소/이동/리셋/이미지 저장이 가능합니다.</p>
 <p><img alt="그래프 툴바" src="images/graph_toolbar.png" /></p>

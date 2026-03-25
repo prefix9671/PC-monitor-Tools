@@ -78,13 +78,42 @@ def _clean_column_names(df):
     df.columns = [_clean(c) for c in df.columns]
     return df
 
+def _calibrate_disk_metrics(df):
+    """
+    Auto-calibrates DiskTime(%) columns. 
+    If all values in a column are extremely low (max < 2.0), 
+    we treat them as legacy fractional-percent values and scale by 100x 
+    to match the user's expected 0-100% scale.
+    """
+    for col in df.columns:
+        if 'DiskTime_' in col and '(%)' in col:
+            # If the max value is low, it's likely the old scale (e.g. 0.32 instead of 32.0)
+            # We only scale if there's actually some data (max > 0)
+            col_max = df[col].max()
+            if 0 < col_max < 2.0:
+                df[col] = df[col] * 100.0
+                
+    # Impute missing memory capacity columns for older Python collector logs
+    if 'Mem_Used(GB)' in df.columns and 'Mem_Usage_Avg(%)' in df.columns:
+        if 'OSTotalMem(GB)' not in df.columns or df['OSTotalMem(GB)'].isna().all():
+            # Derived Total = Used / (Usage% / 100)
+            valid = df[df['Mem_Usage_Avg(%)'] > 0]
+            if not valid.empty:
+                total = (valid['Mem_Used(GB)'].iloc[0] / valid['Mem_Usage_Avg(%)'].iloc[0]) * 100
+                df['OSTotalMem(GB)'] = total
+                if 'PhysicalMem(GB)' not in df.columns:
+                    df['PhysicalMem(GB)'] = total
+    return df
+
 def process_single_file(f):
     try:
         is_local_file = isinstance(f, str)
         fname = f if is_local_file else f.name
         
         if is_local_file:
-            parquet_path = f.replace('.csv', '.parquet')
+            # We append a version suffix to parquet cache if we change the parsing logic
+            # to force invalidation of old cached data.
+            parquet_path = f.replace('.csv', '.v3.parquet')
             if _is_parquet_cache_valid(f, parquet_path):
                 try:
                     df = pd.read_parquet(parquet_path)
@@ -102,8 +131,7 @@ def process_single_file(f):
         if 'Timestamp' in df.columns:
             df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce').astype('datetime64[ns]')
             
-        # Determine format structurally rather than relying entirely on filename
-        # Though files are named resource_*.csv and process_*.csv
+        # Determine format structurally
         if 'CPU_Avg(%)' in df.columns:
             rtype = 'resource'
             # Legacy dashboards may look for 'CPU(%)', 'Used(GB)', 'Usage(%)'
@@ -112,7 +140,7 @@ def process_single_file(f):
         elif 'Top5_CPU(%)' in df.columns:
             rtype = 'process'
         else:
-            return None # Ignore unrecognized CSVs
+            return None
             
         df = _downcast_numeric(df)
         df = _clean_column_names(df)

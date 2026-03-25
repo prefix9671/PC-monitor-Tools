@@ -31,17 +31,17 @@ with st.sidebar:
     st.info("💡 Python Collector runs with a fixed 1s Sampling / 5s Aggregation interval.")
     
     if st.button("Start Monitor"):
-        # Resolve path to start_monitor.bat
         if getattr(sys, 'frozen', False):
-            base_path = sys._MEIPASS
+            # Run the packaged executable itself with 'start' argument
+            exe_path = sys.executable
+            cmd = f"Start-Process -FilePath '{exe_path}' -ArgumentList 'start' -Verb RunAs"
         else:
-            base_path = os.path.dirname(os.path.abspath(__file__))
-        
-        script_path = os.path.join(base_path, "start_monitor.bat")
+            # Development mode: run python.exe cli.py start
+            exe_path = sys.executable
+            cli_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cli.py")
+            cmd = f"Start-Process -FilePath '{exe_path}' -ArgumentList '{cli_path}', 'start' -Verb RunAs"
         
         try:
-            cmd = f"Start-Process -FilePath \"{script_path}\" -Verb RunAs"
-            
             subprocess.Popen(
                 ["powershell", "-Command", cmd],
                 shell=True

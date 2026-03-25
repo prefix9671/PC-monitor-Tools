@@ -83,6 +83,8 @@ class Aggregator:
             'CPU_Peak(%)': cpu_peak,
             'Mem_Used(GB)': mem_gb_avg,
             'Mem_Usage_Avg(%)': mem_avg,
+            'PhysicalMem(GB)': samples[0].phys_mem_gb,
+            'OSTotalMem(GB)': samples[0].os_mem_gb,
             'SampleCount': count
         }
         for drive in all_drives:

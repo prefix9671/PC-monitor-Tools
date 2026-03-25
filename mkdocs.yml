@@ -52,4 +52,4 @@ extra_css:
 nav:
   - 사용자 매뉴얼: index.md
   - 신뢰성 보고서: reliability_report.md
-  - 업데이트 로그 (2026-03-24): Update260324.md
+  - 변경 이력 (Changelog): Changelog.md

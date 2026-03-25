@@ -7,6 +7,12 @@ def resolve_path(path):
     return os.path.join(os.path.abspath("."), path)
 
 if __name__ == "__main__":
+    # If the first argument is 'start', route to the collector CLI instead of Streamlit
+    if len(sys.argv) > 1 and sys.argv[1] == "start":
+        from cli import main as cli_main
+        sys.exit(cli_main())
+        
+    # Otherwise, launch Streamlit dashboard
     sys.argv = [
         "streamlit",
         "run",

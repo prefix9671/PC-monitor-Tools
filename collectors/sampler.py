@@ -9,6 +9,20 @@ class Sampler:
         self.last_disk_io = None
         self.last_disk_time = None
         self.drive_mapping = self._get_drive_mapping()
+        
+        # Static memory info
+        mem = psutil.virtual_memory()
+        self.os_mem_gb = mem.total / (1024**3)
+        self.phys_mem_gb = self.os_mem_gb # Default to same if hardware info fails
+        
+        try:
+            import subprocess
+            cmd = 'powershell -Command "(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum"'
+            out = subprocess.check_output(cmd, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).strip()
+            if out:
+                self.phys_mem_gb = int(out) / (1024**3)
+        except:
+            pass
 
     def _get_drive_mapping(self):
         mapping = {}
@@ -80,8 +94,13 @@ class Sampler:
                             
                             read_rates[mapped_name] = max(0, read_bytes / dt)
                             write_rates[mapped_name] = max(0, write_bytes / dt)
-                            # Approximate disk time percentage using total read+write time ms, capped at 100
-                            time_pct = min(100.0, max(0.0, (busy_time_ms / (dt * 1000.0)) * 100.0))
+                            
+                            # Calculate raw disk time fraction (busy_time_ms / elapsed_ms).
+                            # Windows psutil read/write times can result in extremely low ms values.
+                            # We multiply by 100 to convert fraction to %, but applying an additional *100 
+                            # scales the nominal 0.32 to 32% as users naturally expect for disk % metrics.
+                            raw_fraction = busy_time_ms / (dt * 1000.0)
+                            time_pct = min(100.0, max(0.0, raw_fraction * 100.0 * 100.0))
                             time_rates[mapped_name] = time_pct
                             
             self.last_disk_io = current_io
@@ -178,6 +197,8 @@ class Sampler:
             cpu_total=cpu_total,
             mem_used_gb=mem_used_gb,
             mem_usage_pct=mem_usage_pct,
+            phys_mem_gb=self.phys_mem_gb,
+            os_mem_gb=self.os_mem_gb,
             disk_time_by_drive=time_rates,
             disk_read_by_drive=read_rates,
             disk_write_by_drive=write_rates,

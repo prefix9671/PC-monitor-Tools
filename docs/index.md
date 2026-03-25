@@ -11,8 +11,9 @@
 
 - 로그 저장 위치: `C:\SystemLogs`
 - 주요 로그 파일:
-  - `Global_Usage_*.csv` (고주기 시스템 지표)
-  - `System_Log_*.csv` (프로세스 Top5 요약)
+  - `resource_*.csv` (시스템 자원: CPU/Mem/Disk 5초 집계)
+  - `process_*.csv` (프로세스별 자원 점유 Top5 요약)
+  - `summary_*.log` (수집기 동작 상태 및 이슈 기록)
 
 ![메인 대시보드](images/main_dashboard.png)
 
@@ -22,11 +23,11 @@
 
 왼쪽 사이드바에서 다음 항목을 설정합니다.
 
-- `Global Interval (s)`: 시스템 지표 수집 주기
-- `Process Interval (s)`: 프로세스 Top5 수집 주기
-- `Target Drives`: 스토리지 모니터링 대상 드라이브
-- `Start Monitor (Admin)`: 관리자 권한으로 수집 시작
-- `Stop Monitor (Logman Only)`: Logman 세션 중지
+- **💡 수집 정책**: 1초 샘플링 / 5초 평균 및 Peak 집계 (고정 방식)
+- **Start Monitor**: 관리자 권한으로 파이썬 실시간 수집기 가동
+- **Refresh Log Data 🔄**: 캐시를 비우고 수집 중인 최신 로그 즉시 반영
+- **수집 중단**: 백그라운드에서 실행된 파이썬 콘솔 창을 닫거나 <kbd>Ctrl</kbd> + <kbd>C</kbd> 입력
+- **Target Drives**: [자동] 시스템 파티션을 조회하여 `C:`, `D:`, `E:` 등을 자동 감지함
 
 ### 2.2 Log File Selection
 
@@ -40,8 +41,8 @@
 
 - CPU Dashboard
 - Memory Dashboard
-- Storage (D:)
-- Custom Graph
+- Storage Dashboard (C:, D:, E: 등 통합 표시)
+- Custom Graph (엑셀 내보내기 지원)
 
 그래프 우측 상단 툴바에서 확대/축소/이동/리셋/이미지 저장이 가능합니다.
 
@@ -63,6 +64,10 @@ Storage 화면은 대용량 로그에서도 동작하도록 차트 품질 옵션
 3. 최종 검증이 필요할 때만 `Original (slow)` 사용
 
 ![스토리지 대시보드](images/storage_dashboard.png)
+
+
+
+
 
 ## 5. CPU/Memory 대시보드
 

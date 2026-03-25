@@ -10,6 +10,8 @@ class MetricSample:
     cpu_total: float
     mem_used_gb: float
     mem_usage_pct: float
+    phys_mem_gb: float
+    os_mem_gb: float
     disk_time_by_drive: Dict[str, float]
     disk_read_by_drive: Dict[str, float]
     disk_write_by_drive: Dict[str, float]

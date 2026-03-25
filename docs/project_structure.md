@@ -2,7 +2,7 @@
 
 이 문서는 `System Resource Monitor`의 현재 코드 구조를 빠르게 파악하고, 수정 시 영향 범위를 줄이기 위한 **유지보수 기준 문서**입니다.
 
-업데이트 기준: 2026-03-24
+업데이트 기준: 2026-03-25
 
 ## 1. 상위 디렉토리 구조
 
@@ -34,7 +34,7 @@ PC-monitor-Tools/
 │  ├─ user_manual.md
 │  ├─ optimization_proposal.md
 │  ├─ reliability_report.md
-│  └─ Update260324.md
+│  └─ Changelog.md
 ├─ mkdocs.yml
 ├─ requirements.txt
 ├─ Monitor.ps1
@@ -57,9 +57,9 @@ PC-monitor-Tools/
 | `excel_exporter.py` | 선택된 컬럼과 Top5 컬럼을 엑셀로 내보내기 |
 | `dashboards/` | CPU/Memory/Storage/Custom 시각화 화면 모듈 (5초 집계값 렌더링) |
 | `docs/` | MkDocs 원본 문서 |
-| `mkdocs.yml` | 문서 사이트 네비게이션/테마 설정 |
-| `start_monitor.bat`, `Monitor.ps1` | `cli.py start` 실행을 위한 래퍼(Wrapper) 쉘 스크립트 |
-| `build.bat`, `monitor.spec` | 배포 빌드 자동화(PyInstaller) |
+| `run_app.py` | **Universal Entrypoint**. 패키징된 EXE의 단일 진입점. 인자값에 따라 대시보드/수집기 분기 실행 |
+| `build.bat`, `monitor.spec` | 배포 빌드 자동화 및 `SystemResourceMonitor.exe` 생성 |
+| `start_monitor.bat`, `test_portable.bat` | 수집기 단독 실행 및 포터블 환경 자가 진단용 래퍼 |
 
 ## 3. 실행/데이터 흐름 및 수집 아키텍처
 
@@ -113,9 +113,10 @@ collectors/writers.py
 |---|---|
 | `cli.py` | 목적: 터미널에서 파라미터(`interval`, `window`)를 입력받아 파이썬 수집기를 가동. TDD 자가 테스트를 위한 `iterations` 인자 지원. |
 | `MonitorEngine` (`core.py`) | 목적: 시스템 시계(time.monotonic)를 기준으로 시간 지연(Drift)을 능동 연산하여 실행 주기를 정확히 방어하며, 5초 경계 도달 시 파이프라인(Sampling -> Aggregation -> Writing)을 순차 실행. |
-| `Sampler` | 목적: OS 커널 지표 1초 추출. 핵심 사항: 윈도우 제어 문자(`\x00`) 오염을 차단하기 위해 논리 드라이브명을 정규화(`isalpha()`)하여 필터링. |
+| `Sampler` | 목적: OS 커널 지표 1초 추출. 핵심 사항: 윈도우 파티션 정문화 및 **Disk % 100배 스케일링**(직관성 개선), 윈도우 제어 문자(`\x00`) 차단 로직 포함. |
 | `Aggregator` | 목적: 단기 스파이크로 인한 노이즈를 줄이고 대시보드가 소화할 수 있는 5초 단위 파생 지표(`CPU_Avg(%)`, `DiskRead Peak`)를 생성. |
 | `OutputsWriter`| 목적: 생성된 데이터를 `C:\SystemLogs` 경로의 날짜별(`YYYYMMDD`) 파일로 롤링 아카이브(Append) 처리. |
+| `run_app.py` | 목적: `sys.argv[1] == 'start'` 여부를 판단하여 대시보드와 수집기 모드를 스위칭. `frozen` 상태에서 `sys.executable`을 활용한 자기 자신 재호출 지원. |
 
 ### 4.2 `data_loader.py`
 

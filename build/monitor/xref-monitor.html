@@ -94,6 +94,7 @@ imports:
     <a href="#_collections_abc">_collections_abc</a>
  &#8226;   <a href="#_weakrefset">_weakrefset</a>
  &#8226;   <a href="#abc">abc</a>
+ &#8226;   <a href="#cli">cli</a>
  &#8226;   <a href="#codecs">codecs</a>
  &#8226;   <a href="#collections">collections</a>
  &#8226;   <a href="#copyreg">copyreg</a>
@@ -10024,6 +10025,7 @@ imports:
 imported by:
     <a href="#ast">ast</a>
  &#8226;   <a href="#calendar">calendar</a>
+ &#8226;   <a href="#cli">cli</a>
  &#8226;   <a href="#code">code</a>
  &#8226;   <a href="#dis">dis</a>
  &#8226;   <a href="#doctest">doctest</a>
@@ -12337,6 +12339,25 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="cli"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/cli.py" type="text/plain"><tt>cli</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#argparse">argparse</a>
+ &#8226;   <a href="#collectors.core">collectors.core</a>
+ &#8226;   <a href="#config">config</a>
+ &#8226;   <a href="#sys">sys</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#run_app.py">run_app.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="click"></a>
   <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/venv/Lib/site-packages/click/__init__.py" type="text/plain"><tt>click</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
@@ -13206,6 +13227,9 @@ imported by:
  &#8226;   <a href="#plotly.express._core">plotly.express._core</a>
  &#8226;   <a href="#plotly.figure_factory._dendrogram">plotly.figure_factory._dendrogram</a>
  &#8226;   <a href="#pprint">pprint</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._ntuples">psutil._ntuples</a>
  &#8226;   <a href="#pyarrow.compute">pyarrow.compute</a>
  &#8226;   <a href="#pyarrow.parquet.core">pyarrow.parquet.core</a>
  &#8226;   <a href="#pyarrow.vendored.docscrape">pyarrow.vendored.docscrape</a>
@@ -13280,6 +13304,125 @@ imported by:
 imported by:
     <a href="#collections">collections</a>
  &#8226;   <a href="#pytz.lazy">pytz.lazy</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="collectors"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/collectors/__init__.py" type="text/plain"><tt>collectors</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imported by:
+    <a href="#collectors.aggregator">collectors.aggregator</a>
+ &#8226;   <a href="#collectors.core">collectors.core</a>
+ &#8226;   <a href="#collectors.models">collectors.models</a>
+ &#8226;   <a href="#collectors.sampler">collectors.sampler</a>
+ &#8226;   <a href="#collectors.writers">collectors.writers</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="collectors.aggregator"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/collectors/aggregator.py" type="text/plain"><tt>collectors.aggregator</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#collectors">collectors</a>
+ &#8226;   <a href="#collectors.models">collectors.models</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#collectors.core">collectors.core</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="collectors.core"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/collectors/core.py" type="text/plain"><tt>collectors.core</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#collectors">collectors</a>
+ &#8226;   <a href="#collectors.aggregator">collectors.aggregator</a>
+ &#8226;   <a href="#collectors.models">collectors.models</a>
+ &#8226;   <a href="#collectors.sampler">collectors.sampler</a>
+ &#8226;   <a href="#collectors.writers">collectors.writers</a>
+ &#8226;   <a href="#config">config</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#traceback">traceback</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#cli">cli</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="collectors.models"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/collectors/models.py" type="text/plain"><tt>collectors.models</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#collectors">collectors</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#collectors.aggregator">collectors.aggregator</a>
+ &#8226;   <a href="#collectors.core">collectors.core</a>
+ &#8226;   <a href="#collectors.sampler">collectors.sampler</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="collectors.sampler"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/collectors/sampler.py" type="text/plain"><tt>collectors.sampler</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#collectors">collectors</a>
+ &#8226;   <a href="#collectors.models">collectors.models</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#subprocess">subprocess</a>
+ &#8226;   <a href="#time">time</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#collectors.core">collectors.core</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="collectors.writers"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/collectors/writers.py" type="text/plain"><tt>collectors.writers</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#collectors">collectors</a>
+ &#8226;   <a href="#csv">csv</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#os">os</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#collectors.core">collectors.core</a>
 
   </div>
 
@@ -13559,6 +13702,18 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="config"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/config.py" type="text/plain"><tt>config</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imported by:
+    <a href="#cli">cli</a>
+ &#8226;   <a href="#collectors.core">collectors.core</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="configparser"></a>
   <a target="code" href="///C:/Users/Win11_SPC_General/AppData/Local/Programs/Python/Python313/Lib/configparser.py" type="text/plain"><tt>configparser</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
@@ -13669,6 +13824,8 @@ imported by:
  &#8226;   <a href="#pdb">pdb</a>
  &#8226;   <a href="#plotly.basedatatypes">plotly.basedatatypes</a>
  &#8226;   <a href="#plotly.io._orca">plotly.io._orca</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#pyarrow.parquet.core">pyarrow.parquet.core</a>
  &#8226;   <a href="#pyarrow.tests.util">pyarrow.tests.util</a>
  &#8226;   <a href="#pyarrow.util">pyarrow.util</a>
@@ -14964,6 +15121,7 @@ imports:
 imported by:
     <a href="#altair.datasets._cache">altair.datasets._cache</a>
  &#8226;   <a href="#altair.datasets._readimpl">altair.datasets._readimpl</a>
+ &#8226;   <a href="#collectors.writers">collectors.writers</a>
  &#8226;   <a href="#importlib.metadata">importlib.metadata</a>
  &#8226;   <a href="#pandas._testing.contexts">pandas._testing.contexts</a>
  &#8226;   <a href="#pandas.core.arrays.categorical">pandas.core.arrays.categorical</a>
@@ -15019,6 +15177,7 @@ imported by:
  &#8226;   <a href="#pandas.errors">pandas.errors</a>
  &#8226;   <a href="#pandas.io.clipboard">pandas.io.clipboard</a>
  &#8226;   <a href="#platform">platform</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
  &#8226;   <a href="#setuptools._vendor.packaging._manylinux">setuptools._vendor.packaging._manylinux</a>
  &#8226;   <a href="#setuptools._vendor.wheel.macosx_libfile">setuptools._vendor.wheel.macosx_libfile</a>
  &#8226;   <a href="#setuptools.windows_support">setuptools.windows_support</a>
@@ -15316,6 +15475,7 @@ imported by:
  &#8226;   <a href="#_pyrepl.reader">_pyrepl.reader</a>
  &#8226;   <a href="#_pyrepl.readline">_pyrepl.readline</a>
  &#8226;   <a href="#altair.utils.selection">altair.utils.selection</a>
+ &#8226;   <a href="#collectors.models">collectors.models</a>
  &#8226;   <a href="#packaging._tokenizer">packaging._tokenizer</a>
  &#8226;   <a href="#pandas.core.dtypes.inference">pandas.core.dtypes.inference</a>
  &#8226;   <a href="#pandas.core.groupby.base">pandas.core.groupby.base</a>
@@ -15395,6 +15555,9 @@ imported by:
  &#8226;   <a href="#altair.vegalite.v6.schema._typing">altair.vegalite.v6.schema._typing</a>
  &#8226;   <a href="#calendar">calendar</a>
  &#8226;   <a href="#click.types">click.types</a>
+ &#8226;   <a href="#collectors.aggregator">collectors.aggregator</a>
+ &#8226;   <a href="#collectors.core">collectors.core</a>
+ &#8226;   <a href="#collectors.writers">collectors.writers</a>
  &#8226;   <a href="#dateutil.easter">dateutil.easter</a>
  &#8226;   <a href="#dateutil.parser._parser">dateutil.parser._parser</a>
  &#8226;   <a href="#dateutil.parser.isoparser">dateutil.parser.isoparser</a>
@@ -15481,6 +15644,7 @@ imported by:
  &#8226;   <a href="#pandas.io.stata">pandas.io.stata</a>
  &#8226;   <a href="#pandas.tseries.holiday">pandas.tseries.holiday</a>
  &#8226;   <a href="#plotly.io._json">plotly.io._json</a>
+ &#8226;   <a href="#psutil">psutil</a>
  &#8226;   <a href="#pytz">pytz</a>
  &#8226;   <a href="#pytz.tzfile">pytz.tzfile</a>
  &#8226;   <a href="#pytz.tzinfo">pytz.tzinfo</a>
@@ -19204,6 +19368,8 @@ imported by:
  &#8226;   <a href="#pandas.core.arrays.sparse.array">pandas.core.arrays.sparse.array</a>
  &#8226;   <a href="#pandas.core.interchange.dataframe_protocol">pandas.core.interchange.dataframe_protocol</a>
  &#8226;   <a href="#pandas.io.parsers.base_parser">pandas.io.parsers.base_parser</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#py_compile">py_compile</a>
  &#8226;   <a href="#pyarrow.interchange.buffer">pyarrow.interchange.buffer</a>
  &#8226;   <a href="#pyarrow.interchange.column">pyarrow.interchange.column</a>
@@ -19715,6 +19881,9 @@ imported by:
  &#8226;   <a href="#plotly.basedatatypes">plotly.basedatatypes</a>
  &#8226;   <a href="#plotly.io._orca">plotly.io._orca</a>
  &#8226;   <a href="#plotly.io._templates">plotly.io._templates</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#pyarrow.parquet.core">pyarrow.parquet.core</a>
  &#8226;   <a href="#pyarrow.util">pyarrow.util</a>
  &#8226;   <a href="#pydeck.types.function">pydeck.types.function</a>
@@ -24441,6 +24610,7 @@ imported by:
  &#8226;   <a href="#pkgutil">pkgutil</a>
  &#8226;   <a href="#plotly.express._doc">plotly.express._doc</a>
  &#8226;   <a href="#plotly.io._base_renderers">plotly.io._base_renderers</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
  &#8226;   <a href="#pyarrow.compute">pyarrow.compute</a>
  &#8226;   <a href="#pyarrow.parquet.core">pyarrow.parquet.core</a>
  &#8226;   <a href="#pyarrow.vendored.docscrape">pyarrow.vendored.docscrape</a>
@@ -24701,6 +24871,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#jsonschema._format">jsonschema._format</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
  &#8226;   <a href="#urllib.parse">urllib.parse</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
  &#8226;   <a href="#urllib3.util.ssl_match_hostname">urllib3.util.ssl_match_hostname</a>
@@ -44642,6 +44813,7 @@ imported by:
  &#8226;   <a href="#click.shell_completion">click.shell_completion</a>
  &#8226;   <a href="#click.types">click.types</a>
  &#8226;   <a href="#click.utils">click.utils</a>
+ &#8226;   <a href="#collectors.writers">collectors.writers</a>
  &#8226;   <a href="#colorama.ansitowin32">colorama.ansitowin32</a>
  &#8226;   <a href="#concurrent.futures.process">concurrent.futures.process</a>
  &#8226;   <a href="#concurrent.futures.thread">concurrent.futures.thread</a>
@@ -44789,6 +44961,9 @@ imported by:
  &#8226;   <a href="#plotly.offline.offline">plotly.offline.offline</a>
  &#8226;   <a href="#plotly.tools">plotly.tools</a>
  &#8226;   <a href="#posixpath">posixpath</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#py_compile">py_compile</a>
  &#8226;   <a href="#pyarrow">pyarrow</a>
  &#8226;   <a href="#pyarrow.conftest">pyarrow.conftest</a>
@@ -92388,11 +92563,132 @@ imported by:
 
 <div class="node">
   <a name="psutil"></a>
-  <a target="code" href="" type="text/plain"><tt>psutil</tt></a>
-<span class="moduletype">MissingModule</span>  <div class="import">
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/venv/Lib/site-packages/psutil/__init__.py" type="text/plain"><tt>psutil</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#collections">collections</a>
+ &#8226;   <a href="#contextlib">contextlib</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#functools">functools</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._ntuples">psutil._ntuples</a>
+ &#8226;   <a href="#psutil._psutil_windows">psutil._psutil_windows</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
+ &#8226;   <a href="#pwd">pwd</a>
+ &#8226;   <a href="#signal">signal</a>
+ &#8226;   <a href="#socket">socket</a>
+ &#8226;   <a href="#subprocess">subprocess</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#time">time</a>
+
+  </div>
+  <div class="import">
 imported by:
-    <a href="#numpy.testing._private.utils">numpy.testing._private.utils</a>
+    <a href="#collectors.sampler">collectors.sampler</a>
+ &#8226;   <a href="#numpy.testing._private.utils">numpy.testing._private.utils</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._ntuples">psutil._ntuples</a>
+ &#8226;   <a href="#psutil._psutil_windows">psutil._psutil_windows</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#pyarrow.tests.util">pyarrow.tests.util</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="psutil._common"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/venv/Lib/site-packages/psutil/_common.py" type="text/plain"><tt>psutil._common</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#collections">collections</a>
+ &#8226;   <a href="#ctypes">ctypes</a>
+ &#8226;   <a href="#enum">enum</a>
+ &#8226;   <a href="#functools">functools</a>
+ &#8226;   <a href="#inspect">inspect</a>
+ &#8226;   <a href="#ipaddress">ipaddress</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._ntuples">psutil._ntuples</a>
+ &#8226;   <a href="#socket">socket</a>
+ &#8226;   <a href="#stat">stat</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#warnings">warnings</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._ntuples">psutil._ntuples</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="psutil._ntuples"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/venv/Lib/site-packages/psutil/_ntuples.py" type="text/plain"><tt>psutil._ntuples</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#collections">collections</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="psutil._psutil_windows"></a>
+  <tt>psutil._psutil_windows</tt> <span class="moduletype"><tt>C:\Users\Win11_SPC_General\.gemini\antigravity\scratch\PC-monitor-Tools\venv\Lib\site-packages\psutil\_psutil_windows.pyd</tt></span>  <div class="import">
+imports:
+    <a href="#psutil">psutil</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="psutil._pswindows"></a>
+  <a target="code" href="///C:/Users/Win11_SPC_General/.gemini/antigravity/scratch/PC-monitor-Tools/venv/Lib/site-packages/psutil/_pswindows.py" type="text/plain"><tt>psutil._pswindows</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#contextlib">contextlib</a>
+ &#8226;   <a href="#enum">enum</a>
+ &#8226;   <a href="#functools">functools</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._ntuples">psutil._ntuples</a>
+ &#8226;   <a href="#psutil._psutil_windows">psutil._psutil_windows</a>
+ &#8226;   <a href="#signal">signal</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#time">time</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#psutil">psutil</a>
 
   </div>
 
@@ -92408,6 +92704,7 @@ imported by:
  &#8226;   <a href="#netrc">netrc</a>
  &#8226;   <a href="#pathlib._local">pathlib._local</a>
  &#8226;   <a href="#posixpath">posixpath</a>
+ &#8226;   <a href="#psutil">psutil</a>
  &#8226;   <a href="#setuptools._distutils.archive_util">setuptools._distutils.archive_util</a>
  &#8226;   <a href="#setuptools._distutils.util">setuptools._distutils.util</a>
  &#8226;   <a href="#setuptools._vendor.backports.tarfile">setuptools._vendor.backports.tarfile</a>
@@ -100040,6 +100337,8 @@ imported by:
  &#8226;   <a href="#multiprocessing.resource_sharer">multiprocessing.resource_sharer</a>
  &#8226;   <a href="#multiprocessing.resource_tracker">multiprocessing.resource_tracker</a>
  &#8226;   <a href="#pdb">pdb</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#pyarrow.tests.util">pyarrow.tests.util</a>
  &#8226;   <a href="#streamlit.web.bootstrap">streamlit.web.bootstrap</a>
  &#8226;   <a href="#subprocess">subprocess</a>
@@ -100386,6 +100685,8 @@ imported by:
  &#8226;   <a href="#multiprocessing.resource_sharer">multiprocessing.resource_sharer</a>
  &#8226;   <a href="#platform">platform</a>
  &#8226;   <a href="#plotly.io._orca">plotly.io._orca</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
  &#8226;   <a href="#pyarrow.tests.util">pyarrow.tests.util</a>
  &#8226;   <a href="#pyarrow.util">pyarrow.util</a>
  &#8226;   <a href="#requests.adapters">requests.adapters</a>
@@ -100715,6 +101016,7 @@ imported by:
  &#8226;   <a href="#os">os</a>
  &#8226;   <a href="#pathlib._abc">pathlib._abc</a>
  &#8226;   <a href="#posixpath">posixpath</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
  &#8226;   <a href="#run_app.py">run_app.py</a>
  &#8226;   <a href="#setuptools._core_metadata">setuptools._core_metadata</a>
  &#8226;   <a href="#setuptools._distutils.file_util">setuptools._distutils.file_util</a>
@@ -112465,6 +112767,7 @@ imported by:
  &#8226;   <a href="#asyncio.windows_utils">asyncio.windows_utils</a>
  &#8226;   <a href="#click._termui_impl">click._termui_impl</a>
  &#8226;   <a href="#click.shell_completion">click.shell_completion</a>
+ &#8226;   <a href="#collectors.sampler">collectors.sampler</a>
  &#8226;   <a href="#ctypes._aix">ctypes._aix</a>
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
  &#8226;   <a href="#git.cmd">git.cmd</a>
@@ -112489,6 +112792,7 @@ imported by:
  &#8226;   <a href="#pandas.io.clipboard">pandas.io.clipboard</a>
  &#8226;   <a href="#platform">platform</a>
  &#8226;   <a href="#plotly.io._orca">plotly.io._orca</a>
+ &#8226;   <a href="#psutil">psutil</a>
  &#8226;   <a href="#pyarrow">pyarrow</a>
  &#8226;   <a href="#pyarrow.tests.util">pyarrow.tests.util</a>
  &#8226;   <a href="#pyi_rth_multiprocessing.py">pyi_rth_multiprocessing.py</a>
@@ -112607,6 +112911,7 @@ imported by:
  &#8226;   <a href="#blinker.base">blinker.base</a>
  &#8226;   <a href="#calendar">calendar</a>
  &#8226;   <a href="#certifi.core">certifi.core</a>
+ &#8226;   <a href="#cli">cli</a>
  &#8226;   <a href="#click._compat">click._compat</a>
  &#8226;   <a href="#click._termui_impl">click._termui_impl</a>
  &#8226;   <a href="#click._winconsole">click._winconsole</a>
@@ -112618,6 +112923,7 @@ imported by:
  &#8226;   <a href="#code">code</a>
  &#8226;   <a href="#codecs">codecs</a>
  &#8226;   <a href="#collections">collections</a>
+ &#8226;   <a href="#collectors.core">collectors.core</a>
  &#8226;   <a href="#colorama.ansitowin32">colorama.ansitowin32</a>
  &#8226;   <a href="#colorama.initialise">colorama.initialise</a>
  &#8226;   <a href="#concurrent.futures.process">concurrent.futures.process</a>
@@ -113178,6 +113484,9 @@ imported by:
  &#8226;   <a href="#plotly.io._orca">plotly.io._orca</a>
  &#8226;   <a href="#posixpath">posixpath</a>
  &#8226;   <a href="#pprint">pprint</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#py_compile">py_compile</a>
  &#8226;   <a href="#pyarrow">pyarrow</a>
  &#8226;   <a href="#pyarrow.conftest">pyarrow.conftest</a>
@@ -113978,6 +114287,9 @@ imported by:
  &#8226;   <a href="#numpy.random.bit_generator">numpy.random.bit_generator</a>
  &#8226;   <a href="#numpy.testing._private.utils">numpy.testing._private.utils</a>
  &#8226;   <a href="#plotly.io._orca">plotly.io._orca</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#pydoc">pydoc</a>
  &#8226;   <a href="#pytz.lazy">pytz.lazy</a>
  &#8226;   <a href="#queue">queue</a>
@@ -114072,6 +114384,9 @@ imported by:
  &#8226;   <a href="#cachetools">cachetools</a>
  &#8226;   <a href="#click._termui_impl">click._termui_impl</a>
  &#8226;   <a href="#click._winconsole">click._winconsole</a>
+ &#8226;   <a href="#collectors.core">collectors.core</a>
+ &#8226;   <a href="#collectors.models">collectors.models</a>
+ &#8226;   <a href="#collectors.sampler">collectors.sampler</a>
  &#8226;   <a href="#concurrent.futures._base">concurrent.futures._base</a>
  &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#dateutil.parser._parser">dateutil.parser._parser</a>
@@ -114103,6 +114418,8 @@ imported by:
  &#8226;   <a href="#pandas._testing.contexts">pandas._testing.contexts</a>
  &#8226;   <a href="#pandas.io.clipboard">pandas.io.clipboard</a>
  &#8226;   <a href="#plotly.io._orca">plotly.io._orca</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#psutil._pswindows">psutil._pswindows</a>
  &#8226;   <a href="#pyarrow.tests.util">pyarrow.tests.util</a>
  &#8226;   <a href="#pydeck.io.html">pydeck.io.html</a>
  &#8226;   <a href="#pydoc">pydoc</a>
@@ -115464,6 +115781,7 @@ imported by:
  &#8226;   <a href="#asyncio.base_tasks">asyncio.base_tasks</a>
  &#8226;   <a href="#asyncio.format_helpers">asyncio.format_helpers</a>
  &#8226;   <a href="#code">code</a>
+ &#8226;   <a href="#collectors.core">collectors.core</a>
  &#8226;   <a href="#concurrent.futures.process">concurrent.futures.process</a>
  &#8226;   <a href="#doctest">doctest</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
@@ -115912,6 +116230,8 @@ imported by:
  &#8226;   <a href="#click.termui">click.termui</a>
  &#8226;   <a href="#click.types">click.types</a>
  &#8226;   <a href="#click.utils">click.utils</a>
+ &#8226;   <a href="#collectors.aggregator">collectors.aggregator</a>
+ &#8226;   <a href="#collectors.models">collectors.models</a>
  &#8226;   <a href="#functools">functools</a>
  &#8226;   <a href="#git">git</a>
  &#8226;   <a href="#git.cmd">git.cmd</a>
@@ -119400,6 +119720,7 @@ imported by:
  &#8226;   <a href="#plotly.io._renderers">plotly.io._renderers</a>
  &#8226;   <a href="#plotly.offline.offline">plotly.offline.offline</a>
  &#8226;   <a href="#plotly.tools">plotly.tools</a>
+ &#8226;   <a href="#psutil._common">psutil._common</a>
  &#8226;   <a href="#pyarrow.compute">pyarrow.compute</a>
  &#8226;   <a href="#pyarrow.orc">pyarrow.orc</a>
  &#8226;   <a href="#pyarrow.pandas_compat">pyarrow.pandas_compat</a>
