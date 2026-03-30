@@ -71,7 +71,8 @@ PC-monitor-Tools/
 └── requirements.txt        # Python 의존성
 ```
 
-상세 구조 및 설명은 [docs/project_structure.md](docs/project_structure.md)를 참고하세요.
+상세 구조 및 설명은 [docs/Wiki/ProjectStructure.md](docs/Wiki/ProjectStructure.md)를 참고하세요.  
+AI 에이전트와 협업할 때의 기준 문서는 [docs/ActiveDocs.md](docs/ActiveDocs.md)이며, 작업 규칙은 [AGENTS.md](AGENTS.md)에 정리되어 있습니다.
 
 ## 🛠 빌드 방법 (Building)
 

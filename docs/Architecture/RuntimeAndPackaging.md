@@ -1,0 +1,61 @@
+# Runtime And Packaging
+
+Updated On: 2026-03-30  
+Status: Active
+
+## 실행 모드
+
+이 프로젝트는 크게 두 가지 모드를 가집니다.
+
+1. 대시보드 모드
+2. 수집기 모드
+
+패키징된 EXE에서는 `run_app.py`가 단일 진입점 역할을 하며, `start` 인자가 있으면 수집기로, 없으면 Streamlit 대시보드로 동작합니다.
+
+## 런타임 흐름
+
+### 개발 환경
+
+- 대시보드: `.\venv\Scripts\python -m streamlit run app.py`
+- 수집기: `.\venv\Scripts\python cli.py start`
+
+### 패키징 환경
+
+- 대시보드 실행 파일: `SystemResourceMonitor*.exe`
+- 수집기 시작 래퍼: `start_monitor.bat`
+- EXE 내부 분기: `run_app.py`
+
+## 관련 파일 역할
+
+| 파일 | 역할 |
+|---|---|
+| `run_app.py` | EXE 환경에서 대시보드/수집기 분기 |
+| `aoi_cli.py` | AOI 로그 파서 Smoke Test 및 요약 확인용 CLI |
+| `build.bat` | MkDocs 빌드, PyInstaller 실행, 산출물 복사/압축 |
+| `monitor.spec` | PyInstaller 입력 정의 |
+| `start_monitor.bat` | 관리자 권한 확인 후 EXE를 `start` 인자와 함께 실행 |
+| `Monitor.ps1` | 호환성 목적의 보조 스크립트 |
+
+## 배포 산출물
+
+`build.bat` 기준 주요 산출물은 다음과 같습니다.
+
+- `dist/SystemResourceMonitor*.exe`
+- `dist/start_monitor.bat`
+- `dist/Monitor.ps1`
+- `dist/Manual.zip`
+
+## 현재 운영 기준
+
+- 문서 사이트는 `mkdocs build` 결과로 `site/`에 생성됩니다.
+- `build/`, `dist/`, `site/`는 생성 산출물이므로 소스 코드의 출처로 사용하지 않습니다.
+- 수집기 실행의 현재 기준 래퍼는 `start_monitor.bat` 입니다.
+
+## 알려진 주의 사항
+
+- `Monitor.ps1`는 현재 코드베이스의 다른 파일들과 완전히 정렬되어 있지 않을 수 있으므로, 실행 기준 문서로 삼지 않습니다.
+- 포터블 배포 흐름을 바꿀 때는 `build.bat`, `monitor.spec`, `run_app.py`, `start_monitor.bat`, 관련 문서를 함께 확인합니다.
+
+## 문서 업데이트 트리거
+
+- 실행 인자 규칙, EXE 진입점, 빌드 스크립트, 배포 산출물이 바뀌면 이 문서를 업데이트합니다.

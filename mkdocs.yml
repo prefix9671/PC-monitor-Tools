@@ -1,10 +1,6 @@
-site_name: System Resource Monitor Manual
+site_name: System Resource Monitor Docs
 site_url: https://example.com/system-resource-monitor
 use_directory_urls: false
-exclude_docs: |
-  project_structure.md
-  optimization_proposal.md
-  user_manual.md
 
 theme:
   name: material
@@ -51,5 +47,22 @@ extra_css:
 
 nav:
   - 사용자 매뉴얼: index.md
-  - 신뢰성 보고서: reliability_report.md
-  - 변경 이력 (Changelog): Changelog.md
+  - 문서 허브: DocsHub.md
+  - Active Docs: ActiveDocs.md
+  - Current Phase:
+      - Overview: "Current Phase/CurrentPhase.md"
+      - Verification Checklist: "Current Phase/VerificationChecklist.md"
+  - Architecture:
+      - System Overview: "Architecture/SystemOverview.md"
+      - Runtime And Packaging: "Architecture/RuntimeAndPackaging.md"
+  - Best Practices:
+      - Documentation Workflow: "Best Practices/DocumentationWorkflow.md"
+      - Engineering Guidelines: "Best Practices/EngineeringGuidelines.md"
+  - Wiki:
+      - Project Structure: "Wiki/ProjectStructure.md"
+      - User Manual: "Wiki/UserManual.md"
+      - Reliability Report: "Wiki/ReliabilityReport.md"
+      - Changelog: "Wiki/Changelog.md"
+  - Future:
+      - Roadmap: "Future/Roadmap.md"
+      - Ideas And Backlog: "Future/IdeasAndBacklog.md"

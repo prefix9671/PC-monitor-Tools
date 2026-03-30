@@ -2,6 +2,10 @@
 import pandas as pd
 import streamlit as st
 import os
+from inspector_logs.core import (
+    load_inspector_log_data as load_inspector_log_data_core,
+    load_inspector_log_data_from_uploads as load_inspector_log_data_from_uploads_core,
+)
 
 def _is_parquet_cache_valid(csv_path, parquet_path):
     if not (os.path.exists(csv_path) and os.path.exists(parquet_path)):
@@ -155,3 +159,11 @@ def process_single_file(f):
         
     except Exception as e:
         return None
+
+@st.cache_data
+def load_inspector_data(path_input):
+    return load_inspector_log_data_core(path_input)
+
+@st.cache_data
+def load_inspector_uploaded_data(file_payloads):
+    return load_inspector_log_data_from_uploads_core(file_payloads)
