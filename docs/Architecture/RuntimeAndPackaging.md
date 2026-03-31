@@ -54,6 +54,7 @@ Status: Active
 ## 알려진 주의 사항
 
 - `Monitor.ps1`는 현재 코드베이스의 다른 파일들과 완전히 정렬되어 있지 않을 수 있으므로, 실행 기준 문서로 삼지 않습니다.
+- Streamlit 앱이 런타임에 불러오는 로컬 파이썬 모듈은 `monitor.spec`의 `datas`에 포함되어야 합니다. 예를 들어 `inspector_logs/` 같은 폴더가 빠지면 EXE에서 `ModuleNotFoundError`가 발생할 수 있습니다.
 - 포터블 배포 흐름을 바꿀 때는 `build.bat`, `monitor.spec`, `run_app.py`, `start_monitor.bat`, 관련 문서를 함께 확인합니다.
 
 ## 문서 업데이트 트리거

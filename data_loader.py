@@ -1,11 +1,17 @@
 # data_loader.py
+import os
+import re
+from datetime import datetime, timedelta
+
 import pandas as pd
 import streamlit as st
-import os
 from inspector_logs.core import (
     load_inspector_log_data as load_inspector_log_data_core,
     load_inspector_log_data_from_uploads as load_inspector_log_data_from_uploads_core,
 )
+
+TIME_ONLY_PATTERN = re.compile(r"^\d{1,2}:\d{2}(?::\d{2})?$")
+DATE_ONLY_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 def _is_parquet_cache_valid(csv_path, parquet_path):
     if not (os.path.exists(csv_path) and os.path.exists(parquet_path)):
@@ -21,6 +27,169 @@ def _downcast_numeric(df):
     for col in int_cols:
         df[col] = pd.to_numeric(df[col], downcast='integer')
     return df
+
+def collect_available_timestamps(*frames):
+    timestamp_series = []
+
+    for frame in frames:
+        if frame is None or frame.empty or 'Timestamp' not in frame.columns:
+            continue
+
+        parsed = pd.to_datetime(frame['Timestamp'], errors='coerce').dropna()
+        if not parsed.empty:
+            timestamp_series.append(parsed)
+
+    if not timestamp_series:
+        return pd.DatetimeIndex([])
+
+    combined = pd.concat(timestamp_series, ignore_index=True).drop_duplicates().sort_values()
+    return pd.DatetimeIndex(combined)
+
+def _parse_time_boundary_input(raw_value, default_date, boundary_name):
+    raw_value = (raw_value or '').strip()
+    result = {
+        'provided': bool(raw_value),
+        'raw': raw_value,
+        'parsed': None,
+        'error': None,
+        'is_time_only': False,
+        'is_date_only': False,
+    }
+
+    if not raw_value:
+        return result
+
+    try:
+        if TIME_ONLY_PATTERN.fullmatch(raw_value):
+            time_format = '%H:%M:%S' if raw_value.count(':') == 2 else '%H:%M'
+            parsed_time = datetime.strptime(raw_value, time_format).time()
+            result['parsed'] = pd.Timestamp(datetime.combine(default_date, parsed_time))
+            result['is_time_only'] = True
+        elif DATE_ONLY_PATTERN.fullmatch(raw_value):
+            parsed = pd.Timestamp(raw_value)
+            if boundary_name == 'end':
+                parsed = parsed + timedelta(days=1) - timedelta(microseconds=1)
+            result['parsed'] = parsed
+            result['is_date_only'] = True
+        else:
+            parsed = pd.to_datetime(raw_value, errors='raise')
+            parsed = pd.Timestamp(parsed)
+            if parsed.tzinfo is not None:
+                parsed = parsed.tz_localize(None)
+            result['parsed'] = parsed
+    except Exception:
+        result['error'] = (
+            f"Invalid {boundary_name} time '{raw_value}'. "
+            "Use YYYY-MM-DD HH:MM[:SS], YYYY-MM-DD, or HH:MM[:SS]."
+        )
+
+    return result
+
+def resolve_time_filter_range(available_timestamps, start_input='', end_input=''):
+    timestamps = pd.DatetimeIndex(pd.to_datetime(available_timestamps, errors='coerce')).dropna().sort_values()
+
+    if timestamps.empty:
+        return {
+            'used_manual': False,
+            'error': 'No timestamps are available for time filtering.',
+            'resolved_start': None,
+            'resolved_end': None,
+            'requested_start': None,
+            'requested_end': None,
+            'start_aligned': False,
+            'end_aligned': False,
+            'notes': [],
+            'min_time': None,
+            'max_time': None,
+        }
+
+    min_time = pd.Timestamp(timestamps[0])
+    max_time = pd.Timestamp(timestamps[-1])
+    normalized_dates = pd.Index(timestamps.normalize().unique())
+    multiple_dates = len(normalized_dates) > 1
+
+    start_boundary = _parse_time_boundary_input(start_input, min_time.date(), 'start')
+    end_boundary = _parse_time_boundary_input(end_input, max_time.date(), 'end')
+
+    notes = []
+    if start_boundary['error']:
+        return {
+            'used_manual': True,
+            'error': start_boundary['error'],
+            'resolved_start': min_time,
+            'resolved_end': max_time,
+            'requested_start': None,
+            'requested_end': None,
+            'start_aligned': False,
+            'end_aligned': False,
+            'notes': notes,
+            'min_time': min_time,
+            'max_time': max_time,
+        }
+
+    if end_boundary['error']:
+        return {
+            'used_manual': True,
+            'error': end_boundary['error'],
+            'resolved_start': min_time,
+            'resolved_end': max_time,
+            'requested_start': start_boundary['parsed'],
+            'requested_end': None,
+            'start_aligned': False,
+            'end_aligned': False,
+            'notes': notes,
+            'min_time': min_time,
+            'max_time': max_time,
+        }
+
+    if multiple_dates and (start_boundary['is_time_only'] or end_boundary['is_time_only']):
+        notes.append(
+            'Time-only input is anchored to the first loaded date for Start and the last loaded date for End. '
+            'Use a full datetime if you loaded multiple dates.'
+        )
+
+    used_manual = start_boundary['provided'] or end_boundary['provided']
+    resolved_start = min_time
+    resolved_end = max_time
+    start_aligned = False
+    end_aligned = False
+
+    if start_boundary['parsed'] is not None:
+        start_index = timestamps.searchsorted(start_boundary['parsed'], side='left')
+        if start_index >= len(timestamps):
+            start_index = len(timestamps) - 1
+        resolved_start = pd.Timestamp(timestamps[start_index])
+        start_aligned = resolved_start != start_boundary['parsed']
+
+    if end_boundary['parsed'] is not None:
+        end_index = timestamps.searchsorted(end_boundary['parsed'], side='right') - 1
+        if end_index < 0:
+            end_index = 0
+        resolved_end = pd.Timestamp(timestamps[end_index])
+        end_aligned = resolved_end != end_boundary['parsed']
+
+    error = None
+    if resolved_start > resolved_end:
+        error = 'Requested start time resolves after the end time. Please adjust the inputs.'
+
+    return {
+        'used_manual': used_manual,
+        'error': error,
+        'resolved_start': resolved_start,
+        'resolved_end': resolved_end,
+        'requested_start': start_boundary['parsed'],
+        'requested_end': end_boundary['parsed'],
+        'start_aligned': start_aligned,
+        'end_aligned': end_aligned,
+        'notes': notes,
+        'min_time': min_time,
+        'max_time': max_time,
+    }
+
+def filter_dataframe_by_time_range(df, start_time, end_time):
+    if df is None or df.empty or 'Timestamp' not in df.columns:
+        return df
+    return df[(df['Timestamp'] >= start_time) & (df['Timestamp'] <= end_time)].copy()
 
 @st.cache_data
 def load_data(files):

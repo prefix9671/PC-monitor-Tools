@@ -2,14 +2,82 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://example.com/system-resource-monitor/index.html</loc>
-         <lastmod>2026-03-25</lastmod>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/ActiveDocs.html</loc>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://example.com/system-resource-monitor/Changelog.html</loc>
-         <lastmod>2026-03-25</lastmod>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/DocsHub.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/optimization_proposal.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/project_structure.html</loc>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://example.com/system-resource-monitor/reliability_report.html</loc>
-         <lastmod>2026-03-25</lastmod>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/user_manual.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Architecture/RuntimeAndPackaging.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Architecture/SystemOverview.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Best%20Practices/DocumentationWorkflow.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Best%20Practices/EngineeringGuidelines.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Current%20Phase/CurrentPhase.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Current%20Phase/VerificationChecklist.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Future/IdeasAndBacklog.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Future/Roadmap.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Wiki/Changelog.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Wiki/ProjectStructure.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Wiki/ReliabilityReport.html</loc>
+         <lastmod>2026-03-31</lastmod>
+    </url>
+    <url>
+         <loc>https://example.com/system-resource-monitor/Wiki/UserManual.html</loc>
+         <lastmod>2026-03-31</lastmod>
     </url>
 </urlset>

@@ -14,7 +14,14 @@ from dashboards.cpu import render_cpu_dashboard
 from dashboards.custom import render_custom_dashboard
 from dashboards.memory import render_memory_dashboard
 from dashboards.storage import render_storage_dashboard
-from data_loader import load_data, load_inspector_data, load_inspector_uploaded_data
+from data_loader import (
+    collect_available_timestamps,
+    filter_dataframe_by_time_range,
+    load_data,
+    load_inspector_data,
+    load_inspector_uploaded_data,
+    resolve_time_filter_range,
+)
 from inspector_logs.core import resolve_inspector_log_paths
 from parsers import extract_process_time_series, parse_process_column
 
@@ -182,29 +189,99 @@ with st.sidebar:
     has_inspector_data = aoi_df is not None and not aoi_df.empty
 
     if has_system_data or has_inspector_data:
-        timestamp_candidates = []
-        if has_system_data:
-            timestamp_candidates.append(df["Timestamp"].dropna())
-        if has_inspector_data:
-            timestamp_candidates.append(aoi_df["Timestamp"].dropna())
+        available_timestamps = collect_available_timestamps(df, aoi_df)
 
-        if timestamp_candidates:
-            min_time = min(series.min() for series in timestamp_candidates)
-            max_time = max(series.max() for series in timestamp_candidates)
+        if not available_timestamps.empty:
+            min_time = pd.Timestamp(available_timestamps.min())
+            max_time = pd.Timestamp(available_timestamps.max())
+
+            st.session_state.setdefault("time_range_start_input", "")
+            st.session_state.setdefault("time_range_end_input", "")
+
+            manual_range = resolve_time_filter_range(
+                available_timestamps,
+                start_input=st.session_state["time_range_start_input"],
+                end_input=st.session_state["time_range_end_input"],
+            )
+
+            slider_key = "time_range_slider"
+            slider_bounds_key = "time_range_slider_bounds"
+            current_bounds = (min_time.isoformat(), max_time.isoformat())
+
+            if slider_key not in st.session_state or st.session_state.get(slider_bounds_key) != current_bounds:
+                st.session_state[slider_key] = (min_time.to_pydatetime(), max_time.to_pydatetime())
+                st.session_state[slider_bounds_key] = current_bounds
+
+            if manual_range["used_manual"] and not manual_range["error"]:
+                st.session_state[slider_key] = (
+                    manual_range["resolved_start"].to_pydatetime(),
+                    manual_range["resolved_end"].to_pydatetime(),
+                )
 
             if min_time < max_time:
                 time_range = st.slider(
                     "Time Range",
                     min_value=min_time.to_pydatetime(),
                     max_value=max_time.to_pydatetime(),
-                    value=(min_time.to_pydatetime(), max_time.to_pydatetime()),
+                    key=slider_key,
                 )
-                start_time = pd.to_datetime(time_range[0])
-                end_time = pd.to_datetime(time_range[1])
+
+                input_col1, input_col2 = st.columns(2)
+                with input_col1:
+                    st.text_input(
+                        "Start Time",
+                        key="time_range_start_input",
+                        placeholder="YYYY-MM-DD HH:MM:SS or HH:MM[:SS]",
+                    )
+                with input_col2:
+                    st.text_input(
+                        "End Time",
+                        key="time_range_end_input",
+                        placeholder="YYYY-MM-DD HH:MM:SS or HH:MM[:SS]",
+                    )
+
+                st.caption(
+                    "Optional manual override: leave both blank to use the slider. "
+                    "If only Start is set, the range runs to the last sample. "
+                    "If only End is set, the range starts at the first sample."
+                )
+
+                if manual_range["used_manual"]:
+                    if manual_range["error"]:
+                        st.warning(manual_range["error"])
+                        start_time = pd.to_datetime(time_range[0])
+                        end_time = pd.to_datetime(time_range[1])
+                    else:
+                        start_time = manual_range["resolved_start"]
+                        end_time = manual_range["resolved_end"]
+                        st.caption(
+                            "Applied manual range: "
+                            f"{start_time.strftime('%Y-%m-%d %H:%M:%S')} -> "
+                            f"{end_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                        )
+                        if manual_range["requested_start"] is not None and manual_range["start_aligned"]:
+                            st.caption(
+                                "Start aligned to nearest available sample: "
+                                f"{manual_range['requested_start'].strftime('%Y-%m-%d %H:%M:%S')} -> "
+                                f"{start_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                            )
+                        if manual_range["requested_end"] is not None and manual_range["end_aligned"]:
+                            st.caption(
+                                "End aligned to nearest available sample: "
+                                f"{manual_range['requested_end'].strftime('%Y-%m-%d %H:%M:%S')} -> "
+                                f"{end_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                            )
+                        for note in manual_range["notes"]:
+                            st.caption(note)
+                        st.caption("Clear Start Time and End Time to use the slider directly again.")
+                else:
+                    start_time = pd.to_datetime(time_range[0])
+                    end_time = pd.to_datetime(time_range[1])
+
                 if has_system_data:
-                    df = df[(df["Timestamp"] >= start_time) & (df["Timestamp"] <= end_time)]
+                    df = filter_dataframe_by_time_range(df, start_time, end_time)
                 if has_inspector_data:
-                    aoi_df = aoi_df[(aoi_df["Timestamp"] >= start_time) & (aoi_df["Timestamp"] <= end_time)]
+                    aoi_df = filter_dataframe_by_time_range(aoi_df, start_time, end_time)
             else:
                 st.info("💡 Only one data point available, time filtering skipped.")
 
