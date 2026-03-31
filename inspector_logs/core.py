@@ -6,7 +6,7 @@ from typing import Iterable
 
 import pandas as pd
 
-INSPECTOR_PROCESS_LABEL = "Inspector APP (log)"
+INSPECTOR_PROCESS_LABEL = "인스펙터 앱 (로그)"
 SUPPORTED_LOG_SUFFIXES = (".log", ".txt")
 
 INSPTIME_PATTERN = re.compile(

@@ -1,4 +1,3 @@
-# dashboards/memory.py
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -107,59 +106,56 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
     insp_df = _get_inspector_insp_df(aoi_df)
     inspector_mem_df = _get_inspector_mem_df(aoi_df)
 
-    st.subheader("Memory AND Inspector Analysis")
+    st.subheader("메모리 및 인스펙터 분석")
 
     if has_system_data and not insp_df.empty:
-        st.caption(
-            "ℹ️ OS 메모리 트렌드는 5초 집계값이고, Inspector 값은 AOI 로그에서 추출한 이벤트 시점 데이터입니다."
-        )
+        st.caption("OS 메모리 그래프는 5초 집계 기준이며, 인스펙터 지표는 AOI 로그에서 추출한 이벤트 시점 데이터입니다.")
     elif has_system_data:
-        st.caption("ℹ️ 현재 표시되는 메모리 트렌드 및 프로세스 사용량은 5초 단위 집계값(Avg/Peak)입니다.")
+        st.caption("현재 표시되는 메모리 그래프와 프로세스 사용량은 5초 단위 집계값(평균/피크)입니다.")
     elif not insp_df.empty or not inspector_mem_df.empty:
-        st.caption("ℹ️ System monitor CSV 없이 AOI / Inspector 로그 정보만 표시 중입니다.")
+        st.caption("시스템 모니터 CSV 없이 AOI / 인스펙터 로그 정보만 표시 중입니다.")
 
     if not insp_df.empty or not inspector_mem_df.empty:
         metric_cols = st.columns(3)
 
         if not insp_df.empty:
             metric_cols[0].metric(
-                "🧪 Latest Frame Inspect Time",
-                f"{insp_df['Inspector_Frame_Sec'].iloc[-1]:.2f} sec",
-                delta=f"Peak {insp_df['Inspector_Frame_Sec'].max():.2f} sec",
+                "최근 프레임 검사 시간",
+                f"{insp_df['Inspector_Frame_Sec'].iloc[-1]:.2f}초",
+                delta=f"최대 {insp_df['Inspector_Frame_Sec'].max():.2f}초",
             )
             metric_cols[1].metric(
-                "🧩 Latest Total Inspect Time",
-                f"{insp_df['Inspector_Total_Sec'].iloc[-1]:.2f} sec",
-                delta=f"{int(insp_df['Inspector_Total_Frames'].iloc[-1])} frame",
+                "최근 전체 검사 시간",
+                f"{insp_df['Inspector_Total_Sec'].iloc[-1]:.2f}초",
+                delta=f"{int(insp_df['Inspector_Total_Frames'].iloc[-1])}프레임",
             )
         else:
-            metric_cols[0].metric("🧪 Latest Frame Inspect Time", "N/A")
-            metric_cols[1].metric("🧩 Latest Total Inspect Time", "N/A")
+            metric_cols[0].metric("최근 프레임 검사 시간", "N/A")
+            metric_cols[1].metric("최근 전체 검사 시간", "N/A")
 
         if not inspector_mem_df.empty:
             metric_cols[2].metric(
-                "🧠 Inspector Working Set",
+                "인스펙터 Working Set",
                 f"{inspector_mem_df['Inspector_WorkingSet_GB'].iloc[-1]:.2f} GB",
-                delta=f"Peak {inspector_mem_df['Inspector_WorkingSet_GB'].max():.2f} GB",
+                delta=f"최대 {inspector_mem_df['Inspector_WorkingSet_GB'].max():.2f} GB",
             )
         else:
-            metric_cols[2].metric("🧠 Inspector Working Set", "N/A")
+            metric_cols[2].metric("인스펙터 Working Set", "N/A")
 
         st.divider()
 
-    # 1. OS Memory Graph
     if has_system_data:
         fig_mem = go.Figure()
 
         if "Mem_Usage_Avg(%)" not in df.columns:
-            st.error(f"❌ Memory data not found. Available columns: {list(df.columns)}")
+            st.error(f"메모리 데이터가 없습니다. 현재 컬럼: {list(df.columns)}")
             return
 
         fig_mem.add_trace(
             go.Scatter(
                 x=df["Timestamp"],
                 y=df["Mem_Usage_Avg(%)"],
-                name="Physical Memory Avg (%)",
+                name="실물 메모리 평균 사용률 (%)",
                 mode="lines",
                 line=dict(color=COLOR_MEM, width=2),
                 fill="tozeroy",
@@ -171,7 +167,7 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
                 go.Scatter(
                     x=df["Timestamp"],
                     y=df["Swap_Usage(%)"],
-                    name="Swap Usage (%)",
+                    name="스왑 사용률 (%)",
                     mode="lines",
                     line=dict(color=COLOR_SWAP, width=2),
                 )
@@ -184,7 +180,7 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
                     line_width=2,
                     line_dash="dash",
                     line_color="red",
-                    annotation_text="Swap Started",
+                    annotation_text="스왑 시작",
                 )
                 fig_mem.add_vrect(
                     x0=swap_start,
@@ -203,14 +199,14 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
                     fig_mem.add_annotation(
                         x=df.loc[min_mem_idx, "Timestamp"],
                         y=df.loc[min_mem_idx, "Mem_Usage_Avg(%)"],
-                        text="Start",
+                        text="시작",
                         showarrow=True,
                         arrowhead=1,
                     )
                     fig_mem.add_annotation(
                         x=df.loc[max_mem_idx, "Timestamp"],
                         y=df.loc[max_mem_idx, "Mem_Usage_Avg(%)"],
-                        text="Peak",
+                        text="최대",
                         showarrow=True,
                         arrowhead=1,
                     )
@@ -218,28 +214,34 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
                 pass
 
         fig_mem.update_layout(
-            title=f"Physical Memory Usage (System Capacity: {total_mem} GB)",
-            yaxis=dict(title="Usage (%)", range=[0, 100]),
+            title=f"실물 메모리 사용량 (시스템 메모리: {total_mem} GB)",
+            yaxis=dict(title="사용률 (%)", range=[0, 100]),
             hovermode="x unified",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         st.plotly_chart(fig_mem, width="stretch")
+        st.caption("짙은 파란 선: 5초 평균 기준 실물 메모리 사용률입니다.")
+        st.caption("옅은 파란 영역: 위 실물 메모리 사용률을 면적으로 강조한 표시이며, 별도의 다른 지표는 아닙니다.")
+        if "Swap_Usage(%)" in df.columns:
+            st.caption("주황색 선: 디스크 스왑(페이지 파일) 사용률입니다. RAM에 있던 일부 메모리가 디스크로 밀려난 비율을 뜻합니다.")
+            swap_peak = pd.to_numeric(df["Swap_Usage(%)"], errors="coerce").fillna(0).max()
+            if swap_peak <= 0:
+                st.caption("이번 선택 구간에서는 스왑 사용률이 거의 0%라 주황색 선이 보이지 않거나 바닥에 붙어 있을 수 있습니다.")
+        else:
+            st.caption("현재 로그에는 스왑 사용률 컬럼이 없어 디스크 스왑 메모리 선은 표시되지 않습니다.")
         st.divider()
 
-    # 2. Inspector inspect speed graph
     if not insp_df.empty:
         fig_insp = make_subplots(specs=[[{"secondary_y": True}]])
         fig_insp.add_trace(
             go.Scatter(
                 x=insp_df["Timestamp"],
                 y=insp_df["Inspector_Total_Sec"],
-                name="Total Inspect Time (sec)",
+                name="전체 검사 시간 (초)",
                 mode="lines+markers",
                 line=dict(color=COLOR_INSPECTOR_TOTAL, width=2),
                 customdata=insp_df[["Inspector_Total_Frames"]],
-                hovertemplate=(
-                    "Timestamp=%{x}<br>Total=%{y:.2f} sec<br>Frames=%{customdata[0]}<extra></extra>"
-                ),
+                hovertemplate="시각=%{x}<br>전체=%{y:.2f}초<br>프레임=%{customdata[0]}<extra></extra>",
             ),
             secondary_y=False,
         )
@@ -247,49 +249,44 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
             go.Scatter(
                 x=insp_df["Timestamp"],
                 y=insp_df["Inspector_Frame_Sec"],
-                name="Frame Inspect Time (sec/frame)",
+                name="프레임 검사 시간 (초/프레임)",
                 mode="lines+markers",
                 line=dict(color=COLOR_INSPECTOR_FRAME, width=2),
-                hovertemplate="Timestamp=%{x}<br>Frame=%{y:.2f} sec/frame<extra></extra>",
+                hovertemplate="시각=%{x}<br>프레임=%{y:.2f}초/프레임<extra></extra>",
             ),
             secondary_y=True,
         )
         fig_insp.update_layout(
-            title="Inspector Inspect Speed Timeline",
+            title="인스펙터 검사 속도 시계열",
             hovermode="x unified",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
-        fig_insp.update_yaxes(title_text="Total Inspect Time (sec)", secondary_y=False)
-        fig_insp.update_yaxes(title_text="Frame Inspect Time (sec/frame)", secondary_y=True)
+        fig_insp.update_yaxes(title_text="전체 검사 시간 (초)", secondary_y=False)
+        fig_insp.update_yaxes(title_text="프레임 검사 시간 (초/프레임)", secondary_y=True)
         st.plotly_chart(fig_insp, width="stretch")
         st.divider()
 
-    # 3. Inspector memory graph
     if not inspector_mem_df.empty:
         fig_inspector_mem = go.Figure()
         fig_inspector_mem.add_trace(
             go.Scatter(
                 x=inspector_mem_df["Timestamp"],
                 y=inspector_mem_df["Inspector_WorkingSet_GB"],
-                name="Inspector Working Set (log, KB -> GB)",
+                name="인스펙터 Working Set (로그, KB -> GB)",
                 mode="lines+markers",
                 line=dict(color=COLOR_INSPECTOR_MEM, width=2),
-                hovertemplate=(
-                    "Timestamp=%{x}<br>Working Set=%{y:.2f} GB"
-                    "<br>Raw=%{customdata[0]:,.0f} KB<extra></extra>"
-                ),
+                hovertemplate="시각=%{x}<br>Working Set=%{y:.2f} GB<br>원본=%{customdata[0]:,.0f} KB<extra></extra>",
                 customdata=inspector_mem_df[["Inspector_WorkingSet_KB"]],
             )
         )
         fig_inspector_mem.update_layout(
-            title="Inspector Working Set Memory From AOI Log",
+            title="AOI 로그 기준 인스펙터 Working Set 메모리",
             yaxis=dict(title="Working Set (GB)"),
             hovermode="x unified",
         )
         st.plotly_chart(fig_inspector_mem, width="stretch")
         st.divider()
 
-    # 4. External vs log memory comparison
     if has_system_data and not inspector_mem_df.empty:
         external_inspector_df = _build_external_inspector_df(df, extract_process_time_series)
         if not external_inspector_df.empty:
@@ -298,7 +295,7 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
                 go.Scatter(
                     x=external_inspector_df["Timestamp"],
                     y=external_inspector_df["External_Inspector_GB"],
-                    name="Inspector Process (system monitor, GB)",
+                    name="인스펙터 프로세스 (시스템 모니터, GB)",
                     mode="lines",
                     line=dict(color=COLOR_PROCESS, width=2),
                 )
@@ -307,30 +304,29 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
                 go.Scatter(
                     x=inspector_mem_df["Timestamp"],
                     y=inspector_mem_df["Inspector_WorkingSet_GB"],
-                    name="Inspector APP (log, KB -> GB)",
+                    name="인스펙터 앱 (로그, KB -> GB)",
                     mode="lines+markers",
                     line=dict(color=COLOR_INSPECTOR_MEM, width=2),
                 )
             )
             fig_compare.update_layout(
-                title="External Inspector Memory vs Inspector Log Working Set",
-                yaxis=dict(title="Memory (GB)"),
+                title="외부 인스펙터 메모리와 로그 Working Set 비교",
+                yaxis=dict(title="메모리 (GB)"),
                 hovermode="x unified",
             )
             st.plotly_chart(fig_compare, width="stretch")
             st.divider()
 
-    # 5. Top Memory Processes + Inspector log memory
     top_mem_df = _merge_top_memory_processes(df, parse_process_column, inspector_mem_df)
     if not top_mem_df.empty:
-        st.subheader("🏆 Top 5 Heavy Memory Processes + Inspector APP (log)")
+        st.subheader("상위 5개 메모리 프로세스 + 인스펙터 앱 (로그)")
         top_display_df = top_mem_df.head(5)
         fig_bar = px.bar(
             top_display_df,
             x="Process",
             y="Max_Value",
-            title="Peak Memory Usage by Process / Inspector Log (MB)",
-            labels={"Max_Value": "Peak Memory (MB)"},
+            title="프로세스 / 인스펙터 로그 최대 메모리 사용량 (MB)",
+            labels={"Max_Value": "최대 메모리 (MB)"},
             text_auto=".0f",
         )
         fig_bar.update_traces(marker_color=COLOR_PROCESS)
@@ -338,11 +334,11 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
 
         st.divider()
 
-        st.subheader("📈 Process Memory Trends (Top 5 + Inspector APP)")
+        st.subheader("프로세스 메모리 추세 (상위 5개 + 인스펙터 앱)")
         selectable_names = top_display_df["Process"].tolist()
         selected_procs = []
         if selectable_names:
-            st.write("Select processes to view their memory usage over time:")
+            st.write("시계열로 볼 프로세스를 선택하세요:")
             cols = st.columns(len(selectable_names))
             for idx, name in enumerate(selectable_names):
                 default_selected = idx == 0 or name == INSPECTOR_PROCESS_LABEL
@@ -359,24 +355,24 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
                         x="Timestamp",
                         y="Value",
                         color="Process",
-                        title="Memory Usage Over Time (MB)",
-                        labels={"Value": "Memory (MB)"},
+                        title="시간대별 메모리 사용량 (MB)",
+                        labels={"Value": "메모리 (MB)"},
                     )
                     fig_trend.update_layout(hovermode="x unified")
                     st.plotly_chart(fig_trend, width="stretch")
                 else:
-                    st.info("No time-series data found for selected processes.")
+                    st.info("선택한 프로세스의 시계열 데이터가 없습니다.")
             else:
-                st.info("No process memory trend data available.")
+                st.info("프로세스 메모리 추세 데이터가 없습니다.")
 
-        with st.expander("See Top 10 Details"):
+        with st.expander("상위 10개 상세 보기"):
             st.dataframe(top_mem_df.head(10))
     elif has_system_data:
-        st.warning("No process memory data available.")
+        st.warning("프로세스 메모리 데이터가 없습니다.")
         if "Top5_Memory_MB" in df.columns:
-            with st.expander("💀 Debug: Raw Data Inspection"):
-                st.write("First 10 rows of 'Top5_Memory_MB':")
+            with st.expander("디버그: 원본 데이터 보기"):
+                st.write("'Top5_Memory_MB' 상위 10개 행:")
                 st.write(df["Top5_Memory_MB"].head(10))
-                st.write("Column Type:", df["Top5_Memory_MB"].dtype)
+                st.write("컬럼 타입:", df["Top5_Memory_MB"].dtype)
     else:
-        st.info("No memory process comparison data is available yet.")
+        st.info("메모리 프로세스 비교 데이터가 아직 없습니다.")

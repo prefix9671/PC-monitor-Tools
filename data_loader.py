@@ -47,6 +47,7 @@ def collect_available_timestamps(*frames):
 
 def _parse_time_boundary_input(raw_value, default_date, boundary_name):
     raw_value = (raw_value or '').strip()
+    boundary_label = '시작' if boundary_name == 'start' else '종료'
     result = {
         'provided': bool(raw_value),
         'raw': raw_value,
@@ -79,8 +80,8 @@ def _parse_time_boundary_input(raw_value, default_date, boundary_name):
             result['parsed'] = parsed
     except Exception:
         result['error'] = (
-            f"Invalid {boundary_name} time '{raw_value}'. "
-            "Use YYYY-MM-DD HH:MM[:SS], YYYY-MM-DD, or HH:MM[:SS]."
+            f"{boundary_label} 시간 입력값 '{raw_value}' 형식이 올바르지 않습니다. "
+            "YYYY-MM-DD HH:MM[:SS], YYYY-MM-DD, HH:MM[:SS] 형식을 사용하세요."
         )
 
     return result
@@ -144,8 +145,8 @@ def resolve_time_filter_range(available_timestamps, start_input='', end_input=''
 
     if multiple_dates and (start_boundary['is_time_only'] or end_boundary['is_time_only']):
         notes.append(
-            'Time-only input is anchored to the first loaded date for Start and the last loaded date for End. '
-            'Use a full datetime if you loaded multiple dates.'
+            '여러 날짜를 함께 불러온 상태에서 시간만 입력하면 시작은 첫 로드 날짜, 종료는 마지막 로드 날짜를 기준으로 해석합니다. '
+            '여러 날짜 범위를 정확히 지정하려면 전체 날짜와 시간을 함께 입력하세요.'
         )
 
     used_manual = start_boundary['provided'] or end_boundary['provided']
@@ -170,7 +171,7 @@ def resolve_time_filter_range(available_timestamps, start_input='', end_input=''
 
     error = None
     if resolved_start > resolved_end:
-        error = 'Requested start time resolves after the end time. Please adjust the inputs.'
+        error = '보정된 시작 시간이 종료 시간보다 늦습니다. 입력 범위를 다시 확인하세요.'
 
     return {
         'used_manual': used_manual,

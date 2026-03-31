@@ -94,7 +94,7 @@ class TestTimeFiltering(unittest.TestCase):
         )
 
         self.assertTrue(resolved["notes"])
-        self.assertIn("first loaded date", resolved["notes"][0])
+        self.assertIn("첫 로드 날짜", resolved["notes"][0])
 
     def test_reversed_manual_range_returns_error(self):
         resolved = resolve_time_filter_range(

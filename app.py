@@ -25,12 +25,10 @@ from data_loader import (
 from inspector_logs.core import resolve_inspector_log_paths
 from parsers import extract_process_time_series, parse_process_column
 
-# ==========================================
-# 1. 설정 및 데이터 로딩
-# ==========================================
-st.set_page_config(page_title="System Resource Monitor", page_icon="🖥️", layout="wide")
 
-st.title("🖥️ System Resource Dashboard")
+st.set_page_config(page_title="시스템 자원 모니터", page_icon="📊", layout="wide")
+
+st.title("시스템 자원 대시보드")
 st.markdown("---")
 
 df = None
@@ -39,14 +37,12 @@ system_target_files = []
 resolved_aoi_paths = []
 loaded_aoi_sources = []
 
-# 사이드바: 파일 선택
+
 with st.sidebar:
-    st.header("🎮 Control Panel")
+    st.header("제어판")
+    st.info("Python Collector는 1초 샘플링 / 5초 집계 기준으로 동작합니다.")
 
-    # Configuration Inputs
-    st.info("💡 Python Collector runs with a fixed 1s Sampling / 5s Aggregation interval.")
-
-    if st.button("Start Monitor"):
+    if st.button("모니터링 시작"):
         if getattr(sys, "frozen", False):
             exe_path = sys.executable
             cmd = f"Start-Process -FilePath '{exe_path}' -ArgumentList 'start' -Verb RunAs"
@@ -60,19 +56,18 @@ with st.sidebar:
                 ["powershell", "-Command", cmd],
                 shell=True,
             )
-            st.success("Started Python Monitor (5s Peak/Avg)!")
-            st.info("A command window will appear. Close it to stop monitoring.")
+            st.success("Python 모니터를 시작했습니다.")
+            st.info("명령 프롬프트 창이 열리며, 창을 닫으면 모니터링이 종료됩니다.")
         except Exception as exc:
-            st.error(f"Failed: {exc}")
+            st.error(f"실행 실패: {exc}")
 
     st.divider()
-    if st.button("Refresh Log Data 🔄", use_container_width=True):
+    if st.button("로그 새로고침", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
-    st.header("📂 Log File Selection")
+    st.header("로그 파일 선택")
 
-    # 1. 기본 경로 탐색
     log_groups = set()
     if os.path.exists(DEFAULT_LOG_DIR):
         for file_name in os.listdir(DEFAULT_LOG_DIR):
@@ -84,10 +79,8 @@ with st.sidebar:
                     pass
 
     log_groups = sorted(list(log_groups), reverse=True)
+    uploaded_files = st.file_uploader("시스템 모니터 CSV 업로드", type=["csv"], accept_multiple_files=True)
 
-    uploaded_files = st.file_uploader("Upload Log CSV(s)", type=["csv"], accept_multiple_files=True)
-
-    # 기본값으로 오늘 기준 최근 1주일(7일) 이내의 로그 자동 선택
     default_dates = []
     today = datetime.now().date()
     week_ago = today - timedelta(days=7)
@@ -103,7 +96,7 @@ with st.sidebar:
     if not default_dates and log_groups:
         default_dates = [log_groups[0]]
 
-    selected_dates = st.multiselect(f"Select Record Date from {DEFAULT_LOG_DIR}", log_groups, default=default_dates)
+    selected_dates = st.multiselect(f"{DEFAULT_LOG_DIR}에서 기록 날짜 선택", log_groups, default=default_dates)
 
     if uploaded_files:
         system_target_files.extend(uploaded_files)
@@ -120,17 +113,17 @@ with st.sidebar:
     if system_target_files:
         df = load_data(system_target_files)
         if df is not None and not df.empty:
-            st.success(f"Loaded system monitor rows: {len(df)}")
+            st.success(f"시스템 모니터 행 {len(df)}개를 불러왔습니다.")
 
     st.divider()
-    st.header("🧪 AOI / Inspector Log")
+    st.header("AOI / 인스펙터 로그")
     uploaded_aoi_files = st.file_uploader(
-        "Upload AOI / Inspector Log(s)",
+        "AOI / 인스펙터 로그 업로드",
         type=["log", "txt"],
         accept_multiple_files=True,
-        help="Use Browse files to select AOI / Inspector TXT or LOG files directly.",
+        help="파일 탐색기에서 AOI / 인스펙터 TXT 또는 LOG 파일을 직접 선택합니다.",
     )
-    st.caption("권장: Browse files로 AOI / Inspector TXT 또는 LOG 파일을 직접 선택하세요.")
+    st.caption("권장: Browse files로 AOI / 인스펙터 TXT 또는 LOG 파일을 직접 선택하세요.")
 
     aoi_frames = []
     if uploaded_aoi_files:
@@ -141,21 +134,21 @@ with st.sidebar:
                 aoi_frames.append(uploaded_aoi_df)
                 loaded_aoi_sources.extend(uploaded_file.name for uploaded_file in uploaded_aoi_files)
                 st.success(
-                    f"Loaded Inspector events: {len(uploaded_aoi_df)} rows from {len(uploaded_aoi_files)} uploaded file(s)"
+                    f"업로드한 파일 {len(uploaded_aoi_files)}개에서 인스펙터 이벤트 {len(uploaded_aoi_df)}행을 불러왔습니다."
                 )
             else:
-                st.warning("Uploaded AOI / Inspector files were read, but no InspTime / Working Set lines were parsed.")
+                st.warning("파일은 읽었지만 InspTime / Working Set 라인을 찾지 못했습니다.")
         except Exception as exc:
-            st.error(f"Failed to load uploaded AOI log files: {exc}")
+            st.error(f"업로드한 AOI 로그를 불러오지 못했습니다: {exc}")
 
-    with st.expander("Advanced: Load AOI / Inspector Log by Path", expanded=False):
+    with st.expander("고급: 경로로 AOI / 인스펙터 로그 불러오기", expanded=False):
         aoi_path_input = st.text_area(
-            "AOI Log File or Folder Path(s)",
+            "AOI 로그 파일 또는 폴더 경로",
             value="",
             height=90,
             placeholder=r"C:\Inspector\shared\operation_0319_north side grab",
         )
-        st.caption("Supports file paths, folder paths, or a base path without extension. Use one path per line.")
+        st.caption("파일 경로, 폴더 경로, 확장자 없는 기본 경로를 지원합니다. 한 줄에 하나씩 입력하세요.")
 
         if aoi_path_input.strip():
             try:
@@ -166,14 +159,14 @@ with st.sidebar:
                         aoi_frames.append(path_aoi_df)
                         loaded_aoi_sources.extend(path.name for path in resolved_aoi_paths)
                         st.success(
-                            f"Loaded Inspector events: {len(path_aoi_df)} rows from {len(resolved_aoi_paths)} path file(s)"
+                            f"경로에서 찾은 파일 {len(resolved_aoi_paths)}개에서 인스펙터 이벤트 {len(path_aoi_df)}행을 불러왔습니다."
                         )
                     else:
-                        st.warning("AOI log paths were resolved, but no InspTime / Working Set lines were parsed.")
+                        st.warning("경로는 찾았지만 InspTime / Working Set 라인을 찾지 못했습니다.")
                 else:
-                    st.warning("No AOI log files matched the given path. If you entered a base path, `.log` or `.txt` will be tried automatically.")
+                    st.warning("입력한 경로와 일치하는 AOI 로그가 없습니다. 기본 경로만 넣으면 `.log`, `.txt`를 자동으로 확인합니다.")
             except Exception as exc:
-                st.error(f"Failed to load AOI log path: {exc}")
+                st.error(f"AOI 로그 경로를 불러오지 못했습니다: {exc}")
 
     if aoi_frames:
         aoi_df = (
@@ -183,7 +176,7 @@ with st.sidebar:
             .reset_index(drop=True)
         )
         if loaded_aoi_sources:
-            st.caption(f"AOI sources: {', '.join(dict.fromkeys(loaded_aoi_sources))}")
+            st.caption(f"AOI 원본: {', '.join(dict.fromkeys(loaded_aoi_sources))}")
 
     has_system_data = df is not None and not df.empty
     has_inspector_data = aoi_df is not None and not aoi_df.empty
@@ -220,7 +213,7 @@ with st.sidebar:
 
             if min_time < max_time:
                 time_range = st.slider(
-                    "Time Range",
+                    "시간 범위",
                     min_value=min_time.to_pydatetime(),
                     max_value=max_time.to_pydatetime(),
                     key=slider_key,
@@ -229,21 +222,20 @@ with st.sidebar:
                 input_col1, input_col2 = st.columns(2)
                 with input_col1:
                     st.text_input(
-                        "Start Time",
+                        "시작 시간",
                         key="time_range_start_input",
-                        placeholder="YYYY-MM-DD HH:MM:SS or HH:MM[:SS]",
+                        placeholder="YYYY-MM-DD HH:MM:SS 또는 HH:MM[:SS]",
                     )
                 with input_col2:
                     st.text_input(
-                        "End Time",
+                        "종료 시간",
                         key="time_range_end_input",
-                        placeholder="YYYY-MM-DD HH:MM:SS or HH:MM[:SS]",
+                        placeholder="YYYY-MM-DD HH:MM:SS 또는 HH:MM[:SS]",
                     )
 
                 st.caption(
-                    "Optional manual override: leave both blank to use the slider. "
-                    "If only Start is set, the range runs to the last sample. "
-                    "If only End is set, the range starts at the first sample."
+                    "수동 입력은 선택 사항입니다. 둘 다 비우면 슬라이더 기준으로 동작합니다. "
+                    "시작만 입력하면 마지막 샘플까지, 종료만 입력하면 첫 샘플부터 표시합니다."
                 )
 
                 if manual_range["used_manual"]:
@@ -255,25 +247,25 @@ with st.sidebar:
                         start_time = manual_range["resolved_start"]
                         end_time = manual_range["resolved_end"]
                         st.caption(
-                            "Applied manual range: "
+                            "적용된 수동 범위: "
                             f"{start_time.strftime('%Y-%m-%d %H:%M:%S')} -> "
                             f"{end_time.strftime('%Y-%m-%d %H:%M:%S')}"
                         )
                         if manual_range["requested_start"] is not None and manual_range["start_aligned"]:
                             st.caption(
-                                "Start aligned to nearest available sample: "
+                                "시작 시간을 가장 가까운 사용 가능 샘플로 보정했습니다: "
                                 f"{manual_range['requested_start'].strftime('%Y-%m-%d %H:%M:%S')} -> "
                                 f"{start_time.strftime('%Y-%m-%d %H:%M:%S')}"
                             )
                         if manual_range["requested_end"] is not None and manual_range["end_aligned"]:
                             st.caption(
-                                "End aligned to nearest available sample: "
+                                "종료 시간을 가장 가까운 사용 가능 샘플로 보정했습니다: "
                                 f"{manual_range['requested_end'].strftime('%Y-%m-%d %H:%M:%S')} -> "
                                 f"{end_time.strftime('%Y-%m-%d %H:%M:%S')}"
                             )
                         for note in manual_range["notes"]:
                             st.caption(note)
-                        st.caption("Clear Start Time and End Time to use the slider directly again.")
+                        st.caption("다시 슬라이더로 제어하려면 시작 시간과 종료 시간을 비우세요.")
                 else:
                     start_time = pd.to_datetime(time_range[0])
                     end_time = pd.to_datetime(time_range[1])
@@ -283,10 +275,10 @@ with st.sidebar:
                 if has_inspector_data:
                     aoi_df = filter_dataframe_by_time_range(aoi_df, start_time, end_time)
             else:
-                st.info("💡 Only one data point available, time filtering skipped.")
+                st.info("데이터가 1개뿐이라 시간 필터를 건너뜁니다.")
 
         st.divider()
-        if st.button("📖 웹 매뉴얼 열기 (MkDocs)", width="stretch"):
+        if st.button("매뉴얼 열기 (MkDocs)", width="stretch"):
             if getattr(sys, "frozen", False):
                 base_path = sys._MEIPASS
             else:
@@ -297,14 +289,14 @@ with st.sidebar:
             if os.path.exists(manual_path):
                 webbrowser.open_new_tab(Path(manual_path).as_uri())
             else:
-                st.error(f"매뉴얼 사이트를 찾을 수 없습니다: {manual_path}")
+                st.error(f"매뉴얼 페이지를 찾을 수 없습니다: {manual_path}")
 
         st.divider()
-        st.markdown("### 💾 Export Data")
+        st.markdown("### 데이터 내보내기")
         if has_system_data:
             csv_data = df.to_csv(index=False).encode("utf-8-sig")
             st.download_button(
-                label="Download Merged CSV",
+                label="병합 CSV 다운로드",
                 data=csv_data,
                 file_name=f"Merged_Log_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                 mime="text/csv",
@@ -313,17 +305,14 @@ with st.sidebar:
         if has_inspector_data:
             inspector_csv = aoi_df.to_csv(index=False).encode("utf-8-sig")
             st.download_button(
-                label="Download Parsed Inspector Log CSV",
+                label="파싱된 인스펙터 로그 CSV 다운로드",
                 data=inspector_csv,
                 file_name=f"Inspector_Log_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                 mime="text/csv",
             )
 
-        st.caption("© 2026 System Resource Monitor - v1.2.0")
+        st.caption("2026 시스템 자원 모니터 - v1.2.0")
 
-# ==========================================
-# 2. 메인 대시보드 UI
-# ==========================================
 
 has_system_data = df is not None and not df.empty
 has_inspector_data = aoi_df is not None and not aoi_df.empty
@@ -348,10 +337,10 @@ if has_system_data or has_inspector_data:
             physical_mem_gb = "N/A"
             os_total_mem_gb = "N/A"
 
-        st.markdown("#### 🖥️ 시스템 사양 정보")
-        st.write(f"- **물리 장착 메모리**: {physical_mem_gb} GB")
+        st.markdown("#### 시스템 사양 정보")
+        st.write(f"- **물리 메모리**: {physical_mem_gb} GB")
         st.write(f"- **OS 사용 가능 메모리**: {os_total_mem_gb} GB")
-        st.write("※ 실제 사용 가능 메모리 %로 계산하였습니다.")
+        st.write("- 실제 대시보드 계산은 OS 사용 가능 메모리를 기준으로 합니다.")
 
         total_mem_gb = os_total_mem_gb
         st.markdown("---")
@@ -359,7 +348,7 @@ if has_system_data or has_inspector_data:
         max_mem_gb = f"{df['Mem_Used(GB)'].max():.2f}" if "Mem_Used(GB)" in df.columns else "0.00"
         max_mem_pct = f"{df['Mem_Usage_Avg(%)'].max():.2f}" if "Mem_Usage_Avg(%)" in df.columns else "0.00"
 
-        trend_str = "- Stable or Fluctuating"
+        trend_str = "안정적 또는 변동형"
         if "Mem_Used(GB)" in df.columns and df["Mem_Used(GB)"].notna().any():
             try:
                 min_mem_idx = df["Mem_Used(GB)"].idxmin()
@@ -369,7 +358,7 @@ if has_system_data or has_inspector_data:
                     max_time = df.loc[max_mem_idx, "Timestamp"]
                     if max_time > min_time:
                         duration = max_time - min_time
-                        trend_str = f"↗ {str(duration).split('.')[0]} duration"
+                        trend_str = f"{str(duration).split('.')[0]} 동안 증가"
             except Exception:
                 pass
 
@@ -383,39 +372,39 @@ if has_system_data or has_inspector_data:
 
         kpi1, kpi2, kpi3 = st.columns(3)
         kpi1.metric(
-            label="📈 Peak Memory Usage",
+            label="최대 메모리 사용량",
             value=f"{max_mem_gb} GB",
-            delta=f"{max_mem_pct}% of {total_mem_gb}GB",
+            delta=f"전체 {total_mem_gb}GB 중 {max_mem_pct}%",
             delta_color="inverse",
         )
         kpi2.metric(
-            label="⏱ Memory Ramp-up Duration",
+            label="메모리 상승 구간",
             value=trend_str,
-            help="Time taken from minimum to maximum memory usage in selected range.",
+            help="선택한 구간에서 메모리 최소값부터 최대값까지 걸린 시간입니다.",
         )
         kpi3.metric(
-            label="🔥 Top Offender Process",
+            label="최상위 메모리 프로세스",
             value=top_offender,
-            delta=f"{top_offender_val:.2f} GB Max",
+            delta=f"최대 {top_offender_val:.2f} GB",
             delta_color="inverse",
         )
         st.markdown("---")
     else:
-        st.info("System monitor CSV is not loaded. Showing Inspector log metrics only.")
+        st.info("시스템 모니터 CSV가 없어 인스펙터 로그 지표만 표시합니다.")
 
     tab_list = []
     if has_system_data:
-        tab_list.append("📊 CPU Dashboard")
-    tab_list.append("🧠 Memory AND Inspector Dashboard")
+        tab_list.append("CPU 대시보드")
+    tab_list.append("메모리 + 인스펙터 대시보드")
     if has_system_data:
-        tab_list.append("💾 Storage Dashboard")
-        tab_list.append("📈 Custom Graph")
+        tab_list.append("스토리지 대시보드")
+        tab_list.append("사용자 정의 그래프")
 
-    menu = st.selectbox("Select Dashboard View", tab_list)
+    menu = st.selectbox("대시보드 보기 선택", tab_list)
 
-    if menu == "📊 CPU Dashboard":
+    if menu == "CPU 대시보드":
         render_cpu_dashboard(st, df)
-    elif menu == "🧠 Memory AND Inspector Dashboard":
+    elif menu == "메모리 + 인스펙터 대시보드":
         render_memory_dashboard(
             st,
             df,
@@ -424,13 +413,12 @@ if has_system_data or has_inspector_data:
             total_mem_gb,
             aoi_df=aoi_df,
         )
-    elif menu == "💾 Storage Dashboard":
+    elif menu == "스토리지 대시보드":
         render_storage_dashboard(st, df, parse_process_column)
-    elif menu == "📈 Custom Graph":
+    elif menu == "사용자 정의 그래프":
         render_custom_dashboard(st, df, parse_process_column)
-
 else:
     st.info(
-        f"👈 Please upload a system monitor CSV, ensure files exist in {DEFAULT_LOG_DIR}, "
-        "or upload an AOI / Inspector log file."
+        f"시스템 모니터 CSV를 업로드하거나 {DEFAULT_LOG_DIR}에 로그가 있는지 확인하세요. "
+        "또는 AOI / 인스펙터 로그를 업로드해 주세요."
     )
