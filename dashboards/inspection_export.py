@@ -1,0 +1,340 @@
+from __future__ import annotations
+
+import re
+from datetime import datetime
+
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+from excel_exporter import generate_inspection_excel
+from inspector_logs.core import (
+    format_inspection_export_dataframe,
+    select_inspection_records,
+    summarize_inspection_records,
+)
+
+
+GRAPH_TYPE_OPTIONS = {
+    "선 + 마커": "line",
+    "영역": "area",
+    "막대": "bar",
+    "점": "scatter",
+}
+
+TIME_COLUMNS = ["Frame", "Total"]
+MEMORY_COLUMNS = ["Memory (인스펙터)", "Memory (시스템)"]
+
+COLOR_PRESET_ITEMS = [
+    ("코랄 레드", "#FF6B6B"),
+    ("체리 핑크", "#E63973"),
+    ("로즈 퍼플", "#B565A7"),
+    ("플럼 바이올렛", "#7B2CBF"),
+    ("딥 바이올렛", "#5A189A"),
+    ("인디고 블루", "#3F37C9"),
+    ("코발트 블루", "#4361EE"),
+    ("로열 블루", "#3A86FF"),
+    ("스카이 블루", "#4CC9F0"),
+    ("터쿼이즈", "#2EC4B6"),
+    ("민트 그린", "#52B788"),
+    ("에메랄드", "#2A9D8F"),
+    ("라임 그린", "#8AC926"),
+    ("올리브", "#6A994E"),
+    ("선플라워", "#FFCA3A"),
+    ("앰버", "#F4A261"),
+    ("선셋 오렌지", "#FF9F1C"),
+    ("탠저린", "#F77F00"),
+    ("테라코타", "#E76F51"),
+    ("브릭 레드", "#C44536"),
+    ("모카 브라운", "#9C6644"),
+    ("슬레이트 그레이", "#6C757D"),
+    ("스틸 블루", "#577590"),
+    ("딥 티얼", "#006D77"),
+]
+
+COLOR_PRESET_MAP = dict(COLOR_PRESET_ITEMS)
+COLOR_PRESET_LABELS = [label for label, _ in COLOR_PRESET_ITEMS]
+
+DEFAULT_METRIC_COLOR_LABELS = {
+    "Frame": "플럼 바이올렛",
+    "Total": "선셋 오렌지",
+    "Memory (인스펙터)": "에메랄드",
+    "Memory (시스템)": "코발트 블루",
+}
+
+DEFAULT_TABLE_COLOR_LABEL = "스틸 블루"
+
+
+def _sanitize_file_token(value: str | None) -> str:
+    token = (value or "").strip()
+    if not token:
+        return "UnknownModel"
+    token = re.sub(r"[\\/:*?\"<>|]+", "_", token)
+    token = re.sub(r"\s+", "_", token)
+    return token[:60] or "UnknownModel"
+
+
+def _hex_to_rgba(hex_color: str, opacity: float) -> str:
+    normalized = (hex_color or "").strip().lstrip("#")
+    if len(normalized) != 6:
+        return f"rgba(0, 0, 0, {opacity:.2f})"
+
+    red = int(normalized[0:2], 16)
+    green = int(normalized[2:4], 16)
+    blue = int(normalized[4:6], 16)
+    return f"rgba({red}, {green}, {blue}, {opacity:.2f})"
+
+
+def _style_preview_table(preview_df: pd.DataFrame, accent_color: str, opacity: float):
+    if preview_df.empty:
+        return preview_df.style
+
+    base_fill = _hex_to_rgba(accent_color, max(opacity * 0.45, 0.05))
+    alt_fill = _hex_to_rgba(accent_color, max(opacity * 0.18, 0.02))
+    no_fill = _hex_to_rgba(accent_color, min(opacity + 0.18, 0.95))
+    header_fill = _hex_to_rgba(accent_color, min(opacity + 0.28, 1.0))
+
+    def stripe_row(row):
+        row_fill = base_fill if row.name % 2 == 0 else alt_fill
+        styles = []
+        for column_name in preview_df.columns:
+            if column_name == "NO":
+                styles.append(f"background-color: {no_fill}; font-weight: 700;")
+            else:
+                styles.append(f"background-color: {row_fill};")
+        return styles
+
+    return (
+        preview_df.style.format(
+            {
+                "측정시간": lambda value: value.strftime("%Y-%m-%d %H:%M:%S") if pd.notna(value) else "",
+                "Frame": "{:.2f}",
+                "Total": "{:.2f}",
+                "Memory (인스펙터)": "{:.3f}",
+                "Memory (시스템)": "{:.3f}",
+            },
+            na_rep="",
+        )
+        .apply(stripe_row, axis=1)
+        .set_table_styles(
+            [
+                {"selector": "th", "props": [("background-color", header_fill), ("color", "#111111")]},
+                {"selector": "td", "props": [("border-bottom", "1px solid rgba(255,255,255,0.08)")]},
+            ]
+        )
+    )
+
+
+def _build_preview_chart(
+    preview_df: pd.DataFrame,
+    chart_type: str,
+    selected_metrics: list[str],
+    metric_colors: dict[str, str],
+    opacity: float,
+):
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    chart_key = GRAPH_TYPE_OPTIONS.get(chart_type, "line")
+
+    def add_trace(metric_name: str, secondary_y: bool, color: str):
+        if metric_name not in preview_df.columns:
+            return
+
+        trace_name = metric_name
+        x_values = preview_df["측정시간"]
+        y_values = preview_df[metric_name]
+
+        if chart_key == "bar":
+            fig.add_trace(
+                go.Bar(
+                    x=x_values,
+                    y=y_values,
+                    name=trace_name,
+                    marker_color=_hex_to_rgba(color, opacity),
+                    opacity=opacity,
+                ),
+                secondary_y=secondary_y,
+            )
+            return
+
+        mode = "markers" if chart_key == "scatter" else "lines+markers"
+        fill = "tozeroy" if chart_key == "area" else None
+        fill_color = _hex_to_rgba(color, max(opacity * 0.65, 0.08)) if chart_key == "area" else None
+        fig.add_trace(
+            go.Scatter(
+                x=x_values,
+                y=y_values,
+                name=trace_name,
+                mode=mode,
+                line=dict(color=color, width=3),
+                marker=dict(color=color, size=9, opacity=max(opacity, 0.35)),
+                opacity=max(opacity, 0.35),
+                fill=fill,
+                fillcolor=fill_color,
+            ),
+            secondary_y=secondary_y,
+        )
+
+    for metric_name in selected_metrics:
+        if metric_name in TIME_COLUMNS:
+            add_trace(metric_name, secondary_y=False, color=metric_colors.get(metric_name, "#3A86FF"))
+        elif metric_name in MEMORY_COLUMNS:
+            add_trace(metric_name, secondary_y=True, color=metric_colors.get(metric_name, "#2A9D8F"))
+
+    fig.update_layout(
+        title="검사 결과 미리보기 그래프",
+        hovermode="x unified",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        bargap=0.22,
+    )
+    fig.update_xaxes(title_text="측정시간")
+    fig.update_yaxes(title_text="검사 시간 (sec)", secondary_y=False)
+    fig.update_yaxes(title_text="메모리 (GB)", secondary_y=True)
+    return fig
+
+
+def _render_color_badges(st, metric_color_labels: dict[str, str], table_color_label: str):
+    badge_parts = []
+    combined = list(metric_color_labels.items()) + [("표 강조", table_color_label)]
+
+    for metric_name, color_label in combined:
+        color_hex = COLOR_PRESET_MAP[color_label]
+        badge_parts.append(
+            "<span style='display:inline-flex;align-items:center;margin:0 10px 8px 0;"
+            "padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.06);'>"
+            f"<span style='display:inline-block;width:12px;height:12px;border-radius:50%;"
+            f"background:{color_hex};margin-right:8px;border:1px solid rgba(0,0,0,0.15);'></span>"
+            f"{metric_name}: {color_label}</span>"
+        )
+
+    st.markdown("".join(badge_parts), unsafe_allow_html=True)
+
+
+def render_inspection_export_panel(st, inspection_records):
+    st.subheader("검사 결과 XLSX 내보내기")
+
+    summary = summarize_inspection_records(inspection_records)
+    if summary["rows"] == 0 or summary["no_range"] is None:
+        st.info("현재 불러온 AOI / 인스펙터 로그에는 번호화할 검사 결과가 없습니다.")
+        return
+
+    min_no, max_no = summary["no_range"]
+    start_default = min(max(int(st.session_state.get("inspection_export_start_no", min_no)), min_no), max_no)
+    end_default = min(max(int(st.session_state.get("inspection_export_end_no", max_no)), start_default), max_no)
+
+    selected_model = summary["primary_model_name"] or "미확인"
+    system_match_count = summary["system_memory_matches"]
+
+    metric_col1, metric_col2, metric_col3 = st.columns(3)
+    metric_col1.metric("모델명", selected_model)
+    metric_col2.metric("총 검사 수", f"{summary['rows']}건")
+    metric_col3.metric("시스템 메모리 매칭", f"{system_match_count}건")
+
+    if len(summary["model_names"]) > 1:
+        st.caption(f"감지된 모델명: {', '.join(summary['model_names'])}")
+
+    st.caption("이 내보내기 영역은 현재 불러온 AOI 로그 전체 기준으로 NO를 매기며, 대시보드 시간 필터와는 별도로 동작합니다.")
+
+    range_col1, range_col2 = st.columns(2)
+    with range_col1:
+        start_no = int(
+            range_col1.number_input(
+                "시작 NO",
+                min_value=min_no,
+                max_value=max_no,
+                value=start_default,
+                step=1,
+            )
+        )
+    with range_col2:
+        end_no = int(
+            range_col2.number_input(
+                "종료 NO",
+                min_value=start_no,
+                max_value=max_no,
+                value=max(end_default, start_no),
+                step=1,
+            )
+        )
+
+    st.session_state["inspection_export_start_no"] = start_no
+    st.session_state["inspection_export_end_no"] = end_no
+
+    selected_records = select_inspection_records(inspection_records, start_no=start_no, end_no=end_no)
+    preview_df = format_inspection_export_dataframe(selected_records)
+
+    st.caption(f"선택 범위: NO {start_no} -> {end_no} / {len(preview_df)}건")
+
+    if len(preview_df) != len(selected_records):
+        st.warning("미리보기 생성 중 일부 행이 제외되었습니다.")
+
+    if selected_records["System_Memory_Used_GB"].isna().any():
+        st.warning("일부 검사 결과는 직전 시스템 메모리 샘플을 찾지 못해 `Memory (시스템)` 값이 비어 있습니다.")
+
+    st.markdown("#### 표현 설정")
+    style_col1, style_col2, style_col3 = st.columns(3)
+    with style_col1:
+        chart_type = st.selectbox("그래프 형식", list(GRAPH_TYPE_OPTIONS.keys()), index=0)
+        chart_opacity = st.slider("그래프 투명도", min_value=0.2, max_value=1.0, value=0.85, step=0.05)
+    with style_col2:
+        table_color_label = st.selectbox(
+            "표 강조 색상",
+            COLOR_PRESET_LABELS,
+            index=COLOR_PRESET_LABELS.index(DEFAULT_TABLE_COLOR_LABEL),
+        )
+    with style_col3:
+        table_opacity = st.slider("표 강조 투명도", min_value=0.05, max_value=0.7, value=0.28, step=0.05)
+
+    metric_options = TIME_COLUMNS + MEMORY_COLUMNS
+    default_metrics = [metric for metric in metric_options if metric in preview_df.columns]
+    selected_metrics = st.multiselect(
+        "미리보기 그래프 항목",
+        metric_options,
+        default=default_metrics,
+        help="검사 시간과 메모리 지표를 동시에 비교할 수 있습니다.",
+    )
+
+    st.caption("항목별 색상은 이름으로 고르고, 화면 아래 배지에서 현재 선택을 바로 확인할 수 있습니다.")
+    color_columns = st.columns(len(metric_options))
+    metric_color_labels: dict[str, str] = {}
+    for index, metric_name in enumerate(metric_options):
+        default_label = DEFAULT_METRIC_COLOR_LABELS[metric_name]
+        metric_color_labels[metric_name] = color_columns[index].selectbox(
+            f"{metric_name} 색상",
+            COLOR_PRESET_LABELS,
+            index=COLOR_PRESET_LABELS.index(default_label),
+            key=f"inspection_metric_color_{metric_name}",
+        )
+
+    _render_color_badges(st, metric_color_labels=metric_color_labels, table_color_label=table_color_label)
+    metric_colors = {metric_name: COLOR_PRESET_MAP[color_label] for metric_name, color_label in metric_color_labels.items()}
+    table_color = COLOR_PRESET_MAP[table_color_label]
+
+    if selected_metrics and not preview_df.empty:
+        chart_figure = _build_preview_chart(
+            preview_df=preview_df,
+            chart_type=chart_type,
+            selected_metrics=selected_metrics,
+            metric_colors=metric_colors,
+            opacity=chart_opacity,
+        )
+        st.plotly_chart(chart_figure, width="stretch")
+    elif preview_df.empty:
+        st.info("선택한 NO 범위에 표시할 검사 결과가 없습니다.")
+    else:
+        st.info("미리보기 그래프에 표시할 항목을 하나 이상 선택해 주세요.")
+
+    styled_preview = _style_preview_table(preview_df, accent_color=table_color, opacity=table_opacity)
+    st.dataframe(styled_preview, hide_index=True, width="stretch")
+
+    file_model_token = _sanitize_file_token(selected_model)
+    file_name = (
+        f"Inspection_Results_{file_model_token}_NO{start_no:04d}-{end_no:04d}_"
+        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    )
+
+    st.download_button(
+        label="검사 결과 XLSX 다운로드",
+        data=generate_inspection_excel(selected_records),
+        file_name=file_name,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

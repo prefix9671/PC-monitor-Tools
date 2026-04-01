@@ -1,0 +1,10 @@
+{
+  "name": "pc-monitor-tools-playwright-mcp",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local Playwright MCP runtime for Codex GUI verification",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@playwright/mcp": "0.0.70"
+  }
+}

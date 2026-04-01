@@ -144,6 +144,9 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
 
         st.divider()
 
+        if not insp_df.empty or not inspector_mem_df.empty:
+            st.caption("검사 시간/인스펙터 메모리 상세 시계열은 화면 아래 `검사 결과 XLSX 내보내기` 패널에서 확인할 수 있습니다.")
+
     if has_system_data:
         fig_mem = go.Figure()
 
@@ -231,61 +234,67 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
             st.caption("현재 로그에는 스왑 사용률 컬럼이 없어 디스크 스왑 메모리 선은 표시되지 않습니다.")
         st.divider()
 
-    if not insp_df.empty:
-        fig_insp = make_subplots(specs=[[{"secondary_y": True}]])
-        fig_insp.add_trace(
-            go.Scatter(
-                x=insp_df["Timestamp"],
-                y=insp_df["Inspector_Total_Sec"],
-                name="전체 검사 시간 (초)",
-                mode="lines+markers",
-                line=dict(color=COLOR_INSPECTOR_TOTAL, width=2),
-                customdata=insp_df[["Inspector_Total_Frames"]],
-                hovertemplate="시각=%{x}<br>전체=%{y:.2f}초<br>프레임=%{customdata[0]}<extra></extra>",
-            ),
-            secondary_y=False,
-        )
-        fig_insp.add_trace(
-            go.Scatter(
-                x=insp_df["Timestamp"],
-                y=insp_df["Inspector_Frame_Sec"],
-                name="프레임 검사 시간 (초/프레임)",
-                mode="lines+markers",
-                line=dict(color=COLOR_INSPECTOR_FRAME, width=2),
-                hovertemplate="시각=%{x}<br>프레임=%{y:.2f}초/프레임<extra></extra>",
-            ),
-            secondary_y=True,
-        )
-        fig_insp.update_layout(
-            title="인스펙터 검사 속도 시계열",
-            hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        )
-        fig_insp.update_yaxes(title_text="전체 검사 시간 (초)", secondary_y=False)
-        fig_insp.update_yaxes(title_text="프레임 검사 시간 (초/프레임)", secondary_y=True)
-        st.plotly_chart(fig_insp, width="stretch")
-        st.divider()
-
-    if not inspector_mem_df.empty:
-        fig_inspector_mem = go.Figure()
-        fig_inspector_mem.add_trace(
-            go.Scatter(
-                x=inspector_mem_df["Timestamp"],
-                y=inspector_mem_df["Inspector_WorkingSet_GB"],
-                name="인스펙터 Working Set (로그, KB -> GB)",
-                mode="lines+markers",
-                line=dict(color=COLOR_INSPECTOR_MEM, width=2),
-                hovertemplate="시각=%{x}<br>Working Set=%{y:.2f} GB<br>원본=%{customdata[0]:,.0f} KB<extra></extra>",
-                customdata=inspector_mem_df[["Inspector_WorkingSet_KB"]],
-            )
-        )
-        fig_inspector_mem.update_layout(
-            title="AOI 로그 기준 인스펙터 Working Set 메모리",
-            yaxis=dict(title="Working Set (GB)"),
-            hovermode="x unified",
-        )
-        st.plotly_chart(fig_inspector_mem, width="stretch")
-        st.divider()
+    # NOTE:
+    # The dedicated "검사 결과 XLSX 내보내기" panel now owns the detailed
+    # inspector-only charts below. We are intentionally hiding them here to
+    # avoid duplicated dashboard content, but keeping the old code commented
+    # out until follow-up verification is complete and explicit deletion is requested.
+    #
+    # if not insp_df.empty:
+    #     fig_insp = make_subplots(specs=[[{"secondary_y": True}]])
+    #     fig_insp.add_trace(
+    #         go.Scatter(
+    #             x=insp_df["Timestamp"],
+    #             y=insp_df["Inspector_Total_Sec"],
+    #             name="전체 검사 시간 (초)",
+    #             mode="lines+markers",
+    #             line=dict(color=COLOR_INSPECTOR_TOTAL, width=2),
+    #             customdata=insp_df[["Inspector_Total_Frames"]],
+    #             hovertemplate="시각=%{x}<br>전체=%{y:.2f}초<br>프레임=%{customdata[0]}<extra></extra>",
+    #         ),
+    #         secondary_y=False,
+    #     )
+    #     fig_insp.add_trace(
+    #         go.Scatter(
+    #             x=insp_df["Timestamp"],
+    #             y=insp_df["Inspector_Frame_Sec"],
+    #             name="프레임 검사 시간 (초/프레임)",
+    #             mode="lines+markers",
+    #             line=dict(color=COLOR_INSPECTOR_FRAME, width=2),
+    #             hovertemplate="시각=%{x}<br>프레임=%{y:.2f}초/프레임<extra></extra>",
+    #         ),
+    #         secondary_y=True,
+    #     )
+    #     fig_insp.update_layout(
+    #         title="인스펙터 검사 속도 시계열",
+    #         hovermode="x unified",
+    #         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    #     )
+    #     fig_insp.update_yaxes(title_text="전체 검사 시간 (초)", secondary_y=False)
+    #     fig_insp.update_yaxes(title_text="프레임 검사 시간 (초/프레임)", secondary_y=True)
+    #     st.plotly_chart(fig_insp, width="stretch")
+    #     st.divider()
+    #
+    # if not inspector_mem_df.empty:
+    #     fig_inspector_mem = go.Figure()
+    #     fig_inspector_mem.add_trace(
+    #         go.Scatter(
+    #             x=inspector_mem_df["Timestamp"],
+    #             y=inspector_mem_df["Inspector_WorkingSet_GB"],
+    #             name="인스펙터 Working Set (로그, KB -> GB)",
+    #             mode="lines+markers",
+    #             line=dict(color=COLOR_INSPECTOR_MEM, width=2),
+    #             hovertemplate="시각=%{x}<br>Working Set=%{y:.2f} GB<br>원본=%{customdata[0]:,.0f} KB<extra></extra>",
+    #             customdata=inspector_mem_df[["Inspector_WorkingSet_KB"]],
+    #         )
+    #     )
+    #     fig_inspector_mem.update_layout(
+    #         title="AOI 로그 기준 인스펙터 Working Set 메모리",
+    #         yaxis=dict(title="Working Set (GB)"),
+    #         hovermode="x unified",
+    #     )
+    #     st.plotly_chart(fig_inspector_mem, width="stretch")
+    #     st.divider()
 
     if has_system_data and not inspector_mem_df.empty:
         external_inspector_df = _build_external_inspector_df(df, extract_process_time_series)

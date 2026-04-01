@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Updated On: 2026-03-30
+Updated On: 2026-04-01
 
 ## 목적
 
@@ -48,3 +48,4 @@ Updated On: 2026-03-30
 - 현재 실행 기준은 `start_monitor.bat`와 `run_app.py` 흐름을 우선합니다.
 - `build/`, `dist/`, `site/`는 생성 산출물이므로 기준 문서나 기준 코드로 삼지 않습니다.
 - 로그 스키마를 바꾸면 수집기, 로더, 대시보드, 문서를 함께 갱신해야 합니다.
+- WEB 기반 GUI 검증이 필요하면 먼저 `tools/playwright-mcp/launch-playwright-mcp.ps1`와 `~/.codex/config.toml`의 `playwright` MCP 구성이 살아 있는지 확인합니다.

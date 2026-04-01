@@ -58,7 +58,7 @@ def self_test(files=None):
         
     # User requested: top 1 line parsing
     top_df = df.head(1).copy()
-    print(f"\n✅ Dataframe loaded. Top 1 row features: {list(top_df.columns)}")
+    print(f"\n[OK] Dataframe loaded. Top 1 row features: {list(top_df.columns)}")
     
     # Create Mock Streamlit API
     st_mock = MagicMock()
@@ -80,21 +80,21 @@ def self_test(files=None):
     st_mock.columns.side_effect = lambda n: [MagicMock() for _ in range(n)] if isinstance(n, int) else [MagicMock() for _ in range(len(n))]
     st_mock.tabs.side_effect = lambda labels: [MagicMock() for _ in labels]
     
-    print("\n[🏃] Executing CPU Dashboard...")
+    print("\n[RUN] Executing CPU Dashboard...")
     try:
         render_cpu_dashboard(st_mock, top_df)
         print(" -> CPU Dashboard SUCCESS.")
     except Exception as e:
         print(f" -> CPU Dashboard FAILED: {e}")
         
-    print("\n[🏃] Executing Memory Dashboard...")
+    print("\n[RUN] Executing Memory Dashboard...")
     try:
         render_memory_dashboard(st_mock, top_df, parse_process_column, extract_process_time_series, "16")
         print(" -> Memory Dashboard SUCCESS.")
     except Exception as e:
         print(f" -> Memory Dashboard FAILED: {e}")
         
-    print("\n[🏃] Executing Storage Dashboard...")
+    print("\n[RUN] Executing Storage Dashboard...")
     try:
         render_storage_dashboard(st_mock, top_df, parse_process_column)
         print(" -> Storage Dashboard SUCCESS.")
@@ -108,7 +108,7 @@ def self_test(files=None):
     except Exception as e:
         print(f" -> Storage Dashboard FAILED: {e}")
         
-    print("\n[🏃] Executing Custom Graph Dashboard...")
+    print("\n[RUN] Executing Custom Graph Dashboard...")
     try:
         selected_custom_cols_mock = [c for c in top_df.columns if pd.api.types.is_numeric_dtype(top_df[c])]
         if selected_custom_cols_mock:
@@ -118,7 +118,7 @@ def self_test(files=None):
     except Exception as e:
         print(f" -> Custom Graph FAILED: {e}")
 
-    print("\n🎉 Self-Test Suite Completed.")
+    print("\n[DONE] Self-Test Suite Completed.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -1,6 +1,9 @@
 import pandas as pd
 import io
 import re
+from openpyxl.utils import get_column_letter
+
+from inspector_logs.core import format_inspection_export_dataframe
 
 def parse_top5_string(data_str):
     """문자열 형태의 Top5 데이터를 리스트로 변환 (예: 'proc1:100MB | proc2:50MB')"""
@@ -61,5 +64,27 @@ def generate_excel(df, selected_cols):
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         export_df.to_excel(writer, index=False, sheet_name='System_Resource_Report')
         
+    return output.getvalue()
+
+
+def _apply_column_widths(writer, sheet_name, export_df):
+    worksheet = writer.book[sheet_name]
+    for column_index, column_name in enumerate(export_df.columns, start=1):
+        column_values = [column_name, *export_df[column_name].astype(str).tolist()]
+        max_length = min(max(len(str(value)) for value in column_values) + 2, 28)
+        worksheet.column_dimensions[get_column_letter(column_index)].width = max_length
+
+
+def generate_inspection_excel(inspection_records):
+    """
+    검사 결과 레코드를 XLSX로 내보냅니다.
+    """
+    output = io.BytesIO()
+    export_df = format_inspection_export_dataframe(inspection_records)
+
+    with pd.ExcelWriter(output, engine="openpyxl", datetime_format="YYYY-MM-DD HH:MM:SS") as writer:
+        export_df.to_excel(writer, index=False, sheet_name="Inspection_Results")
+        _apply_column_widths(writer, "Inspection_Results", export_df)
+
     return output.getvalue()
 

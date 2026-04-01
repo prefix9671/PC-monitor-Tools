@@ -1,7 +1,27 @@
 # Changelog
 
-Updated On: 2026-03-31  
+Updated On: 2026-04-01  
 Status: Active
+
+## [2026-04-01] - Playwright MCP 로컬 세팅 추가
+
+### 변경 사항
+
+- `tools/playwright-mcp/`에 로컬 Playwright MCP 패키지, 실행 래퍼, Smoke Test 스크립트를 추가했습니다.
+- Windows 환경에 Node.js LTS를 설치하고, Codex Desktop 로컬 설정 `C:\Users\Win11_SPC_General\.codex\config.toml`에 `playwright` MCP 서버 엔트리를 등록했습니다.
+- 이후 WEB 기반 GUI 검증은 저장소 로컬 래퍼 `tools/playwright-mcp/launch-playwright-mcp.ps1`를 기준 경로로 사용하도록 정리했습니다.
+
+## [2026-04-01] - AOI 검사 결과 번호화와 XLSX 내보내기
+
+### 변경 사항
+
+- `inspector_logs/core.py`에서 `Model Open : ...` 라인을 파싱하고, `InspTime` 기준 검사 결과를 `NO=1`부터 재구성하도록 확장했습니다.
+- 검사 결과별 `Memory (인스펙터)`는 AOI 로그의 최신 `Working Set` 값을, `Memory (시스템)`은 해당 검사 시각 직전의 `Mem_Used(GB)` 값을 매칭하도록 추가했습니다.
+- `aoi_cli.py`에 `export` 명령을 추가해 검사 결과 XLSX를 CLI로도 내보낼 수 있게 했습니다.
+- 메인 화면 대시보드 아래쪽에 `검사 결과 XLSX 내보내기` 영역을 두고, 모델명, 총 검사 수, 시작/종료 NO, 미리보기, XLSX 다운로드를 바로 사용할 수 있게 했습니다.
+- 검사 결과 미리보기에서 그래프 형식, 항목별 이름 기반 색상 팔레트, 투명도, 표 강조 색상을 사용자가 직접 바꿀 수 있게 했습니다.
+- 메모리 대시보드에서는 새 검사 결과 패널과 겹치는 인스펙터 상세 시계열 차트를 숨기고, 관련 코드는 주석으로 보존했습니다.
+- `verify_dashboards.py`의 Windows 콘솔 인코딩 문제를 피하도록 ASCII 출력으로 정리했습니다.
 
 ## [2026-03-31] - Time Range 직접 입력 추가와 한글 UI 정리
 

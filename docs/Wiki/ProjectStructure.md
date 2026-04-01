@@ -1,6 +1,6 @@
 # Project Structure
 
-Updated On: 2026-03-30  
+Updated On: 2026-04-01  
 Status: Active
 
 ## 루트 구조
@@ -19,6 +19,7 @@ PC-monitor-Tools/
 ├─ verify_dashboards.py
 ├─ collectors/
 ├─ dashboards/
+├─ tools/
 ├─ tests/
 ├─ docs/
 ├─ build.bat
@@ -34,8 +35,9 @@ PC-monitor-Tools/
 | 경로 | 설명 |
 |---|---|
 | `collectors/` | 샘플링, 집계, 로그 기록을 담당하는 수집 엔진 |
-| `dashboards/` | CPU, Memory, Storage, Custom 화면 |
-| `tests/` | 현재는 CLI 기반 기본 검증 테스트 포함 |
+| `dashboards/` | CPU, Memory, Storage, Custom 화면과 검사 결과 XLSX 내보내기 UI |
+| `tools/` | 로컬 Playwright MCP 같은 보조 실행 도구 |
+| `tests/` | 수집 CLI, AOI CLI, 시간 필터, Inspector 파싱 기본 검증 |
 | `docs/` | 사람과 에이전트를 위한 기준 문서 |
 
 ## 주요 파일 역할
@@ -43,11 +45,13 @@ PC-monitor-Tools/
 | 파일 | 설명 |
 |---|---|
 | `app.py` | Streamlit 메인 앱 |
-| `aoi_cli.py` | AOI / Inspector 로그 파서 요약 CLI |
+| `aoi_cli.py` | AOI / Inspector 로그 요약 및 XLSX export CLI |
 | `cli.py` | 수집기 CLI |
 | `run_app.py` | 패키징된 EXE의 단일 진입점 |
 | `data_loader.py` | CSV 로딩, 캐시, exact merge |
+| `dashboards/inspection_export.py` | 메인 화면 AOI 검사 결과 미리보기와 XLSX 다운로드 |
 | `inspector_logs/` | AOI / Inspector 로그 경로 해석과 이벤트 파싱 코어 |
+| `tools/playwright-mcp/` | Codex용 Playwright MCP 로컬 패키지와 실행/검증 스크립트 |
 | `parsers.py` | Top 5 문자열 파싱 |
 | `excel_exporter.py` | 엑셀 내보내기 |
 | `verify_dashboards.py` | 헤드리스 대시보드 자가 점검 |

@@ -9,3 +9,5 @@ site/
 .ipynb_checkpoints/
 *.exe
 C:\SystemLogs\
+tools/playwright-mcp/node_modules/
+tools/playwright-mcp/.npm-cache/

@@ -12,6 +12,7 @@ import streamlit as st
 from config import DEFAULT_LOG_DIR
 from dashboards.cpu import render_cpu_dashboard
 from dashboards.custom import render_custom_dashboard
+from dashboards.inspection_export import render_inspection_export_panel
 from dashboards.memory import render_memory_dashboard
 from dashboards.storage import render_storage_dashboard
 from data_loader import (
@@ -22,7 +23,7 @@ from data_loader import (
     load_inspector_uploaded_data,
     resolve_time_filter_range,
 )
-from inspector_logs.core import resolve_inspector_log_paths
+from inspector_logs.core import build_inspection_records, resolve_inspector_log_paths
 from parsers import extract_process_time_series, parse_process_column
 
 
@@ -33,6 +34,9 @@ st.markdown("---")
 
 df = None
 aoi_df = None
+system_df_full = None
+aoi_df_full = None
+inspection_records_df = None
 system_target_files = []
 resolved_aoi_paths = []
 loaded_aoi_sources = []
@@ -180,6 +184,9 @@ with st.sidebar:
 
     has_system_data = df is not None and not df.empty
     has_inspector_data = aoi_df is not None and not aoi_df.empty
+    system_df_full = df
+    aoi_df_full = aoi_df
+    inspection_records_df = build_inspection_records(aoi_df_full, system_df_full) if has_inspector_data else None
 
     if has_system_data or has_inspector_data:
         available_timestamps = collect_available_timestamps(df, aoi_df)
@@ -321,8 +328,6 @@ if has_system_data or has_inspector_data:
     total_mem_gb = "N/A"
 
     if has_system_data:
-        st.markdown("---")
-
         try:
             if "PhysicalMem(GB)" in df.columns and pd.notna(df["PhysicalMem(GB)"].iloc[0]):
                 physical_mem_gb = f"{float(df['PhysicalMem(GB)'].iloc[0]):.2f}"
@@ -417,6 +422,10 @@ if has_system_data or has_inspector_data:
         render_storage_dashboard(st, df, parse_process_column)
     elif menu == "사용자 정의 그래프":
         render_custom_dashboard(st, df, parse_process_column)
+
+    if inspection_records_df is not None:
+        st.markdown("---")
+        render_inspection_export_panel(st, inspection_records_df)
 else:
     st.info(
         f"시스템 모니터 CSV를 업로드하거나 {DEFAULT_LOG_DIR}에 로그가 있는지 확인하세요. "
