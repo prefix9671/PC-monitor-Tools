@@ -1,6 +1,6 @@
 # 문서 허브
 
-Updated On: 2026-03-30  
+Updated On: 2026-04-02  
 Status: Active
 
 이 `docs` 폴더는 사람과 AI 에이전트가 같은 기준 문서를 빠르게 찾을 수 있도록 재구성한 허브입니다.
@@ -28,6 +28,7 @@ Status: Active
 - 계획을 세우거나 구조를 바꾸기 전에는 `Current Phase`와 관련 `Architecture` 문서를 먼저 확인합니다.
 - 구현이 끝나면 영향받는 활성 문서를 같은 변경에서 함께 업데이트합니다.
 - `Future` 문서는 아이디어 저장소이며, 현재 동작의 출처로 사용하지 않습니다.
+- PowerShell에서 한글 문서를 읽을 때는 `Get-Content -Encoding UTF8`를 사용합니다.
 
 ## 충돌 해결 규칙
 

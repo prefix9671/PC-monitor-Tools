@@ -1,6 +1,6 @@
 # User Manual
 
-Updated On: 2026-04-01  
+Updated On: 2026-04-02  
 Status: Active
 
 이 문서는 현재 Streamlit 대시보드와 수집기 사용 방법을 설명합니다. 사용자 화면 기준 명칭은 한국어 UI에 맞춰 표기합니다.
@@ -18,6 +18,8 @@ Status: Active
 - `resource_YYYYMMDD.csv`
 - `process_YYYYMMDD.csv`
 - `summary_YYYYMMDD.log`
+
+CPU 온도 센서가 현재 시스템에서 잡히는지 빠르게 확인하려면 `.\venv\Scripts\python cli.py probe-temp`를 실행할 수 있습니다.
 
 ### 대시보드 실행
 
@@ -94,7 +96,9 @@ Status: Active
 
 - CPU 평균/피크 사용률
 - CPU 온도 시계열
+- CPU 온도 전용 대시보드
 - 최대/평균 CPU 요약 지표
+- `CPU 온도`는 1초마다 수집한 센서 값 중 각 5초 구간의 최고값을 사용합니다.
 
 ### 메모리 + 인스펙터 대시보드
 

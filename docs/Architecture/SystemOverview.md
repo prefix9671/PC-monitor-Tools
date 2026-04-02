@@ -1,6 +1,6 @@
 # System Overview
 
-Updated On: 2026-04-01  
+Updated On: 2026-04-02  
 Status: Active
 
 ## 시스템 개요
@@ -24,11 +24,12 @@ Status: Active
 | 영역 | 파일 | 역할 |
 |---|---|---|
 | 대시보드 엔트리 | `app.py` | 로그 선택, 시간 필터, KPI, 탭 라우팅 |
-| 수집 CLI | `cli.py` | 수집기 시작 파라미터 처리 |
+| 수집 CLI | `cli.py` | 수집기 시작과 CPU 온도 센서 진단 파라미터 처리 |
 | 수집 루프 | `collectors/core.py` | 1초 샘플링과 5초 집계 주기 제어 |
-| 샘플링 | `collectors/sampler.py` | CPU, 메모리, 디스크, 프로세스 정보 수집 |
-| 집계 | `collectors/aggregator.py` | 윈도우 평균/피크 계산과 Top N 포맷 생성 |
-| 기록 | `collectors/writers.py` | 날짜별 CSV와 요약 로그 기록 |
+| CPU 온도 프로브 | `collectors/cpu_temperature.py` | Windows에서 LibreHardwareMonitor, OpenHardwareMonitor, Thermal Zone 순으로 CPU 온도 센서 조회 |
+| 샘플링 | `collectors/sampler.py` | CPU, CPU 온도, 메모리, 디스크, 프로세스 정보 수집 |
+| 집계 | `collectors/aggregator.py` | 윈도우 평균/피크 계산, 5초 구간 최고 CPU 온도, Top N 포맷 생성 |
+| 기록 | `collectors/writers.py` | 날짜별 CSV와 요약 로그 기록, 새 로그 컬럼 등장 시 헤더 재작성 |
 | 데이터 로딩 | `data_loader.py` | `resource_*.csv`와 `process_*.csv` 병합 |
 | AOI 로그 코어 | `inspector_logs/core.py` | AOI / Inspector 로그 경로 해석, `Model Open` 파싱, 검사 NO 재구성, 시스템 메모리 역매칭 |
 | AOI 로그 CLI | `aoi_cli.py` | AOI 로그 요약 확인과 검사 결과 XLSX export Smoke Test |
@@ -49,7 +50,7 @@ Status: Active
 ## 데이터 흐름
 
 ```text
-Sampler (1s) -> WindowState accumulate -> Aggregator (5s) -> resource/process CSV
+CpuTemperatureProbe -> Sampler (1s) -> WindowState accumulate -> Aggregator (5s max temp) -> resource/process CSV
 CSV files -> data_loader.load_data() -> merged DataFrame -> dashboards/*.py
 AOI log path -> inspector_logs.core.load_inspector_log_data() -> Inspector event DataFrame
 Inspector event DataFrame + system monitor DataFrame -> inspector_logs.core.build_inspection_records() -> numbered inspection export rows
@@ -60,7 +61,9 @@ Inspector event DataFrame -> memory dashboard
 
 - `data_loader.py`는 `pyarrow` 우선 읽기와 Parquet 캐시를 사용합니다.
 - `collectors/sampler.py`는 PowerShell `Get-Partition` 결과를 파싱해 `PhysicalDriveX`를 실제 드라이브 문자로 정규화합니다.
+- `collectors/cpu_temperature.py`는 `LibreHardwareMonitor`, `OpenHardwareMonitor`, `MSAcpi_ThermalZoneTemperature`를 순차 탐색하고, 샘플마다 CPU 관련 온도 센서의 최고값을 선택합니다.
 - `dashboards/storage.py`는 대용량 로그를 위해 차트 품질 모드를 제공합니다.
+- `dashboards/cpu.py`는 `CPU_Temp(C)` 컬럼이 있을 때 사용률 복합 차트와 온도 전용 차트를 함께 표시합니다.
 - `dashboards/memory.py`는 시스템 메모리와 AOI / Inspector 로그를 함께 보여주는 `Memory AND Inspector` 대시보드로 확장되었습니다.
 - `dashboards/inspection_export.py`는 메인 화면에서 AOI 검사 결과를 `NO=1`부터 번호화해 XLSX로 내보냅니다.
 - `verify_dashboards.py`는 브라우저 없이도 대시보드가 크래시하지 않는지 빠르게 확인하는 헤드리스 점검 스크립트입니다.

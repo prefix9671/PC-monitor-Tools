@@ -1,6 +1,7 @@
 # collectors/sampler.py
 import psutil
 import time
+from collectors.cpu_temperature import CpuTemperatureProbe
 from collectors.models import MetricSample
 
 class Sampler:
@@ -9,6 +10,7 @@ class Sampler:
         self.last_disk_io = None
         self.last_disk_time = None
         self.drive_mapping = self._get_drive_mapping()
+        self.cpu_temperature_probe = CpuTemperatureProbe()
         
         # Static memory info
         mem = psutil.virtual_memory()
@@ -126,6 +128,7 @@ class Sampler:
         
         # CPU & Mem
         cpu_total = psutil.cpu_percent(interval=None)
+        cpu_temp_c = self.cpu_temperature_probe.read_celsius()
         mem = psutil.virtual_memory()
         mem_used_gb = mem.used / (1024**3)
         mem_usage_pct = mem.percent
@@ -195,6 +198,7 @@ class Sampler:
         return MetricSample(
             timestamp=now,
             cpu_total=cpu_total,
+            cpu_temp_c=cpu_temp_c,
             mem_used_gb=mem_used_gb,
             mem_usage_pct=mem_usage_pct,
             phys_mem_gb=self.phys_mem_gb,

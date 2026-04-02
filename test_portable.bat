@@ -5,7 +5,7 @@ setlocal enabledelayedexpansion
 :: Description: Verifies the packaged EXE runs the collector in a clean directory
 :: ==========================================
 set "TEST_DIR=C:\temp\monitor_portable_test"
-set "DIST_DIR=%~dp0dist"
+set "RELEASE_ROOT=%~dp0.artifacts\releases"
 
 echo ==========================================
 echo [1] Preparing Clean Environment
@@ -21,18 +21,22 @@ echo ==========================================
 echo [2] Locating Latest Executable
 echo ==========================================
 set "TARGET_EXE="
-for %%F in ("%DIST_DIR%\SystemResourceMonitor*.exe") do (
+set "TARGET_DIR="
+for /f "delims=" %%F in ('dir "%RELEASE_ROOT%\SystemResourceMonitor*.exe" /b /s /o-d 2^>nul') do (
     set "TARGET_EXE=%%~nxF"
+    set "TARGET_DIR=%%~dpF"
+    goto found_exe
 )
 
+:found_exe
 if "%TARGET_EXE%"=="" (
-    echo [ERROR] No SystemResourceMonitor*.exe found in dist\
+    echo [ERROR] No SystemResourceMonitor*.exe found in %RELEASE_ROOT%
     exit /b 1
 )
 
 echo Found: %TARGET_EXE%
-copy "%DIST_DIR%\%TARGET_EXE%" "%TEST_DIR%\" >nul
-copy "%DIST_DIR%\start_monitor.bat" "%TEST_DIR%\" >nul
+copy "%TARGET_DIR%%TARGET_EXE%" "%TEST_DIR%\" >nul
+copy "%TARGET_DIR%start_monitor.bat" "%TEST_DIR%\" >nul
 
 echo ==========================================
 echo [3] Executing Portable Collector Test

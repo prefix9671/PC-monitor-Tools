@@ -27,6 +27,8 @@ class Aggregator:
         # Resource aggregation variables
         cpu_avg = sum(s.cpu_total for s in samples) / count
         cpu_peak = max(s.cpu_total for s in samples)
+        cpu_temp_values = [s.cpu_temp_c for s in samples if s.cpu_temp_c is not None]
+        cpu_temp_peak = max(cpu_temp_values) if cpu_temp_values else None
         mem_avg = sum(s.mem_usage_pct for s in samples) / count
         mem_gb_avg = sum(s.mem_used_gb for s in samples) / count
         
@@ -81,6 +83,7 @@ class Aggregator:
             'Timestamp': ts_end,
             'CPU_Avg(%)': cpu_avg,
             'CPU_Peak(%)': cpu_peak,
+            'CPU_Temp(C)': cpu_temp_peak,
             'Mem_Used(GB)': mem_gb_avg,
             'Mem_Usage_Avg(%)': mem_avg,
             'PhysicalMem(GB)': samples[0].phys_mem_gb,
@@ -105,5 +108,7 @@ class Aggregator:
         
         # Summary String
         summary_line = f"[{ts_end}] CPU Avg:{cpu_avg:5.1f}% Peak:{cpu_peak:5.1f}% | Mem:{mem_gb_avg:5.2f}GB ({mem_avg:5.1f}%) | Top CPU: {top_cpu_str[:30]}..."
+        if cpu_temp_peak is not None:
+            summary_line += f" | Temp Max:{cpu_temp_peak:4.1f}C"
 
         return resource_row, process_row, summary_line

@@ -44,6 +44,7 @@ class TestCLI(unittest.TestCase):
         
         self.assertIn('Timestamp', res_df.columns)
         self.assertIn('CPU_Avg(%)', res_df.columns)
+        self.assertIn('CPU_Temp(C)', res_df.columns)
         self.assertIn('Timestamp', proc_df.columns)
         self.assertIn('Top5_CPU(%)', proc_df.columns)
         self.assertTrue(len(res_df) >= 1, "Resource dataframe should have data")

@@ -1,6 +1,6 @@
 # Project Structure
 
-Updated On: 2026-04-01  
+Updated On: 2026-04-02  
 Status: Active
 
 ## 루트 구조
@@ -19,6 +19,7 @@ PC-monitor-Tools/
 ├─ verify_dashboards.py
 ├─ collectors/
 ├─ dashboards/
+├─ scripts/
 ├─ tools/
 ├─ tests/
 ├─ docs/
@@ -34,10 +35,11 @@ PC-monitor-Tools/
 
 | 경로 | 설명 |
 |---|---|
-| `collectors/` | 샘플링, 집계, 로그 기록을 담당하는 수집 엔진 |
+| `collectors/` | CPU 온도 프로브, 샘플링, 집계, 로그 기록을 담당하는 수집 엔진 |
 | `dashboards/` | CPU, Memory, Storage, Custom 화면과 검사 결과 XLSX 내보내기 UI |
 | `tools/` | 로컬 Playwright MCP 같은 보조 실행 도구 |
-| `tests/` | 수집 CLI, AOI CLI, 시간 필터, Inspector 파싱 기본 검증 |
+| `scripts/` | CI, 문서 동기화, 대시보드 스모크 자동화 |
+| `tests/` | 수집 CLI, CPU 온도, AOI CLI, 시간 필터, Inspector 파싱 기본 검증 |
 | `docs/` | 사람과 에이전트를 위한 기준 문서 |
 
 ## 주요 파일 역할
@@ -46,9 +48,13 @@ PC-monitor-Tools/
 |---|---|
 | `app.py` | Streamlit 메인 앱 |
 | `aoi_cli.py` | AOI / Inspector 로그 요약 및 XLSX export CLI |
-| `cli.py` | 수집기 CLI |
+| `cli.py` | 수집기 시작과 CPU 온도 센서 진단 CLI |
 | `run_app.py` | 패키징된 EXE의 단일 진입점 |
 | `data_loader.py` | CSV 로딩, 캐시, exact merge |
+| `collectors/cpu_temperature.py` | CPU 온도 센서 조회 및 CPU 관련 최고 온도 선택 |
+| `scripts/doc_sync_rules.toml` | 에이전트와 CI가 공유하는 문서 동기화 규칙 표 |
+| `scripts/verify_docs_sync.py` | 코드 변경과 활성 문서 변경의 동기화 검사 |
+| `scripts/run_ci_dashboard_smoke.py` | 샘플 CSV로 대시보드 스모크 테스트 실행 |
 | `dashboards/inspection_export.py` | 메인 화면 AOI 검사 결과 미리보기와 XLSX 다운로드 |
 | `inspector_logs/` | AOI / Inspector 로그 경로 해석과 이벤트 파싱 코어 |
 | `tools/playwright-mcp/` | Codex용 Playwright MCP 로컬 패키지와 실행/검증 스크립트 |
@@ -76,5 +82,6 @@ docs/
 ## 참고 메모
 
 - `build/`, `dist/`, `site/`는 생성 산출물이므로 구조 설명의 기준이 아닙니다.
+- `.artifacts/`는 수동 빌드와 CI가 공통으로 사용하는 생성 산출물 경로입니다.
 - 현재 문서 탐색 시작점은 `docs/ActiveDocs.md` 입니다.
 - 더 상세한 아키텍처 설명은 [../Architecture/SystemOverview.md](../Architecture/SystemOverview.md)를 참고합니다.

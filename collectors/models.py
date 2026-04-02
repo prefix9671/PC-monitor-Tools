@@ -8,6 +8,7 @@ class MetricSample:
     """Represents a single 1-second sample from psutil."""
     timestamp: float
     cpu_total: float
+    cpu_temp_c: Optional[float]
     mem_used_gb: float
     mem_usage_pct: float
     phys_mem_gb: float

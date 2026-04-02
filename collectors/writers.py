@@ -26,14 +26,23 @@ class OutputsWriter:
         
         if file_exists:
             with open(filename, 'r', encoding=self.encoding) as f:
-                reader = csv.reader(f)
+                reader = csv.DictReader(f)
                 try:
-                    existing_fields = next(reader)
+                    existing_fields = list(reader.fieldnames or [])
                     # Extend fieldnames with any new keys while keeping existing order
+                    has_new_field = False
                     for key in fieldnames:
                         if key not in existing_fields:
                             existing_fields.append(key)
+                            has_new_field = True
                     fieldnames = existing_fields
+                    if has_new_field:
+                        existing_rows = list(reader)
+                        with open(filename, 'w', encoding=self.encoding, newline='') as rewrite_file:
+                            rewrite_writer = csv.DictWriter(rewrite_file, fieldnames=fieldnames)
+                            rewrite_writer.writeheader()
+                            for existing_row in existing_rows:
+                                rewrite_writer.writerow(existing_row)
                 except StopIteration:
                     pass
         

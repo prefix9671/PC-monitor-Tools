@@ -1,6 +1,6 @@
 # Documentation Workflow
 
-Updated On: 2026-03-30  
+Updated On: 2026-04-02  
 Status: Active
 
 ## 목적
@@ -13,6 +13,16 @@ Status: Active
 - 계획을 세우거나 불확실성이 생기면 먼저 `ActiveDocs.md`를 보고 관련 문서를 엽니다.
 - 구현이 끝나면 영향받는 활성 문서를 같은 변경 안에서 업데이트합니다.
 - 활성 상태가 아닌 문서는 현재 동작의 출처로 사용하지 않습니다.
+- 문서-코드 매핑의 사람 기준 문서는 이 파일이고, 기계 기준 소스는 `scripts/doc_sync_rules.toml`입니다.
+
+## 기준 소스
+
+- `docs/Best Practices/DocumentationWorkflow.md`
+  사람이 읽는 기준 문서입니다. 에이전트와 개발자는 여기의 설명을 먼저 따릅니다.
+- `scripts/doc_sync_rules.toml`
+  `scripts/verify_docs_sync.py`와 CI가 함께 쓰는 기계 판독 규칙 소스입니다.
+- `AGENTS.md`
+  저장소 진입 규칙과 문서 트리만 요약하고, 세부 매핑은 이 문서를 참조합니다.
 
 ## 문서 업데이트 절차
 
@@ -22,16 +32,32 @@ Status: Active
 4. 구현 후 영향받는 문서를 수정하고 `Updated On` 날짜를 갱신합니다.
 5. 새 문서를 만들었다면 `ActiveDocs.md`에 등록합니다.
 6. `mkdocs build`로 링크와 렌더를 확인합니다.
+7. 코드 변경이 있다면 `scripts/verify_docs_sync.py`로 문서 동기화를 확인합니다.
+
+## 작업 마감 체크
+
+- 비사소한 코드 변경이 있었다면 기본적으로 `docs/Current Phase/VerificationChecklist.md`를 같은 변경 안에서 업데이트합니다.
+- 우선순위, 리스크, 운영 기준이 바뀌었다면 `docs/Current Phase/CurrentPhase.md`를 함께 업데이트합니다.
+- 런타임, 패키징, CI 변경은 `docs/Wiki/ReliabilityReport.md`를 자동 요구 대상으로 취급합니다.
+- 위 규칙의 자동 판정은 `scripts/doc_sync_rules.toml`을 기준으로 하고, `scripts/verify_docs_sync.py`가 이를 검사합니다.
+
+## PowerShell 인코딩 규칙
+
+- 한글 문서를 PowerShell로 읽을 때는 `Get-Content -Encoding UTF8`를 사용합니다.
+- `docs/` 트리의 문서, `README.md`, `AGENTS.md` 같은 한국어 기준 문서도 같은 규칙을 적용합니다.
+- Windows 콘솔에서 기본 인코딩에 의존한 문서 읽기는 기준 작업 방식으로 인정하지 않습니다.
 
 ## 어떤 변경이 어떤 문서를 건드리는가
 
 | 변경 종류 | 반드시 확인/업데이트할 문서 |
 |---|---|
+| 모든 비사소한 코드 변경 | `Current Phase/VerificationChecklist.md` |
 | 모듈 구조 변경 | `Architecture/SystemOverview.md`, `Wiki/ProjectStructure.md` |
-| 실행/배포 흐름 변경 | `Architecture/RuntimeAndPackaging.md`, `Wiki/Changelog.md` |
-| 테스트 절차 변경 | `Current Phase/VerificationChecklist.md`, `Best Practices/EngineeringGuidelines.md` |
+| 실행/배포 흐름 변경 | `Architecture/RuntimeAndPackaging.md`, `Wiki/Changelog.md`, `Wiki/ReliabilityReport.md`, `Current Phase/CurrentPhase.md` |
+| CI 또는 검증 자동화 변경 | `Wiki/ReliabilityReport.md`, `Current Phase/VerificationChecklist.md` |
+| 테스트 절차 변경 | `Current Phase/VerificationChecklist.md`, 필요 시 `Best Practices/EngineeringGuidelines.md` |
 | UI/사용 흐름 변경 | `Wiki/UserManual.md`, 필요 시 `Wiki/Changelog.md` |
-| 우선순위/리스크 변경 | `Current Phase/CurrentPhase.md` |
+| 우선순위/리스크/운영 기준 변경 | `Current Phase/CurrentPhase.md` |
 | 신규 계획 추가 | `Future/Roadmap.md` 또는 `Future/IdeasAndBacklog.md` |
 
 ## 충돌 처리

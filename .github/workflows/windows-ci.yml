@@ -1,0 +1,47 @@
+name: Windows CI
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run Unit Tests
+        shell: pwsh
+        run: python -m unittest discover -s tests
+
+      - name: Run Dashboard Smoke
+        shell: pwsh
+        run: python scripts/run_ci_dashboard_smoke.py
+
+      - name: Verify Docs Sync
+        shell: pwsh
+        run: |
+          $baseRef = if ("${{ github.base_ref }}") { "origin/${{ github.base_ref }}" } else { "HEAD~1" }
+          python scripts/verify_docs_sync.py --base-ref $baseRef
+
+      - name: Build Docs
+        shell: pwsh
+        run: python -m mkdocs build

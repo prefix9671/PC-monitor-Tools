@@ -1,6 +1,9 @@
 # config.py
 
+import os
+
 COLOR_CPU = '#FF4B4B'
+COLOR_CPU_TEMP = '#FFD700'
 COLOR_MEM = '#0068C9'
 COLOR_SWAP = '#FFA500'
 COLOR_PROCESS = '#800080'
@@ -20,4 +23,8 @@ TOP_N = 5
 OUTPUT_DIR = DEFAULT_LOG_DIR
 ENABLE_SUMMARY_LOG = True
 CSV_ENCODING = 'utf-8-sig'
+
+ARTIFACT_ROOT_DIR = ".artifacts"
+MANUAL_SITE_DIR = os.path.join(ARTIFACT_ROOT_DIR, "manual-site")
+RELEASE_ROOT_DIR = os.path.join(ARTIFACT_ROOT_DIR, "releases")
 

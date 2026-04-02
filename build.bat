@@ -1,6 +1,15 @@
 @echo off
 setlocal enabledelayedexpansion
 
+set "ARTIFACT_ROOT=.artifacts"
+set "MANUAL_SITE_DIR=%ARTIFACT_ROOT%\manual-site"
+set "PYI_BUILD_DIR=%ARTIFACT_ROOT%\pyinstaller\build"
+set "PYI_DIST_DIR=%ARTIFACT_ROOT%\pyinstaller\dist"
+set "RELEASE_ROOT=%ARTIFACT_ROOT%\releases"
+
+if not exist "%ARTIFACT_ROOT%" mkdir "%ARTIFACT_ROOT%"
+if not exist "%RELEASE_ROOT%" mkdir "%RELEASE_ROOT%"
+
 :: 1. Get current date (fallback if wmic fails)
 echo. | date > nul
 for /f "tokens=1-3 delims=-/. " %%a in ("%date%") do (
@@ -13,10 +22,12 @@ set "DATE_STAMP=%DATE_STAMP: =%"
 set "REV=1"
 :check_rev
 set "BASENAME=SystemResourceMonitor%DATE_STAMP%_rev%REV%"
-if exist "dist\%BASENAME%.exe" (
+if exist "%RELEASE_ROOT%\%BASENAME%" (
     set /a "REV+=1"
     goto check_rev
 )
+
+set "RELEASE_DIR=%RELEASE_ROOT%\%BASENAME%"
 
 echo ========================================
 echo   Building Web Manual (MkDocs)
@@ -33,8 +44,11 @@ echo ========================================
 echo   Building and Renaming to: %BASENAME%.exe
 echo ========================================
 
+if exist "%RELEASE_DIR%" rmdir /S /Q "%RELEASE_DIR%"
+mkdir "%RELEASE_DIR%"
+
 :: 3. Run PyInstaller (using existing spec)
-.\venv\Scripts\pyinstaller.exe --clean monitor.spec
+.\venv\Scripts\pyinstaller.exe --clean --workpath "%PYI_BUILD_DIR%" --distpath "%PYI_DIST_DIR%" monitor.spec
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Build failed!
@@ -44,28 +58,26 @@ if %ERRORLEVEL% NEQ 0 (
 
 :: 4. Rename output file
 :: monitor.spec produces SystemResourceMonitor.exe based on its content
-if exist "dist\SystemResourceMonitor.exe" (
-    echo Renaming dist\SystemResourceMonitor.exe to dist\%BASENAME%.exe
-    move "dist\SystemResourceMonitor.exe" "dist\%BASENAME%.exe"
+if exist "%PYI_DIST_DIR%\SystemResourceMonitor.exe" (
+    echo Moving %PYI_DIST_DIR%\SystemResourceMonitor.exe to %RELEASE_DIR%\%BASENAME%.exe
+    move "%PYI_DIST_DIR%\SystemResourceMonitor.exe" "%RELEASE_DIR%\%BASENAME%.exe"
 )
 
-:: 5. Copy Monitor.ps1 and start_monitor.bat to dist
-echo Copying scripts...
-copy "Monitor.ps1" "dist\"
-copy "start_monitor.bat" "dist\"
+:: 5. Copy supported launchers to release bundle
+echo Copying release scripts...
+copy "start_monitor.bat" "%RELEASE_DIR%\" >nul
 
-:: 6. Zip Manual (site folder) to dist
+:: 6. Zip Manual (.artifacts/manual-site) to release bundle
 echo Zipping Manual...
-if exist "dist\Manual.zip" del "dist\Manual.zip"
-powershell -Command "Compress-Archive -Path 'site\*' -DestinationPath 'dist\Manual.zip' -Force"
+if exist "%RELEASE_DIR%\Manual.zip" del "%RELEASE_DIR%\Manual.zip"
+powershell.exe -NoProfile -Command "Compress-Archive -Path '%MANUAL_SITE_DIR%\*' -DestinationPath '%RELEASE_DIR%\Manual.zip' -Force"
 
 
 
 echo ========================================
 echo   Build Completed: 
-echo   - dist/%BASENAME%.exe
-echo   - dist/start_monitor.bat
-echo   - dist/Monitor.ps1
-echo   - dist/Manual.zip
+echo   - %RELEASE_DIR%\%BASENAME%.exe
+echo   - %RELEASE_DIR%\start_monitor.bat
+echo   - %RELEASE_DIR%\Manual.zip
 echo ========================================
 :: pause

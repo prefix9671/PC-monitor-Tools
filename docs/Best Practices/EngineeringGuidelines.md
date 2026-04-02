@@ -1,6 +1,6 @@
 # Engineering Guidelines
 
-Updated On: 2026-03-30  
+Updated On: 2026-04-02  
 Status: Active
 
 ## 현재 프로젝트에서 중요한 개발 규칙
@@ -9,8 +9,10 @@ Status: Active
 - 로그 스키마 변경은 매우 비싸므로, 바꿀 때는 수집기, 로더, 대시보드, 문서를 한 번에 맞춥니다.
 - 기본 수집 계약은 1초 샘플링과 5초 집계입니다. 이 값을 바꾸면 구조 문서와 검증 절차를 같이 갱신합니다.
 - `build/`, `dist/`, `site/`는 생성 결과물이며 수정 기준이 아닙니다.
+- `.artifacts/`는 빌드, 매뉴얼, 패키징 산출물을 모아두는 전용 출력 경로이며 Git 추적 대상이 아닙니다.
 - 프로그램 추가, 변경, 삭제 시 메인 로직 코어와 CLI 도구, GUI 도구를 분리합니다.
 - 코어 파일이 대략 500~600라인을 넘기기 시작하면 역할별 계층으로 분리하는 것을 기본 원칙으로 삼습니다.
+- 한글 문서를 PowerShell로 읽을 때는 `Get-Content -Encoding UTF8`를 사용합니다.
 
 ## 변경 시 주의 포인트
 
@@ -28,6 +30,7 @@ Status: Active
 ### 패키징 변경
 
 - `run_app.py`, `monitor.spec`, `build.bat`, `start_monitor.bat`는 하나의 배포 흐름으로 봅니다.
+- `Monitor.ps1`는 신규 기준 파일이 아니라 정리 대상 호환 스텁으로 취급합니다.
 - 개발 환경 실행과 패키징 환경 실행을 분리해서 생각합니다.
 
 ### 기능 추가 또는 구조 개편
@@ -39,6 +42,8 @@ Status: Active
 
 - CLI/수집기: `.\venv\Scripts\python -m pytest tests\test_cli.py`
 - 대시보드 파이프라인: `.\venv\Scripts\python verify_dashboards.py`
+- CI 대시보드 스모크: `.\venv\Scripts\python scripts\run_ci_dashboard_smoke.py`
+- 문서 동기화: `.\venv\Scripts\python scripts\verify_docs_sync.py`
 - 문서: `.\venv\Scripts\python -m mkdocs build`
 - 새 기능이나 변경 기능이 CLI 경로를 가진다면 간단한 Smoke Test를 추가하거나 실행합니다.
 

@@ -1,7 +1,37 @@
 # Changelog
 
-Updated On: 2026-04-01  
+Updated On: 2026-04-02  
 Status: Active
+
+## [2026-04-02] - 문서 동기화 규칙 단일 소스화
+
+### 변경 사항
+
+- `docs/Best Practices/DocumentationWorkflow.md`를 문서-코드 매핑의 기준 문서로 올리고, `AGENTS.md`는 문서 트리와 진입 규칙만 남기도록 정리했습니다.
+- `scripts/doc_sync_rules.toml`을 추가해 `scripts/verify_docs_sync.py`와 CI가 같은 문서 동기화 규칙 소스를 공유하도록 바꿨습니다.
+- 비사소한 코드 변경의 기본 문서는 `docs/Current Phase/VerificationChecklist.md`, 리스크/우선순위/운영 기준 변경의 필수 문서는 `docs/Current Phase/CurrentPhase.md`로 역할을 분리했습니다.
+- `docs/Wiki/ReliabilityReport.md`는 런타임, 패키징, CI 변경에서만 자동 요구 대상으로 유지하고, 일반 기능 작업에서는 선택 검토로 낮췄습니다.
+
+## [2026-04-02] - CPU 온도 수집 복원과 전용 대시보드 추가
+
+### 변경 사항
+
+- `collectors/cpu_temperature.py`를 추가하고 Windows에서 `LibreHardwareMonitor`, `OpenHardwareMonitor`, `MSAcpi_ThermalZoneTemperature` 순으로 CPU 온도 센서를 조회하도록 확장했습니다.
+- `collectors/sampler.py`와 `collectors/aggregator.py`에서 1초 단위 온도를 수집하고, 각 5초 집계 구간의 최고 온도를 `CPU_Temp(C)` 컬럼으로 기록하도록 연결했습니다.
+- `dashboards/cpu.py`에 기존 사용률 복합 차트와 함께 `CPU 온도 추이` 전용 차트를 추가하고, KPI에 최고/평균 온도를 표시하도록 보강했습니다.
+- `cli.py`에 `probe-temp` 명령을 추가해 현재 PC에서 CPU 온도 센서가 잡히는지 바로 확인할 수 있게 했습니다.
+- `collectors/writers.py`는 기존 날짜 CSV에 새 컬럼이 추가되더라도 헤더를 재작성해 로그 파일이 깨지지 않도록 보강했습니다.
+
+## [2026-04-02] - 패키징 산출물 정리와 CI 문서 동기화 추가
+
+### 변경 사항
+
+- `Monitor.ps1`를 공식 정리 대상으로 명시하고, 신규 실행 기준이 아닌 호환성 스텁으로 단순화했습니다.
+- `build.bat`, `mkdocs.yml`, `monitor.spec`를 조정해 문서 사이트, PyInstaller 작업 디렉토리, 릴리스 산출물이 모두 `.artifacts/` 아래로 생성되도록 정리했습니다.
+- `.github/workflows/windows-ci.yml`을 추가하고, 단위 테스트, 샘플 로그 기반 대시보드 스모크, 문서 동기화 검사, MkDocs 빌드를 자동 검증에 포함했습니다.
+- `scripts/verify_docs_sync.py`를 추가해 코드 변경과 활성 문서 변경이 함께 이뤄졌는지 CI와 로컬에서 확인할 수 있게 했습니다.
+- PowerShell에서 한글 문서를 읽을 때 `Get-Content -Encoding UTF8`를 사용해야 한다는 규칙을 활성 문서와 에이전트 기준에 반영했습니다.
+- `AGENTS.md`와 문서 워크플로에 작업 마감 문서 게이트를 추가해 `docs/Current Phase/*` 문서가 기능 변경 뒤에 빠지지 않도록 보강했습니다.
 
 ## [2026-04-01] - Playwright MCP 로컬 세팅 추가
 

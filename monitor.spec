@@ -1,7 +1,24 @@
 # -*- mode: python ; coding: utf-8 -*-
+from pathlib import Path
 from PyInstaller.utils.hooks import collect_data_files, copy_metadata, collect_submodules
 
-datas = [('app.py', '.'), ('cli.py', '.'), ('collectors', 'collectors'), ('inspector_logs', 'inspector_logs'), ('Monitor.ps1', '.'), ('start_monitor.bat', '.'), ('config.py', '.'), ('data_loader.py', '.'), ('parsers.py', '.'), ('excel_exporter.py', '.'), ('dashboards', 'dashboards'), ('site', 'site')]
+manual_site_dir = Path('.artifacts/manual-site')
+if not manual_site_dir.exists():
+    manual_site_dir = Path('site')
+
+datas = [
+    ('app.py', '.'),
+    ('cli.py', '.'),
+    ('collectors', 'collectors'),
+    ('inspector_logs', 'inspector_logs'),
+    ('start_monitor.bat', '.'),
+    ('config.py', '.'),
+    ('data_loader.py', '.'),
+    ('parsers.py', '.'),
+    ('excel_exporter.py', '.'),
+    ('dashboards', 'dashboards'),
+    (str(manual_site_dir), 'site'),
+]
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit')
 

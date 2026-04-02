@@ -64,10 +64,11 @@ PC-monitor-Tools/
 ├── parsers.py              # 로그 파싱 유틸리티
 ├── dashboards/             # 대시보드 모듈 (CPU, Memory, Storage, Custom)
 ├── config.py               # 전역 설정 (로그 경로, 수집 주기 등)
-├── Monitor.ps1             # 수집기 실행 래퍼 (PowerShell)
+├── Monitor.ps1             # 정리 대상 호환 스텁 (신규 실행 기준 아님)
 ├── start_monitor.bat       # 수집기 실행 래퍼 (Batch)
 ├── monitor.spec            # PyInstaller 빌드 설정
 ├── build.bat               # 통합 빌드 스크립트
+├── scripts/                # CI, 문서 동기화, 대시보드 스모크 자동화
 └── requirements.txt        # Python 의존성
 ```
 
@@ -82,11 +83,12 @@ AI 에이전트와 협업할 때의 기준 문서는 [docs/ActiveDocs.md](docs/A
 build.bat
 ```
 
-**`dist/` 폴더 산출물:**
+**`.artifacts/releases/<빌드명>/` 폴더 산출물:**
 1. **`SystemResourceMonitor_....exe`**: 대시보드 실행 파일.
 2. **`start_monitor.bat`**: 모니터링 실행 스크립트.
-3. **`Monitor.ps1`**: 보조 스크립트.
-4. **`Manual.zip`**: 사용자 매뉴얼 (웹 문서).
+3. **`Manual.zip`**: 사용자 매뉴얼 (웹 문서).
+
+`Monitor.ps1`는 더 이상 배포 산출물에 포함하지 않으며, 레거시 안내용 호환 스텁으로만 유지합니다.
 
 ## 📋 요구 사항 (Requirements)
 - **OS**: Windows 10/11

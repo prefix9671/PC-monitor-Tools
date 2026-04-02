@@ -6,6 +6,7 @@ venv/
 logs/
 data/
 site/
+.artifacts/
 .ipynb_checkpoints/
 *.exe
 C:\SystemLogs\

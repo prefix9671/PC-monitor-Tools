@@ -1,6 +1,6 @@
 # Verification Checklist
 
-Updated On: 2026-04-01  
+Updated On: 2026-04-02  
 Status: Active
 
 구현을 마친 뒤에는 변경 종류에 따라 아래 검증을 수행합니다.
@@ -9,12 +9,17 @@ Status: Active
 
 - 영향받는 활성 문서를 함께 업데이트했는지 확인
 - `docs/ActiveDocs.md` 기준으로 문서 경로와 우선순위가 유지되는지 확인
+- `.\venv\Scripts\python scripts\verify_docs_sync.py`
+- 비사소한 코드 변경이 있었다면 이 문서(`docs/Current Phase/VerificationChecklist.md`)가 같은 변경 안에서 갱신되었는지 확인
+- 우선순위, 리스크, 운영 기준이 바뀌었다면 `docs/Current Phase/CurrentPhase.md`도 함께 갱신되었는지 확인
 
 ## 수집기 또는 로그 스키마 변경
 
 - `.\venv\Scripts\python -m pytest tests\test_cli.py`
+- `.\venv\Scripts\python cli.py probe-temp`
 - CLI 경로로 기능을 확인할 수 있다면 목적에 맞는 Smoke Test 수행
 - 실제 CSV 컬럼명이 대시보드 기대값과 맞는지 확인
+- 같은 날짜 로그 파일에 새 컬럼이 추가될 때 CSV 헤더가 깨지지 않는지 확인
 - 구조가 바뀌면 `Architecture/SystemOverview.md`와 `Wiki/ProjectStructure.md` 업데이트
 
 ## AOI / Inspector 로그 변경
@@ -33,6 +38,7 @@ Status: Active
 - `.\venv\Scripts\python verify_dashboards.py`
 - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\playwright-mcp\verify-playwright-mcp.ps1`
 - 최근 로그를 읽어 `CPU`, `Memory`, `Storage`, `Custom Graph`가 모두 뜨는지 확인
+- `CPU 대시보드`에서 `CPU 사용률과 온도`, `CPU 온도 추이`가 함께 보이고, 온도가 5초 구간 최고값 기준으로 표시되는지 확인
 - 주요 버튼, 메뉴, 차트 제목, KPI 라벨이 한국어 UI 기준으로 자연스럽게 보이는지 확인
 - `Time Range` 슬라이더와 `Start Time` / `End Time` 직접 입력이 함께 동작하는지 확인
 - 시작만 입력했을 때 끝까지, 종료만 입력했을 때 처음부터, 둘 다 입력했을 때 해당 범위만 보이는지 확인
@@ -40,6 +46,13 @@ Status: Active
 - Playwright MCP가 구성된 세션에서는 WEB 기반 GUI 검증을 우선하고, 현재 세션에서 `unknown MCP server 'playwright'`가 보이면 Codex 앱 재실행 후 새 세션에서 다시 확인
 - 재실행 전에는 `verify_dashboards.py`, AOI CLI export Smoke Test, Streamlit 수동 확인 결과를 함께 남김
 - 사용자 흐름이 바뀌면 `Wiki/UserManual.md` 업데이트
+
+## CI 또는 문서 자동화 변경
+
+- `.\venv\Scripts\python scripts\run_ci_dashboard_smoke.py`
+- `.\venv\Scripts\python scripts\verify_docs_sync.py`
+- GitHub Actions `windows-ci.yml`이 새 검증을 포함하는지 확인
+- CI 변경이라면 `docs/Wiki/ReliabilityReport.md`도 같은 변경 안에서 갱신했는지 확인
 
 ## 실행 또는 패키징 변경
 

@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from config import DEFAULT_LOG_DIR
+from config import DEFAULT_LOG_DIR, MANUAL_SITE_DIR
 from dashboards.cpu import render_cpu_dashboard
 from dashboards.custom import render_custom_dashboard
 from dashboards.inspection_export import render_inspection_export_panel
@@ -287,16 +287,20 @@ with st.sidebar:
         st.divider()
         if st.button("매뉴얼 열기 (MkDocs)", width="stretch"):
             if getattr(sys, "frozen", False):
-                base_path = sys._MEIPASS
+                manual_candidates = [os.path.join(sys._MEIPASS, "site", "index.html")]
             else:
                 base_path = os.path.dirname(os.path.abspath(__file__))
+                manual_candidates = [
+                    os.path.join(base_path, MANUAL_SITE_DIR, "index.html"),
+                    os.path.join(base_path, "site", "index.html"),
+                ]
 
-            manual_path = os.path.join(base_path, "site", "index.html")
+            manual_path = next((path for path in manual_candidates if os.path.exists(path)), None)
 
-            if os.path.exists(manual_path):
+            if manual_path:
                 webbrowser.open_new_tab(Path(manual_path).as_uri())
             else:
-                st.error(f"매뉴얼 페이지를 찾을 수 없습니다: {manual_path}")
+                st.error("매뉴얼 페이지를 찾을 수 없습니다. 먼저 `python -m mkdocs build`를 실행해 주세요.")
 
         st.divider()
         st.markdown("### 데이터 내보내기")

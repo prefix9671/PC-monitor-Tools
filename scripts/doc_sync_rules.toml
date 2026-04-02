@@ -1,0 +1,88 @@
+[meta]
+doc_prefix = "docs/"
+generated_prefixes = [
+  ".artifacts/",
+  "build/",
+  "dist/",
+  "site/",
+  "__pycache__/",
+  "dashboards/__pycache__/",
+]
+code_change_exempt_prefixes = [
+  "AGENTS.md",
+  "README.md",
+  ".gitignore",
+]
+baseline_required_docs = [
+  "docs/Current Phase/VerificationChecklist.md",
+]
+
+[[rules]]
+name = "collector-or-loader"
+trigger_prefixes = [
+  "collectors/",
+  "config.py",
+  "data_loader.py",
+  "parsers.py",
+  "inspector_logs/",
+  "cli.py",
+  "aoi_cli.py",
+]
+required_docs = [
+  "docs/Architecture/SystemOverview.md",
+  "docs/Wiki/ProjectStructure.md",
+]
+
+[[rules]]
+name = "dashboard-or-ui"
+trigger_prefixes = [
+  "app.py",
+  "dashboards/",
+  "excel_exporter.py",
+]
+required_docs = [
+  "docs/Wiki/UserManual.md",
+]
+
+[[rules]]
+name = "packaging-or-runtime"
+trigger_prefixes = [
+  "build.bat",
+  "monitor.spec",
+  "run_app.py",
+  "start_monitor.bat",
+  "Monitor.ps1",
+  "mkdocs.yml",
+  "test_portable.bat",
+]
+required_docs = [
+  "docs/Architecture/RuntimeAndPackaging.md",
+  "docs/Wiki/Changelog.md",
+  "docs/Wiki/ReliabilityReport.md",
+  "docs/Current Phase/CurrentPhase.md",
+]
+
+[[rules]]
+name = "ci-or-verification-automation"
+trigger_prefixes = [
+  ".github/workflows/",
+  "scripts/verify_docs_sync.py",
+  "scripts/run_ci_dashboard_smoke.py",
+]
+required_docs = [
+  "docs/Wiki/ReliabilityReport.md",
+]
+
+[[rules]]
+name = "agent-or-doc-workflow"
+trigger_prefixes = [
+  "AGENTS.md",
+  "docs/ActiveDocs.md",
+  "docs/DocsHub.md",
+  "docs/Best Practices/DocumentationWorkflow.md",
+  "scripts/verify_docs_sync.py",
+  "scripts/doc_sync_rules.toml",
+]
+required_docs = [
+  "docs/Best Practices/DocumentationWorkflow.md",
+]
