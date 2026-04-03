@@ -24,9 +24,10 @@ Status: Active
 | 영역 | 파일 | 역할 |
 |---|---|---|
 | 대시보드 엔트리 | `app.py` | 로그 선택, 시간 필터, KPI, 탭 라우팅 |
-| 수집 CLI | `cli.py` | 수집기 시작과 CPU 온도 센서 진단 파라미터 처리 |
+| 수집 CLI | `cli.py` | 수집기 시작 전 Dell 대상 장비의 DCM 부트스트랩과 CPU 온도 센서 진단 파라미터 처리 |
 | 수집 루프 | `collectors/core.py` | 1초 샘플링과 5초 집계 주기 제어 |
-| CPU 온도 프로브 | `collectors/cpu_temperature.py` | Windows에서 LibreHardwareMonitor, OpenHardwareMonitor, Thermal Zone 순으로 CPU 온도 센서 조회 |
+| DCM 부트스트랩 | `collectors/dell_command_monitor.py` | Dell Precision T5/T7 Tower 계열이면 DCM 설치/준비 상태를 확인하고 필요 시 공식 패키지를 자동 설치 |
+| CPU 온도 프로브 | `collectors/cpu_temperature.py` | Dell 대상 장비에서는 DCM WMI를 우선, 일반 PC에서는 LibreHardwareMonitor, OpenHardwareMonitor, Thermal Zone 순으로 CPU 온도 센서 조회 |
 | 샘플링 | `collectors/sampler.py` | CPU, CPU 온도, 메모리, 디스크, 프로세스 정보 수집 |
 | 집계 | `collectors/aggregator.py` | 윈도우 평균/피크 계산, 5초 구간 최고 CPU 온도, Top N 포맷 생성 |
 | 기록 | `collectors/writers.py` | 날짜별 CSV와 요약 로그 기록, 새 로그 컬럼 등장 시 헤더 재작성 |
@@ -61,7 +62,10 @@ Inspector event DataFrame -> memory dashboard
 
 - `data_loader.py`는 `pyarrow` 우선 읽기와 Parquet 캐시를 사용합니다.
 - `collectors/sampler.py`는 PowerShell `Get-Partition` 결과를 파싱해 `PhysicalDriveX`를 실제 드라이브 문자로 정규화합니다.
-- `collectors/cpu_temperature.py`는 `LibreHardwareMonitor`, `OpenHardwareMonitor`, `MSAcpi_ThermalZoneTemperature`를 순차 탐색하고, 샘플마다 CPU 관련 온도 센서의 최고값을 선택합니다.
+- `cli.py start`와 `cli.py probe-temp`는 Dell Precision T5/T7 Tower 계열 장비를 감지하면 `collectors/dell_command_monitor.py`를 통해 DCM 설치/준비를 먼저 시도합니다.
+- `collectors/cpu_temperature.py`는 Dell 대상 장비에서 `root\dcim\sysman/DCIM_NumericSensor`가 준비된 경우에만 이를 사용하고, 일반 PC나 DCM 미준비 상태에서는 `LibreHardwareMonitor`, `OpenHardwareMonitor`, `MSAcpi_ThermalZoneTemperature`를 순차 탐색합니다.
+- Dell DCM 온도 센서는 `UnitModifier`가 실제 온도 스케일과 어긋나는 경우가 있어, CPU 온도처럼 그럴듯한 직접 읽기값이 있으면 이를 우선 사용하고 스케일 값은 fallback으로만 사용합니다.
+- Dell Command Monitor 또는 하드웨어 모니터 계열에서 `CPU Package` 센서가 보이면 이를 메인 지표로 우선 사용하고, 없으면 CPU 관련 온도 센서 중 최고값을 선택합니다.
 - `dashboards/storage.py`는 대용량 로그를 위해 차트 품질 모드를 제공합니다.
 - `dashboards/cpu.py`는 `CPU_Temp(C)` 컬럼이 있을 때 사용률 복합 차트와 온도 전용 차트를 함께 표시합니다.
 - `dashboards/memory.py`는 시스템 메모리와 AOI / Inspector 로그를 함께 보여주는 `Memory AND Inspector` 대시보드로 확장되었습니다.

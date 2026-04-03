@@ -13,7 +13,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from cli import main
 from collectors.aggregator import Aggregator
+from collectors.dell_command_monitor import (
+    LEGACY_PRECISION_PACKAGE,
+    MODERN_PRECISION_PACKAGE,
+    resolve_dcm_package,
+)
 from collectors.cpu_temperature import (
+    _convert_numeric_sensor_to_celsius,
+    _select_dell_command_monitor_temperature,
     _select_max_sensor_temperature,
     _select_max_thermal_zone_temperature,
 )
@@ -80,14 +87,42 @@ class FakeStreamlit:
 
 
 class TestCpuTemperatureCore(unittest.TestCase):
-    def test_select_max_sensor_temperature_prefers_cpu_related_records(self):
+    def test_resolve_dcm_package_distinguishes_legacy_and_modern_precision_towers(self):
+        legacy = resolve_dcm_package("Dell Inc.", "Precision 5820 Tower")
+        modern = resolve_dcm_package("Dell Inc.", "Precision 5860 Tower")
+        non_target = resolve_dcm_package("ASUS", "ROG STRIX")
+
+        self.assertEqual(LEGACY_PRECISION_PACKAGE, legacy)
+        self.assertEqual(MODERN_PRECISION_PACKAGE, modern)
+        self.assertIsNone(non_target)
+
+    def test_select_max_sensor_temperature_prefers_cpu_package_when_available(self):
         records = [
             {"Name": "GPU Core", "Value": 71.0, "Identifier": "/gpu-nvidia/0/temperature/0"},
-            {"Name": "CPU Package", "Value": 82.4, "Identifier": "/intelcpu/0/temperature/1"},
-            {"Name": "CPU Core #1", "Value": 79.1, "Identifier": "/intelcpu/0/temperature/2"},
+            {"Name": "CPU Package", "Value": 78.4, "Identifier": "/intelcpu/0/temperature/1"},
+            {"Name": "CPU Core #1", "Value": 81.1, "Identifier": "/intelcpu/0/temperature/2"},
         ]
 
-        self.assertEqual(82.4, _select_max_sensor_temperature(records))
+        self.assertEqual(78.4, _select_max_sensor_temperature(records))
+
+    def test_convert_numeric_sensor_to_celsius_prefers_raw_temperature_when_scaled_value_is_implausible(self):
+        record = {
+            "CurrentReading": 58,
+            "UnitModifier": -1,
+            "BaseUnits": 2,
+            "ElementName": "CPU Package Temperature Sensor",
+        }
+
+        self.assertEqual(58.0, _convert_numeric_sensor_to_celsius(record))
+
+    def test_select_dell_command_monitor_temperature_prefers_cpu_package(self):
+        records = [
+            {"ElementName": "System Board Temperature Sensor", "DeviceID": "SYS_TEMP", "CurrentReading": 39, "BaseUnits": 2},
+            {"ElementName": "CPU Package Temperature Sensor", "DeviceID": "CPU_PACKAGE", "CurrentReading": 74, "BaseUnits": 2},
+            {"ElementName": "CPU Core 0 Temperature Sensor", "DeviceID": "CPU_CORE_0", "CurrentReading": 81, "BaseUnits": 2},
+        ]
+
+        self.assertEqual(74.0, _select_dell_command_monitor_temperature(records))
 
     def test_select_max_thermal_zone_temperature_converts_to_celsius(self):
         records = [
@@ -181,7 +216,9 @@ class TestCpuDashboard(unittest.TestCase):
 
 class TestCpuTemperatureCli(unittest.TestCase):
     @patch("cli.CpuTemperatureProbe")
-    def test_probe_temp_command_reports_current_temperature(self, probe_cls):
+    @patch("cli.ensure_dcm_ready")
+    def test_probe_temp_command_reports_current_temperature(self, _ensure_dcm_ready, probe_cls):
+        _ensure_dcm_ready.return_value.message = ""
         probe = probe_cls.return_value
         probe.source_name = "LibreHardwareMonitor"
         probe.read_celsius.return_value = 67.5

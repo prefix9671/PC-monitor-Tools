@@ -17,6 +17,10 @@ Status: Active
 
 - `.\venv\Scripts\python -m pytest tests\test_cli.py`
 - `.\venv\Scripts\python cli.py probe-temp`
+- Dell Precision T5/T7 Tower 제어 PC라면 `start` 또는 `probe-temp` 실행 시 DCM 자동 설치/준비 메시지가 보이는지 확인
+- Dell 제어 PC라면 `probe-temp`가 가능할 때 `Source: DellCommandMonitor`를 우선 보고하는지 확인
+- Dell 제어 PC라면 CPU 온도가 `5.x°C`처럼 비현실적으로 낮게 표시되지 않고, 실제 장비 상태에 맞는 값으로 보이는지 확인
+- 일반 PC라면 DCM 설치 시도를 건너뛰고 Libre/OpenHardwareMonitor 또는 Thermal Zone fallback으로 계속 동작하는지 확인
 - CLI 경로로 기능을 확인할 수 있다면 목적에 맞는 Smoke Test 수행
 - 실제 CSV 컬럼명이 대시보드 기대값과 맞는지 확인
 - 같은 날짜 로그 파일에 새 컬럼이 추가될 때 CSV 헤더가 깨지지 않는지 확인

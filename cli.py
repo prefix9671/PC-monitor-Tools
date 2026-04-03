@@ -3,6 +3,14 @@ import sys
 import config
 from collectors.core import MonitorEngine
 from collectors.cpu_temperature import CpuTemperatureProbe
+from collectors.dell_command_monitor import ensure_dcm_ready
+
+
+def _prepare_temperature_provider():
+    result = ensure_dcm_ready(auto_install=True)
+    if result.message:
+        print(result.message)
+    return result
 
 def main():
     parser = argparse.ArgumentParser(description="System Resource Monitor CLI")
@@ -20,6 +28,7 @@ def main():
     args = parser.parse_args()
     
     if args.command == "start":
+        _prepare_temperature_provider()
         engine = MonitorEngine(
             output_dir=args.out_dir,
             interval_sec=args.interval,
@@ -27,6 +36,7 @@ def main():
         )
         engine.run(max_iterations=args.iterations)
     elif args.command == "probe-temp":
+        _prepare_temperature_provider()
         probe = CpuTemperatureProbe(retry_interval_sec=args.retry_interval)
         value = probe.read_celsius(force_refresh=True)
         source = probe.source_name or "Unavailable"

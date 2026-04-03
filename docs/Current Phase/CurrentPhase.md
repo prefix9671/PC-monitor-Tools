@@ -14,6 +14,7 @@ Status: Active
 - UI: Streamlit + Plotly
 - 데이터 결합: `resource/process` exact merge
 - 배포: `run_app.py` + `monitor.spec` + `build.bat`
+- 운영 하드웨어 기준: Dell T5820 / T5860 / T7860 계열 제어 PC에서는 Dell Command Monitor 기반 CPU 온도 경로를 우선 사용하고, 일반 PC는 하드웨어 모니터 fallback 경로를 사용
 
 ## 이미 완료된 큰 변화
 

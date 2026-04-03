@@ -20,6 +20,8 @@ Status: Active
 - `summary_YYYYMMDD.log`
 
 CPU 온도 센서가 현재 시스템에서 잡히는지 빠르게 확인하려면 `.\venv\Scripts\python cli.py probe-temp`를 실행할 수 있습니다.
+Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 먼저 Dell Command | Monitor 설치 상태를 확인하고, 필요하면 공식 Dell 패키지를 자동으로 내려받아 무인 설치합니다.
+일반 PC이거나 Dell 대상 모델이 아니면 DCM 설치를 건너뛰고 LibreHardwareMonitor, OpenHardwareMonitor, Thermal Zone 경로로 바로 fallback 합니다.
 
 ### 대시보드 실행
 
@@ -99,6 +101,9 @@ CPU 온도 센서가 현재 시스템에서 잡히는지 빠르게 확인하려�
 - CPU 온도 전용 대시보드
 - 최대/평균 CPU 요약 지표
 - `CPU 온도`는 1초마다 수집한 센서 값 중 각 5초 구간의 최고값을 사용합니다.
+- Dell 대상 장비에서는 DCM `DCIM_NumericSensor`가 준비되면 이를 공식 우선 경로로 사용합니다.
+- 일부 Dell 장비에서는 DCM `UnitModifier`가 실제 온도 스케일과 다르게 보일 수 있어, 프로그램은 비현실적으로 낮은 온도를 피하도록 직접 읽기값을 우선 해석합니다.
+- Dell Command Monitor 또는 하드웨어 모니터 도구에서 `CPU Package` 센서가 보이면 해당 값을 메인 온도 지표로 우선 사용합니다.
 
 ### 메모리 + 인스펙터 대시보드
 

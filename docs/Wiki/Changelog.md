@@ -3,6 +3,16 @@
 Updated On: 2026-04-02  
 Status: Active
 
+## [2026-04-02] - Dell Command Monitor CPU 온도 우선 수집
+
+### 변경 사항
+
+- `collectors/dell_command_monitor.py`를 추가해 Dell Precision T5/T7 Tower 계열 장비에서는 Dell Command | Monitor를 자동 감지하고, 필요하면 공식 Dell 패키지를 내려받아 무인 설치하도록 연결했습니다.
+- `collectors/cpu_temperature.py`는 Dell 대상 장비에서만 `root\dcim\sysman/DCIM_NumericSensor`를 사용하고, 일반 PC는 LibreHardwareMonitor, OpenHardwareMonitor, Thermal Zone 경로로 바로 fallback 하도록 분기했습니다.
+- Dell Command Monitor 또는 하드웨어 모니터 계열 센서가 여러 개일 때는 `CPU Package`를 메인 지표로 우선 선택하고, 없으면 CPU 관련 센서 중 최고값으로 fallback 하도록 정리했습니다.
+- Dell Precision 일부 장비에서 `UnitModifier=-1` 때문에 `5.x°C`처럼 비현실적인 온도가 기록되던 문제를 보정해, 그럴듯한 직접 온도 읽기값을 우선 사용하도록 수정했습니다.
+- `cli.py start`, `cli.py probe-temp`, 관련 검증/사용자 문서를 Dell 제어 PC 운영 기준에 맞춰 갱신했습니다.
+
 ## [2026-04-02] - 문서 동기화 규칙 단일 소스화
 
 ### 변경 사항

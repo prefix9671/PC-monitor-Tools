@@ -51,7 +51,8 @@ PC-monitor-Tools/
 | `cli.py` | 수집기 시작과 CPU 온도 센서 진단 CLI |
 | `run_app.py` | 패키징된 EXE의 단일 진입점 |
 | `data_loader.py` | CSV 로딩, 캐시, exact merge |
-| `collectors/cpu_temperature.py` | CPU 온도 센서 조회 및 CPU 관련 최고 온도 선택 |
+| `collectors/dell_command_monitor.py` | Dell Precision T5/T7 Tower 계열의 DCM 감지, 다운로드, 무인 설치, namespace 준비 확인 |
+| `collectors/cpu_temperature.py` | Dell Command Monitor, 하드웨어 모니터, Thermal Zone 경로에서 CPU 온도 조회 및 CPU Package 우선 선택 |
 | `scripts/doc_sync_rules.toml` | 에이전트와 CI가 공유하는 문서 동기화 규칙 표 |
 | `scripts/verify_docs_sync.py` | 코드 변경과 활성 문서 변경의 동기화 검사 |
 | `scripts/run_ci_dashboard_smoke.py` | 샘플 CSV로 대시보드 스모크 테스트 실행 |

@@ -27,7 +27,8 @@ class TestCLI(unittest.TestCase):
         # Test arguments: 1s sampling, 2s window, 3 iterations (so at least 1 file write occurs)
         test_args = ['cli.py', 'start', '--out-dir', out_dir, '--interval', '1', '--window', '2', '--iterations', '3']
         
-        with patch.object(sys, 'argv', test_args):
+        with patch("cli.ensure_dcm_ready") as ensure_dcm_ready, patch.object(sys, 'argv', test_args):
+            ensure_dcm_ready.return_value.message = ""
             main()
             
         # Check if files were created in out_dir
