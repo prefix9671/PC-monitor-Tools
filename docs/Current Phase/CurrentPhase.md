@@ -1,6 +1,6 @@
 # Current Phase
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-06  
 Status: Active
 
 ## 현재 단계
@@ -12,6 +12,8 @@ Status: Active
 - 수집기: 1초 샘플링, 5초 집계
 - 로그 경로: `C:\SystemLogs`
 - UI: Streamlit + Plotly
+- AOI 업로드 상한: 1GB
+- AOI 파싱: 대용량 단일 로그는 청크 기반 병렬 파싱, 다중 파일은 파일 단위 병렬 파싱
 - 데이터 결합: `resource/process` exact merge
 - 배포: `run_app.py` + `monitor.spec` + `build.bat`
 - 운영 하드웨어 기준: Dell T5820 / T5860 / T7860 계열 제어 PC에서는 Dell Command Monitor 기반 CPU 온도 경로를 우선 사용하고, 일반 PC는 하드웨어 모니터 fallback 경로를 사용
@@ -30,6 +32,7 @@ Status: Active
 - 리스크, 우선순위, 운영 기준이 실제로 바뀌는 경우에만 `CurrentPhase.md`를 필수 갱신 대상으로 유지
 - 로그 스키마 변경이 대시보드와 파서를 깨지 않는지 확인
 - 패키징 흐름에서 실제 기준 파일이 무엇인지 문서에 명확히 유지
+- 48시간 이상 누적되는 AOI / Inspector 로그도 업로드 상한과 파싱 응답성을 함께 유지하는지 확인
 
 ## 활성 리스크
 
@@ -37,6 +40,7 @@ Status: Active
 - `Monitor.ps1`는 공식 정리 대상이며, 호환성 안내 스텁으로만 유지됩니다.
 - 생성 산출물은 `.artifacts/` 아래로 분리하되, 레거시 `build/`, `dist/`, `site/`가 Git에 다시 추적되지 않도록 유지해야 합니다.
 - 문서가 업데이트되지 않으면 AI 에이전트가 오래된 경로와 규칙을 참조할 위험이 있습니다.
+- AOI / Inspector 로그는 장시간 구동 시 300MB 이상으로 커질 수 있으므로, 개발 환경과 EXE 런타임의 업로드 상한(1GB)과 대용량 파싱 경로가 계속 정렬돼 있어야 합니다.
 - `CurrentPhase.md`는 꼭 필요한 상황에서만 갱신하도록 좁혔기 때문에, 실제 리스크/우선순위/운영 기준 변경이 있었는지 작업 종료 전에 한 번 더 확인해야 합니다.
 
 ## 현재 단계의 완료 조건

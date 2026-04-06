@@ -1,6 +1,6 @@
 # Runtime And Packaging
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-06  
 Status: Active
 
 ## 실행 모드
@@ -30,6 +30,7 @@ Status: Active
 | 파일 | 역할 |
 |---|---|
 | `run_app.py` | EXE 환경에서 대시보드/수집기 분기 |
+| `.streamlit/config.toml` | 개발 환경 Streamlit 런타임 설정과 AOI 로그 업로드 상한(1GB) 고정 |
 | `aoi_cli.py` | AOI 로그 파서 Smoke Test 및 요약 확인용 CLI |
 | `build.bat` | MkDocs 빌드, PyInstaller 실행, 산출물 복사/압축 |
 | `monitor.spec` | PyInstaller 입력 정의 |
@@ -55,6 +56,7 @@ Status: Active
 - 문서 사이트는 `mkdocs build` 결과로 `.artifacts/manual-site/`에 생성됩니다.
 - `.artifacts/`, `build/`, `dist/`, `site/`는 생성 산출물이므로 소스 코드의 출처로 사용하지 않습니다.
 - 수집기 실행의 현재 기준 래퍼는 `start_monitor.bat` 입니다.
+- AOI / Inspector 로그 업로드 상한은 개발 환경 `.streamlit/config.toml`과 EXE 런타임 `run_app.py` 인자에서 모두 `1GB`로 맞춥니다.
 - WEB GUI 자동화 기준 래퍼는 `tools/playwright-mcp/launch-playwright-mcp.ps1` 입니다.
 - Codex Desktop용 MCP 연결은 사용자 로컬 `C:\Users\Win11_SPC_General\.codex\config.toml`의 `[mcp_servers.playwright]` 항목을 사용합니다.
 
@@ -62,6 +64,7 @@ Status: Active
 
 - `Monitor.ps1`는 공식 정리 대상이며 배포 산출물에 포함하지 않습니다. 필요할 때만 레거시 안내용 스텁으로 취급합니다.
 - Streamlit 앱이 런타임에 불러오는 로컬 파이썬 모듈은 `monitor.spec`의 `datas`에 포함되어야 합니다. 예를 들어 `inspector_logs/` 같은 폴더가 빠지면 EXE에서 `ModuleNotFoundError`가 발생할 수 있습니다.
+- EXE는 `run_app.py`에서 `--server.maxUploadSize=1024`를 명시해 패키징 환경에서도 AOI 로그 업로드 상한이 개발 환경과 동일하게 유지되도록 합니다.
 - 포터블 배포 흐름을 바꿀 때는 `build.bat`, `monitor.spec`, `run_app.py`, `start_monitor.bat`, 관련 문서를 함께 확인합니다.
 - Playwright MCP는 Node.js LTS와 로컬 `tools/playwright-mcp/` 패키지 설치를 전제로 하며, 기본 브라우저 채널은 `msedge`, 기본 실행 모드는 `headless + isolated` 입니다.
 

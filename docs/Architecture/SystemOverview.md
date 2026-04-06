@@ -1,6 +1,6 @@
 # System Overview
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-06  
 Status: Active
 
 ## 시스템 개요
@@ -32,7 +32,7 @@ Status: Active
 | 집계 | `collectors/aggregator.py` | 윈도우 평균/피크 계산, 5초 구간 최고 CPU 온도, Top N 포맷 생성 |
 | 기록 | `collectors/writers.py` | 날짜별 CSV와 요약 로그 기록, 새 로그 컬럼 등장 시 헤더 재작성 |
 | 데이터 로딩 | `data_loader.py` | `resource_*.csv`와 `process_*.csv` 병합 |
-| AOI 로그 코어 | `inspector_logs/core.py` | AOI / Inspector 로그 경로 해석, `Model Open` 파싱, 검사 NO 재구성, 시스템 메모리 역매칭 |
+| AOI 로그 코어 | `inspector_logs/core.py` | AOI / Inspector 로그 경로 해석, 대용량 단일 로그 청크 기반 병렬 파싱, `Model Open` 파싱, 검사 NO 재구성, 시스템 메모리 역매칭 |
 | AOI 로그 CLI | `aoi_cli.py` | AOI 로그 요약 확인과 검사 결과 XLSX export Smoke Test |
 | 검사 결과 Export UI | `dashboards/inspection_export.py` | 메인 화면에서 모델명, 검사 수, NO 범위, 미리보기, XLSX 다운로드 제공 |
 | GUI 자동화 보조 | `tools/playwright-mcp/*` | 로컬 Playwright MCP 실행 래퍼와 WEB GUI 검증 Smoke Test |
@@ -70,6 +70,7 @@ Inspector event DataFrame -> memory dashboard
 - `dashboards/cpu.py`는 `CPU_Temp(C)` 컬럼이 있을 때 사용률 복합 차트와 온도 전용 차트를 함께 표시합니다.
 - `dashboards/memory.py`는 시스템 메모리와 AOI / Inspector 로그를 함께 보여주는 `Memory AND Inspector` 대시보드로 확장되었습니다.
 - `dashboards/inspection_export.py`는 메인 화면에서 AOI 검사 결과를 `NO=1`부터 번호화해 XLSX로 내보냅니다.
+- `inspector_logs/core.py`는 여러 AOI 로그를 함께 읽을 때는 파일 단위 스레드 병렬화를 사용하고, 매우 큰 단일 로그는 줄 수 기준 청크 병렬 파싱으로 처리합니다.
 - `verify_dashboards.py`는 브라우저 없이도 대시보드가 크래시하지 않는지 빠르게 확인하는 헤드리스 점검 스크립트입니다.
 - `tools/playwright-mcp/`는 Codex Desktop이 로컬 Playwright MCP 서버를 통해 WEB 기반 GUI 검증을 수행할 수 있게 하는 보조 경로입니다.
 

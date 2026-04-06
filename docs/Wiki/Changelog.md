@@ -1,7 +1,16 @@
 # Changelog
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-06  
 Status: Active
+
+## [2026-04-06] - AOI 대용량 로그 1GB 업로드와 병렬 파싱
+
+### 변경 사항
+
+- 루트 `.streamlit/config.toml`과 `run_app.py`에 AOI / Inspector 로그 업로드 상한 `1GB`를 함께 반영해 개발 환경과 EXE 런타임의 Streamlit 제한을 맞췄습니다.
+- `inspector_logs/core.py`를 정리해 여러 AOI 로그를 함께 읽을 때는 파일 단위 병렬화를, 매우 큰 단일 로그는 청크 기반 병렬 파싱을 사용하도록 확장했습니다.
+- `tests/test_inspector_logs.py`에 병렬 청크 경로 회귀 테스트를 추가하고, `tests/test_packaging_layout.py`에 1GB 업로드 설정 고정 검사를 추가했습니다.
+- 사용자 화면과 문서에 AOI 업로드 상한 1GB 및 대용량 로그 파싱 동작을 반영했습니다.
 
 ## [2026-04-02] - Dell Command Monitor CPU 온도 우선 수집
 

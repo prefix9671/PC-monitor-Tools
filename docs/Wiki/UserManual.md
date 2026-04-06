@@ -1,6 +1,6 @@
 # User Manual
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-06  
 Status: Active
 
 이 문서는 현재 Streamlit 대시보드와 수집기 사용 방법을 설명합니다. 사용자 화면 기준 명칭은 한국어 UI에 맞춰 표기합니다.
@@ -64,8 +64,10 @@ Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 
 ### AOI / 인스펙터 로그
 
 - `AOI / 인스펙터 로그 업로드`에서 `Browse files`를 눌러 TXT 또는 LOG 파일을 직접 선택할 수 있습니다.
+- AOI / 인스펙터 업로드 상한은 1GB입니다.
 - 개발자가 아닌 블랙박스 테스터도 파일 탐색기에서 바로 선택해 사용할 수 있습니다.
 - 원본 TXT / LOG는 수정하지 않고, 필요한 `Model Open`, `InspTime`, `Working Set Memory Size` 라인만 읽어 별도 시계열과 검사 결과 표로 정리합니다.
+- 매우 큰 단일 로그는 내부적으로 줄 수 기준 청크 병렬 파싱을 사용하고, 여러 로그를 함께 읽을 때는 파일 단위 병렬 파싱을 사용합니다.
 - 필요할 때만 `고급: 경로로 AOI / 인스펙터 로그 불러오기`를 열어 경로 입력 방식을 사용할 수 있습니다.
 - 예시 경로: `C:\Inspector\shared\operation_0319_north side grab`
 
@@ -144,6 +146,7 @@ Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 
 - 관리자 권한으로 수집기를 실행했는지 확인합니다.
 - `로그 새로고침`으로 캐시를 비웁니다.
 - AOI 로그는 `AOI / 인스펙터 로그 업로드`에서 파일을 다시 선택합니다.
+- AOI 로그가 200MB를 넘는다면 현재 빌드가 1GB 업로드 상한을 포함한 최신 버전인지 확인합니다.
 
 ### 그래프가 예상과 다를 때
 

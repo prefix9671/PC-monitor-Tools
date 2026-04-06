@@ -1,6 +1,6 @@
 # Verification Checklist
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-06  
 Status: Active
 
 구현을 마친 뒤에는 변경 종류에 따라 아래 검증을 수행합니다.
@@ -30,7 +30,10 @@ Status: Active
 
 - `.\venv\Scripts\python aoi_cli.py summary --path "C:\Inspector\shared\operation_0319_north side grab"`
 - `.\venv\Scripts\python aoi_cli.py export --path "C:\Inspector\shared\operation_0319_north side grab" --system-path "C:\SystemLogs\resource_YYYYMMDD.csv" --out ".\inspection_export.xlsx"`
+- 저장소의 대용량 샘플이 있다면 `.\venv\Scripts\python aoi_cli.py summary --path ".\tests\operation.log"`로 300MB+ 단일 로그 Smoke Test 수행
 - AOI 경로가 파일, 폴더, 확장자 없는 기본 경로를 모두 처리하는지 확인
+- `.\venv\Scripts\python -c "import streamlit.config as cfg; print(cfg.get_option('server.maxUploadSize'))"` 결과가 `1024`인지 확인
+- 대용량 단일 로그는 청크 기반 병렬 파싱이, 다중 로그 입력은 파일 단위 병렬 파싱이 회귀 없이 동작하는지 확인
 - `Memory AND Inspector Dashboard`에서 인스펙터 요약 지표와 외부 시스템 메모리 비교가 보이는지 확인
 - 메인 화면 대시보드 아래 `검사 결과 XLSX 내보내기` 영역에서 모델명, 총 검사 수, 시작/종료 NO, 미리보기, 다운로드가 모두 보이는지 확인
 - 메모리 대시보드에서 중복 인스펙터 상세 차트가 미노출되고, 상세 시계열 안내가 하단 검사 결과 패널로 연결되는지 확인
@@ -62,6 +65,7 @@ Status: Active
 
 - `.\venv\Scripts\python -m mkdocs build`
 - 관련 기능이 CLI 진입점과 연결된다면 최소 Smoke Test를 추가 수행
+- `SystemResourceMonitor*.exe` 또는 `run_app.py` 기준 실행에서도 AOI 업로드 상한이 1GB로 유지되는지 확인
 - 필요 시 `build.bat` 실행 후 산출물 확인
 - `Architecture/RuntimeAndPackaging.md`와 `Wiki/Changelog.md` 업데이트
 
