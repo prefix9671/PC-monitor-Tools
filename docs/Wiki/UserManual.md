@@ -1,6 +1,6 @@
 # User Manual
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-10  
 Status: Active
 
 이 문서는 현재 Streamlit 대시보드와 수집기 사용 방법을 설명합니다. 사용자 화면 기준 명칭은 한국어 UI에 맞춰 표기합니다.
@@ -21,7 +21,9 @@ Status: Active
 
 CPU 온도 센서가 현재 시스템에서 잡히는지 빠르게 확인하려면 `.\venv\Scripts\python cli.py probe-temp`를 실행할 수 있습니다.
 Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 먼저 Dell Command | Monitor 설치 상태를 확인하고, 필요하면 공식 Dell 패키지를 자동으로 내려받아 무인 설치합니다.
-일반 PC이거나 Dell 대상 모델이 아니면 DCM 설치를 건너뛰고 LibreHardwareMonitor, OpenHardwareMonitor, Thermal Zone 경로로 바로 fallback 합니다.
+일반 PC이거나 Dell 대상 모델이 아니면 DCM 설치를 건너뛰고 LibreHardwareMonitor, OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone 경로로 fallback 합니다.
+어드벤텍 IPC 같은 산업용 PC에서 `Win32_PerfRawData_Counters_ThermalZoneInformation`이 `353`, `3530`처럼 Kelvin 또는 1/10 Kelvin 값을 노출하면 이를 자동으로 섭씨로 환산합니다.
+`probe-temp`는 가능할 때 `Source` 아래에 실제로 선택된 `Sensor` 문자열도 함께 출력하므로 `_Total` 집계 레코드인지 개별 Thermal Zone 인지 현장에서 바로 확인할 수 있습니다.
 
 ### 대시보드 실행
 
@@ -75,13 +77,16 @@ Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 
 - `모델명`, `총 검사 수`, `시스템 메모리 매칭` 요약을 먼저 보여줍니다.
 - `시작 NO`, `종료 NO`를 지정하면 해당 구간만 미리보기와 XLSX 다운로드에 반영됩니다.
 - 이 내보내기 영역의 NO는 현재 불러온 AOI 로그 전체 기준이며, 대시보드 `시간 범위` 필터와는 별도로 동작합니다.
-- `Memory (시스템)` 값은 해당 검사 시각보다 바로 이전인 시스템 모니터 `Mem_Used(GB)` 샘플을 사용합니다.
-- 직전 시스템 샘플이 없으면 `Memory (시스템)`은 비어 있을 수 있습니다.
+- `메모리 (시스템)` 값은 해당 검사 시각보다 바로 이전인 시스템 모니터 `Mem_Used(GB)` 샘플을 사용합니다.
+- `메모리 (인스펙터)` 값은 AOI 로그의 최신 `Working Set Memory Size`를 사용합니다.
+- 직전 시스템 샘플이 없으면 `메모리 (시스템)`은 비어 있을 수 있습니다.
 - `그래프 형식`에서 `선 + 마커`, `영역`, `막대`, `점` 중 원하는 미리보기 형식을 선택할 수 있습니다.
-- `Frame`, `Total`, `Memory (인스펙터)`, `Memory (시스템)` 항목별 색상을 이름 기반 팔레트에서 직접 고를 수 있습니다.
+- `Frame`, `Total`, `메모리 (시스템)`, `메모리 (인스펙터)` 항목별 색상을 이름 기반 팔레트에서 직접 고를 수 있습니다.
 - 색상은 HEX 입력 없이 직관적인 이름 기반 팔레트로 선택하며, 표 강조 색상도 같은 방식으로 바꿀 수 있습니다.
 - `그래프 투명도`, `표 강조 투명도`를 바꿔 미리보기 표현을 조정할 수 있습니다.
-- `미리보기 그래프 항목`에서 `Frame`, `Total`, `Memory (인스펙터)`, `Memory (시스템)` 중 필요한 항목만 골라 비교할 수 있습니다.
+- `미리보기 표`는 `NO`, `Frame`, `Total`, `메모리 (시스템)`, `메모리 (인스펙터)`를 표시합니다.
+- `미리보기 그래프 항목`에서 `Frame`, `Total`, `메모리 (시스템)`, `메모리 (인스펙터)` 중 필요한 항목만 골라 비교할 수 있습니다.
+- `XLSX에 인스펙터 메모리 포함` 옵션은 기본 `OFF`이며, 켜면 `메모리 (시스템)` 오른쪽에 `메모리 (인스펙터)` 컬럼이 추가됩니다.
 
 ## 대시보드 화면
 
@@ -102,12 +107,15 @@ Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 
 - 최대/평균 CPU 요약 지표
 - `CPU 온도`는 1초마다 수집한 센서 값 중 각 5초 구간의 최고값을 사용합니다.
 - Dell 대상 장비에서는 DCM `DCIM_NumericSensor`가 준비되면 이를 공식 우선 경로로 사용합니다.
+- 일반 PC에서는 Libre/OpenHardwareMonitor 뒤에 `PerfRawThermalZone` 경로도 시도하며, 어드벤텍 IPC의 Kelvin raw 값도 섭씨로 변환해 사용할 수 있습니다.
+- PerfRaw / Thermal Zone 에서 `_Total` 집계 레코드와 개별 zone 이 함께 보이면 개별 zone 을 우선하고, 그 안에서 가장 높은 유효 온도를 선택합니다.
 - 일부 Dell 장비에서는 DCM `UnitModifier`가 실제 온도 스케일과 다르게 보일 수 있어, 프로그램은 비현실적으로 낮은 온도를 피하도록 직접 읽기값을 우선 해석합니다.
 - Dell Command Monitor 또는 하드웨어 모니터 도구에서 `CPU Package` 센서가 보이면 해당 값을 메인 온도 지표로 우선 사용합니다.
 
 ### 메모리 + 인스펙터 대시보드
 
 - 메모리 사용량과 스왑 사용량
+- 현재 페이지 파일 사용량, 스왑 사용률, 가상 메모리 상태
 - 상위 메모리 프로세스
 - `인스펙터 앱 (로그)` Working Set 메모리 비교
 - 외부 시스템 모니터 메모리와 AOI 로그 메모리 비교
@@ -115,6 +123,9 @@ Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 
 - 짙은 파란 선: 5초 평균 기준 실물 메모리 사용률
 - 옅은 파란 영역: 같은 실물 메모리 사용률을 면적으로 강조한 표시
 - 주황색 선: 디스크 스왑(페이지 파일) 사용률. RAM에 있던 일부 메모리가 디스크로 이동한 비율
+- `가상 메모리 상태`가 `스왑 없음`이면 현재 스왑된 메모리가 없다는 뜻입니다.
+- `가상 메모리 상태`가 `스왑 사용 중`이면 페이지 파일을 실제로 사용 중인 상태이므로 메모리 압박 여부를 함께 확인합니다.
+- 페이지 파일 크기가 0GB로 기록되면 `페이지 파일 꺼짐`으로 표시합니다.
 
 ### 스토리지 대시보드
 
@@ -134,7 +145,7 @@ Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 
 - `병합 CSV 다운로드`: 시스템 모니터 병합 CSV 저장
 - `파싱된 인스펙터 로그 CSV 다운로드`: AOI / 인스펙터 로그 파싱 결과 저장
 - `엑셀(.xlsx) 다운로드`: 사용자 정의 그래프 선택 지표를 엑셀로 저장
-- `검사 결과 XLSX 다운로드`: AOI 검사 결과를 `측정시간`, `NO`, `Frame`, `Total`, `Memory (인스펙터)`, `Memory (시스템)` 컬럼으로 저장
+- `검사 결과 XLSX 다운로드`: 기본적으로 `NO`, `Frame`, `Total`, `메모리 (시스템)` 컬럼으로 저장하고, 옵션을 켜면 `메모리 (인스펙터)`를 오른쪽에 추가합니다
 
 ## 문제 해결
 

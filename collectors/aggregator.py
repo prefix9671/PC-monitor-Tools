@@ -31,6 +31,9 @@ class Aggregator:
         cpu_temp_peak = max(cpu_temp_values) if cpu_temp_values else None
         mem_avg = sum(s.mem_usage_pct for s in samples) / count
         mem_gb_avg = sum(s.mem_used_gb for s in samples) / count
+        swap_used_peak = max((getattr(s, 'swap_used_gb', 0.0) or 0.0) for s in samples)
+        swap_total_gb = max((getattr(s, 'swap_total_gb', 0.0) or 0.0) for s in samples)
+        swap_usage_peak = max((getattr(s, 'swap_usage_pct', 0.0) or 0.0) for s in samples)
         
         # Disk IO aggregation (average of rates over the window, or peak? The prompt says peak/avg depending on metrics. Let's do max for rates to catch spikes, and avg for time.)
         # Actually, let's keep it simple: max for throughput, avg for active time.
@@ -88,6 +91,9 @@ class Aggregator:
             'Mem_Usage_Avg(%)': mem_avg,
             'PhysicalMem(GB)': samples[0].phys_mem_gb,
             'OSTotalMem(GB)': samples[0].os_mem_gb,
+            'Swap_Used(GB)': swap_used_peak,
+            'Swap_Total(GB)': swap_total_gb,
+            'Swap_Usage(%)': swap_usage_peak,
             'SampleCount': count
         }
         for drive in all_drives:
@@ -110,5 +116,7 @@ class Aggregator:
         summary_line = f"[{ts_end}] CPU Avg:{cpu_avg:5.1f}% Peak:{cpu_peak:5.1f}% | Mem:{mem_gb_avg:5.2f}GB ({mem_avg:5.1f}%) | Top CPU: {top_cpu_str[:30]}..."
         if cpu_temp_peak is not None:
             summary_line += f" | Temp Max:{cpu_temp_peak:4.1f}C"
+        if swap_total_gb > 0:
+            summary_line += f" | Swap Max:{swap_used_peak:4.2f}GB ({swap_usage_peak:4.1f}%)"
 
         return resource_row, process_row, summary_line

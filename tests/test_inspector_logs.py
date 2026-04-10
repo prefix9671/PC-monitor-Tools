@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from inspector_logs.core import (
     build_inspection_records,
     format_inspection_export_dataframe,
+    format_inspection_preview_dataframe,
     load_inspector_log_data,
     load_inspector_log_data_from_uploads,
     resolve_inspector_log_paths,
@@ -88,7 +89,9 @@ class TestInspectorLogs(unittest.TestCase):
         )
 
         records = build_inspection_records(df, system_df)
+        preview_df = format_inspection_preview_dataframe(records)
         export_df = format_inspection_export_dataframe(records)
+        export_with_inspector_df = format_inspection_export_dataframe(records, include_inspector_memory=True)
 
         self.assertEqual(2, len(records))
         self.assertEqual([1, 2], records["Inspection_No"].tolist())
@@ -98,8 +101,16 @@ class TestInspectorLogs(unittest.TestCase):
         self.assertAlmostEqual(28.5, float(records.iloc[0]["System_Memory_Used_GB"]), places=2)
         self.assertAlmostEqual(29.0, float(records.iloc[1]["System_Memory_Used_GB"]), places=2)
         self.assertEqual(
-            ["측정시간", "NO", "Frame", "Total", "Memory (인스펙터)", "Memory (시스템)"],
+            ["NO", "Frame", "Total", "메모리 (인스펙터)", "메모리 (시스템)"],
+            preview_df.columns.tolist(),
+        )
+        self.assertEqual(
+            ["NO", "Frame", "Total", "메모리 (시스템)"],
             export_df.columns.tolist(),
+        )
+        self.assertEqual(
+            ["NO", "Frame", "Total", "메모리 (시스템)", "메모리 (인스펙터)"],
+            export_with_inspector_df.columns.tolist(),
         )
 
     def test_parse_uploaded_log_payload(self):

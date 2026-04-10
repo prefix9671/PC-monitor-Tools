@@ -69,12 +69,37 @@ class TestAoiCli(unittest.TestCase):
 
         export_df = pd.read_excel(output_path)
         self.assertEqual(
-            ["측정시간", "NO", "Frame", "Total", "Memory (인스펙터)", "Memory (시스템)"],
+            ["NO", "Frame", "Total", "메모리 (시스템)"],
             export_df.columns.tolist(),
         )
         self.assertEqual([1, 2], export_df["NO"].tolist())
-        self.assertAlmostEqual(28.5, float(export_df.iloc[0]["Memory (시스템)"]), places=2)
-        self.assertAlmostEqual(29.0, float(export_df.iloc[1]["Memory (시스템)"]), places=2)
+        self.assertAlmostEqual(28.5, float(export_df.iloc[0]["메모리 (시스템)"]), places=2)
+        self.assertAlmostEqual(29.0, float(export_df.iloc[1]["메모리 (시스템)"]), places=2)
+
+    def test_export_command_can_optionally_include_inspector_memory(self):
+        output_path = self.temp_path / "inspection_export_with_inspector.xlsx"
+        test_args = [
+            "aoi_cli.py",
+            "export",
+            "--path",
+            str(self.aoi_log_path),
+            "--system-path",
+            str(self.resource_csv_path),
+            "--include-inspector-memory",
+            "--out",
+            str(output_path),
+        ]
+
+        with patch.object(sys, "argv", test_args):
+            exit_code = main()
+
+        self.assertEqual(0, exit_code)
+        export_df = pd.read_excel(output_path)
+        self.assertEqual(
+            ["NO", "Frame", "Total", "메모리 (시스템)", "메모리 (인스펙터)"],
+            export_df.columns.tolist(),
+        )
+        self.assertAlmostEqual(47487856 / (1024.0 * 1024.0), float(export_df.iloc[0]["메모리 (인스펙터)"]), places=3)
 
 
 if __name__ == "__main__":

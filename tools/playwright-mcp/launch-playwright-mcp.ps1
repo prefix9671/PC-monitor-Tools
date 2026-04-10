@@ -14,6 +14,11 @@ $npmCmd = "C:\Program Files\nodejs\npm.cmd"
 $cliPath = Join-Path $scriptDir "node_modules\@playwright\mcp\cli.js"
 $npmCacheDir = Join-Path $scriptDir ".npm-cache"
 
+function Write-McpLog {
+    param([string]$Message)
+    [Console]::Error.WriteLine($Message)
+}
+
 if (-not (Test-Path $nodeExe)) {
     throw "Node.js runtime not found at $nodeExe"
 }
@@ -23,7 +28,7 @@ if (-not (Test-Path $cliPath)) {
         throw "npm not found at $npmCmd"
     }
 
-    Write-Host "[playwright-mcp] Installing local dependencies..."
+    Write-McpLog "[playwright-mcp] Installing local dependencies..."
     & $npmCmd install --no-fund --no-audit --cache $npmCacheDir
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to install @playwright/mcp dependencies."
@@ -45,6 +50,6 @@ if ($Port -gt 0) {
     $arguments += "$Port"
 }
 
-Write-Host "[playwright-mcp] Launching from $repoRoot"
+Write-McpLog "[playwright-mcp] Launching from $repoRoot"
 & $nodeExe @arguments
 exit $LASTEXITCODE

@@ -75,12 +75,15 @@ def _apply_column_widths(writer, sheet_name, export_df):
         worksheet.column_dimensions[get_column_letter(column_index)].width = max_length
 
 
-def generate_inspection_excel(inspection_records):
+def generate_inspection_excel(inspection_records, include_inspector_memory=False):
     """
     검사 결과 레코드를 XLSX로 내보냅니다.
     """
     output = io.BytesIO()
-    export_df = format_inspection_export_dataframe(inspection_records)
+    export_df = format_inspection_export_dataframe(
+        inspection_records,
+        include_inspector_memory=include_inspector_memory,
+    )
 
     with pd.ExcelWriter(output, engine="openpyxl", datetime_format="YYYY-MM-DD HH:MM:SS") as writer:
         export_df.to_excel(writer, index=False, sheet_name="Inspection_Results")

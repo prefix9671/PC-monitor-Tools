@@ -1,8 +1,16 @@
 # collectors/sampler.py
-import psutil
+import subprocess
 import time
+
+import psutil
+
 from collectors.cpu_temperature import CpuTemperatureProbe
 from collectors.models import MetricSample
+from collectors.subprocess_utils import check_output_text
+
+
+CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
 
 class Sampler:
     def __init__(self, top_n=5):
@@ -15,23 +23,39 @@ class Sampler:
         # Static memory info
         mem = psutil.virtual_memory()
         self.os_mem_gb = mem.total / (1024**3)
-        self.phys_mem_gb = self.os_mem_gb # Default to same if hardware info fails
+        self.phys_mem_gb = self.os_mem_gb  # Default to same if hardware info fails
         
         try:
-            import subprocess
             cmd = 'powershell -Command "(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum"'
-            out = subprocess.check_output(cmd, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).strip()
+            out = check_output_text(cmd, shell=True, creationflags=CREATE_NO_WINDOW).strip()
             if out:
                 self.phys_mem_gb = int(out) / (1024**3)
-        except:
+        except Exception:
             pass
+
+    def _read_swap_memory(self):
+        try:
+            swap = psutil.swap_memory()
+        except Exception:
+            return 0.0, 0.0, 0.0
+
+        total_bytes = max(0, int(getattr(swap, "total", 0) or 0))
+        used_bytes = max(0, int(getattr(swap, "used", 0) or 0))
+        percent = float(getattr(swap, "percent", 0.0) or 0.0)
+
+        if total_bytes <= 0:
+            return 0.0, 0.0, 0.0
+
+        total_gb = total_bytes / (1024**3)
+        used_gb = min(total_gb, used_bytes / (1024**3))
+        usage_pct = min(100.0, max(0.0, percent))
+        return used_gb, total_gb, usage_pct
 
     def _get_drive_mapping(self):
         mapping = {}
         try:
-            import subprocess
             cmd = 'powershell -Command "Get-Partition | Select-Object DiskNumber, DriveLetter | Format-List"'
-            out = subprocess.check_output(cmd, shell=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            out = check_output_text(cmd, shell=True, creationflags=CREATE_NO_WINDOW)
             
             current_disk = None
             for line in out.splitlines():
@@ -132,6 +156,7 @@ class Sampler:
         mem = psutil.virtual_memory()
         mem_used_gb = mem.used / (1024**3)
         mem_usage_pct = mem.percent
+        swap_used_gb, swap_total_gb, swap_usage_pct = self._read_swap_memory()
         
         # Disk IO
         read_rates, write_rates, time_rates = self._get_disk_io_rates()
@@ -209,5 +234,8 @@ class Sampler:
             top_cpu_processes=sorted_by_cpu,
             top_mem_processes=sorted_by_mem,
             top_disk_read_processes=sorted_by_read,
-            top_disk_write_processes=sorted_by_write
+            top_disk_write_processes=sorted_by_write,
+            swap_used_gb=swap_used_gb,
+            swap_total_gb=swap_total_gb,
+            swap_usage_pct=swap_usage_pct,
         )

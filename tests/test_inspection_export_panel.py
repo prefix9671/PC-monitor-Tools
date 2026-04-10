@@ -13,12 +13,11 @@ class TestInspectionExportPanel(unittest.TestCase):
     def setUp(self):
         self.preview_df = pd.DataFrame(
             {
-                "측정시간": pd.to_datetime(["2026-03-18 17:44:07", "2026-03-18 17:44:12"]),
                 "NO": [1, 2],
                 "Frame": [1.19, 1.50],
                 "Total": [38.13, 40.00],
-                "Memory (인스펙터)": [45.288, 47.684],
-                "Memory (시스템)": [28.5, 29.0],
+                "메모리 (시스템)": [28.5, 29.0],
+                "메모리 (인스펙터)": [45.288, 47.684],
             }
         )
 
@@ -32,12 +31,12 @@ class TestInspectionExportPanel(unittest.TestCase):
         fig = _build_preview_chart(
             preview_df=self.preview_df,
             chart_type="선 + 마커",
-            selected_metrics=["Frame", "Total", "Memory (인스펙터)", "Memory (시스템)"],
+            selected_metrics=["Frame", "Total", "메모리 (시스템)", "메모리 (인스펙터)"],
             metric_colors={
                 "Frame": COLOR_PRESET_MAP["플럼 바이올렛"],
                 "Total": COLOR_PRESET_MAP["선셋 오렌지"],
-                "Memory (인스펙터)": COLOR_PRESET_MAP["에메랄드"],
-                "Memory (시스템)": COLOR_PRESET_MAP["코발트 블루"],
+                "메모리 (시스템)": COLOR_PRESET_MAP["코발트 블루"],
+                "메모리 (인스펙터)": COLOR_PRESET_MAP["에메랄드"],
             },
             opacity=0.85,
         )
@@ -46,20 +45,22 @@ class TestInspectionExportPanel(unittest.TestCase):
         self.assertTrue(all(trace.type == "scatter" for trace in fig.data))
         self.assertEqual("검사 시간 (sec)", fig.layout.yaxis.title.text)
         self.assertEqual("메모리 (GB)", fig.layout.yaxis2.title.text)
+        self.assertEqual("NO", fig.layout.xaxis.title.text)
 
     def test_build_preview_chart_bar_mode(self):
         fig = _build_preview_chart(
             preview_df=self.preview_df,
             chart_type="막대",
-            selected_metrics=["Frame", "Memory (시스템)"],
+            selected_metrics=["Frame", "메모리 (시스템)", "메모리 (인스펙터)"],
             metric_colors={
                 "Frame": COLOR_PRESET_MAP["플럼 바이올렛"],
-                "Memory (시스템)": COLOR_PRESET_MAP["코발트 블루"],
+                "메모리 (시스템)": COLOR_PRESET_MAP["코발트 블루"],
+                "메모리 (인스펙터)": COLOR_PRESET_MAP["에메랄드"],
             },
             opacity=0.55,
         )
 
-        self.assertEqual(2, len(fig.data))
+        self.assertEqual(3, len(fig.data))
         self.assertTrue(all(trace.type == "bar" for trace in fig.data))
 
 

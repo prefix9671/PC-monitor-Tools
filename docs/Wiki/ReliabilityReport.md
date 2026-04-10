@@ -1,6 +1,6 @@
 # Reliability Report
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-10  
 Status: Active
 
 ## 개요
@@ -37,6 +37,9 @@ Status: Active
 - 특정 프로세스가 자원 피크를 유발하는 시점 식별
 - 로그를 보존해 장애 재분석 가능
 - CI에서 단위 테스트, 대시보드 스모크, 문서 동기화 검사를 함께 돌려 회귀를 더 일찍 발견 가능
+- PyInstaller가 실제 미사용 optional 모듈에 끌려가지 않도록 패키징 대상을 좁혀 빌드 경고 노이즈를 줄일 수 있음
+- Playwright MCP 브라우저 검증은 stdio 직결 구성으로 유지해 GUI 자동화에서 연결 실패 가능성을 낮출 수 있음
+- 작업 완료 후 `scripts/verify_playwright_dashboards.js`로 실제 Streamlit 대시보드 4종을 다시 열어 보고, 스크린샷과 콘솔 메시지를 아티팩트로 남길 수 있음
 
 ## 현재 한계와 주의점
 
@@ -45,6 +48,7 @@ Status: Active
 - `Monitor.ps1`는 현재 운영 기준 실행 경로가 아니므로, 신뢰성 기준은 `start_monitor.bat`와 `run_app.py` 조합을 우선합니다.
 - 문서 동기화가 느슨해지면 운영 기준과 검증 절차가 실제 코드보다 뒤처질 수 있으므로 `scripts/verify_docs_sync.py`를 유지해야 합니다.
 - 이 문서는 런타임, 패키징, CI 변경에서 자동 요구 대상으로 취급하고, 그 외 작업에서는 선택 검토 문서로 유지합니다.
+- Playwright MCP를 PowerShell 래퍼 경유 stdio로 연결하면 stdin 전달 문제로 initialize 실패가 날 수 있으므로, Codex 구성은 Node CLI 직결 상태를 유지해야 합니다.
 
 ## 결론
 

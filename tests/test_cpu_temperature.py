@@ -19,8 +19,11 @@ from collectors.dell_command_monitor import (
     resolve_dcm_package,
 )
 from collectors.cpu_temperature import (
+    CpuTemperatureProbe,
     _convert_numeric_sensor_to_celsius,
+    _convert_perf_raw_thermal_zone_to_celsius,
     _select_dell_command_monitor_temperature,
+    _select_perf_raw_thermal_zone_temperature,
     _select_max_sensor_temperature,
     _select_max_thermal_zone_temperature,
 )
@@ -29,7 +32,7 @@ from collectors.writers import OutputsWriter
 from dashboards.cpu import render_cpu_dashboard
 
 
-def _make_sample(timestamp: float, cpu_total: float, cpu_temp_c):
+def _make_sample(timestamp: float, cpu_total: float, cpu_temp_c, swap_used_gb=0.0, swap_total_gb=0.0, swap_usage_pct=0.0):
     return MetricSample(
         timestamp=timestamp,
         cpu_total=cpu_total,
@@ -45,6 +48,9 @@ def _make_sample(timestamp: float, cpu_total: float, cpu_temp_c):
         top_mem_processes=[],
         top_disk_read_processes=[],
         top_disk_write_processes=[],
+        swap_used_gb=swap_used_gb,
+        swap_total_gb=swap_total_gb,
+        swap_usage_pct=swap_usage_pct,
     )
 
 
@@ -132,6 +138,58 @@ class TestCpuTemperatureCore(unittest.TestCase):
 
         self.assertAlmostEqual(55.05, _select_max_thermal_zone_temperature(records), places=2)
 
+    def test_convert_perf_raw_thermal_zone_to_celsius_from_kelvin(self):
+        record = {"Name": "CPU Thermal Zone", "Temperature": 353}
+
+        self.assertAlmostEqual(79.85, _convert_perf_raw_thermal_zone_to_celsius(record), places=2)
+
+    def test_convert_perf_raw_thermal_zone_to_celsius_from_tenths_kelvin(self):
+        record = {"Name": "CPU Thermal Zone", "Temperature": 3530}
+
+        self.assertAlmostEqual(79.85, _convert_perf_raw_thermal_zone_to_celsius(record), places=2)
+
+    def test_convert_perf_raw_thermal_zone_to_celsius_ignores_non_positive_and_implausible_values(self):
+        self.assertIsNone(_convert_perf_raw_thermal_zone_to_celsius({"Temperature": 0}))
+        self.assertIsNone(_convert_perf_raw_thermal_zone_to_celsius({"Temperature": -1}))
+        self.assertIsNone(_convert_perf_raw_thermal_zone_to_celsius({"Temperature": 20000}))
+
+    def test_select_perf_raw_thermal_zone_temperature_prefers_cpu_keyword_records(self):
+        records = [
+            {"Name": "Mainboard Thermal Zone", "Temperature": 360},
+            {"Name": "CPU Thermal Zone", "Temperature": 353},
+        ]
+
+        self.assertAlmostEqual(79.85, _select_perf_raw_thermal_zone_temperature(records), places=2)
+
+    def test_select_perf_raw_thermal_zone_temperature_prefers_specific_zone_over_total_aggregate(self):
+        records = [
+            {"Name": "Processor Information", "InstanceName": "_Total", "Temperature": 331},
+            {"Name": "Thermal Zone CPU0", "InstanceName": "TZ00", "Temperature": 356},
+        ]
+
+        self.assertAlmostEqual(82.85, _select_perf_raw_thermal_zone_temperature(records), places=2)
+
+    def test_select_perf_raw_thermal_zone_temperature_falls_back_to_max_valid_value(self):
+        records = [
+            {"Name": "Thermal Zone A", "Temperature": 340},
+            {"Name": "Thermal Zone B", "Temperature": 353},
+        ]
+
+        self.assertAlmostEqual(79.85, _select_perf_raw_thermal_zone_temperature(records), places=2)
+
+    def test_probe_provider_order_includes_perf_raw_before_msacpi(self):
+        probe = CpuTemperatureProbe(enable_dell_command_monitor=False)
+
+        self.assertEqual(
+            [
+                "LibreHardwareMonitor",
+                "OpenHardwareMonitor",
+                "PerfRawThermalZone",
+                "MSAcpiThermalZone",
+            ],
+            [provider_name for provider_name, *_ in probe._providers],
+        )
+
     def test_aggregator_uses_max_cpu_temperature_over_window(self):
         state = WindowState(window_start=0.0)
         state.update(_make_sample(1.0, 24.0, 55.2))
@@ -142,6 +200,19 @@ class TestCpuTemperatureCore(unittest.TestCase):
 
         self.assertEqual(61.7, resource_row["CPU_Temp(C)"])
         self.assertIn("Temp Max:61.7C", summary)
+
+    def test_aggregator_tracks_peak_swap_usage_over_window(self):
+        state = WindowState(window_start=0.0)
+        state.update(_make_sample(1.0, 24.0, 55.2, swap_used_gb=0.0, swap_total_gb=8.0, swap_usage_pct=0.0))
+        state.update(_make_sample(2.0, 42.0, 61.7, swap_used_gb=0.35, swap_total_gb=8.0, swap_usage_pct=4.4))
+        state.update(_make_sample(3.0, 31.0, None, swap_used_gb=0.12, swap_total_gb=8.0, swap_usage_pct=1.5))
+
+        resource_row, _, summary = Aggregator(top_n=5).aggregate(state)
+
+        self.assertEqual(0.35, resource_row["Swap_Used(GB)"])
+        self.assertEqual(8.0, resource_row["Swap_Total(GB)"])
+        self.assertEqual(4.4, resource_row["Swap_Usage(%)"])
+        self.assertIn("Swap Max:0.35GB ( 4.4%)", summary)
 
     def test_outputs_writer_rewrites_header_when_new_field_is_added(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -221,6 +292,7 @@ class TestCpuTemperatureCli(unittest.TestCase):
         _ensure_dcm_ready.return_value.message = ""
         probe = probe_cls.return_value
         probe.source_name = "LibreHardwareMonitor"
+        probe.source_detail = "CPU Package"
         probe.read_celsius.return_value = 67.5
 
         buffer = io.StringIO()
@@ -228,6 +300,8 @@ class TestCpuTemperatureCli(unittest.TestCase):
             main()
 
         self.assertIn("CPU temperature: 67.5", buffer.getvalue())
+        self.assertIn("Source: LibreHardwareMonitor", buffer.getvalue())
+        self.assertIn("Sensor: CPU Package", buffer.getvalue())
 
 
 if __name__ == "__main__":

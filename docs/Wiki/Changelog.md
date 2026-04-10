@@ -1,7 +1,41 @@
 # Changelog
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-09  
 Status: Active
+
+## [2026-04-08] - 검사 결과 XLSX 컬럼 단순화
+
+### 변경 사항
+
+- AOI / Inspector 검사 결과 XLSX와 메인 화면 미리보기 컬럼을 `NO`, `Frame`, `Total`, `메모리 (시스템)`만 남기도록 단순화했습니다.
+- `측정시간`과 `Memory (인스펙터)`는 검사 결과 XLSX와 미리보기 표에서 제외했습니다.
+- 미리보기 그래프의 X축은 `측정시간` 대신 `NO`를 사용하도록 조정했습니다.
+
+## [2026-04-09] - 어드벤텍 IPC Kelvin CPU 온도 fallback 추가
+
+### 변경 사항
+
+- `collectors/cpu_temperature.py`에 `Win32_PerfRawData_Counters_ThermalZoneInformation` 기반 `PerfRawThermalZone` 공급자를 추가했습니다.
+- 일반 PC fallback 순서를 `LibreHardwareMonitor -> OpenHardwareMonitor -> PerfRawThermalZone -> MSAcpiThermalZone`로 확장했습니다.
+- `Temperature` raw 값은 `<=0` 무시, `>=2000`이면 1/10 Kelvin, 그 외 양수는 Kelvin 으로 해석해 섭씨로 변환하도록 고정했습니다.
+- 어드벤텍 IPC처럼 `353`, `3530` 형식의 Thermal Zone 값을 노출하는 장비에서 `probe-temp`와 수집 로그의 CPU 온도 인식률을 개선했습니다.
+
+## [2026-04-09] - PyInstaller optional import 경고와 Playwright MCP stdio 정리
+
+### 변경 사항
+
+- `monitor.spec`에서 Streamlit 서브모듈 수집 시 `streamlit.external.langchain`을 제외해 optional LangChain import 경고를 제거할 수 있게 정리했습니다.
+- Playwright MCP 로컬 런처는 stdout 대신 stderr로 진단 로그를 보내도록 조정했습니다.
+- Codex용 `playwright` MCP 구성은 PowerShell 래퍼 대신 `node.exe + @playwright/mcp cli.js` direct stdio 연결을 기준으로 재정렬했습니다.
+- `launch-playwright-mcp.ps1`는 계속 포트/SSE 기동 확인용 래퍼로 유지하고, 실제 MCP 도구 연결은 direct stdio 기준으로 검증합니다.
+
+## [2026-04-08] - 인스펙터 메모리 미리보기 복원과 XLSX 옵션화
+
+### 변경 사항
+
+- 검사 결과 미리보기 표와 그래프에는 `메모리 (인스펙터)`를 다시 표시하도록 복원했습니다.
+- XLSX 내보내기는 기본적으로 `NO`, `Frame`, `Total`, `메모리 (시스템)`만 내보내고, `XLSX에 인스펙터 메모리 포함` 옵션을 켰을 때만 `메모리 (인스펙터)`를 `메모리 (시스템)` 오른쪽에 추가하도록 조정했습니다.
+- AOI CLI `export`에도 동일 동작을 맞추기 위해 `--include-inspector-memory` 옵션을 추가했습니다.
 
 ## [2026-04-02] - Dell Command Monitor CPU 온도 우선 수집
 

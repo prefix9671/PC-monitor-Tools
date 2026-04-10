@@ -1,6 +1,6 @@
 # Project Structure
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-10  
 Status: Active
 
 ## 루트 구조
@@ -35,7 +35,7 @@ PC-monitor-Tools/
 
 | 경로 | 설명 |
 |---|---|
-| `collectors/` | CPU 온도 프로브, 샘플링, 집계, 로그 기록을 담당하는 수집 엔진 |
+| `collectors/` | CPU 온도 프로브, 실물/가상 메모리 샘플링, 집계, 로그 기록을 담당하는 수집 엔진 |
 | `dashboards/` | CPU, Memory, Storage, Custom 화면과 검사 결과 XLSX 내보내기 UI |
 | `tools/` | 로컬 Playwright MCP 같은 보조 실행 도구 |
 | `scripts/` | CI, 문서 동기화, 대시보드 스모크 자동화 |
@@ -52,11 +52,15 @@ PC-monitor-Tools/
 | `run_app.py` | 패키징된 EXE의 단일 진입점 |
 | `data_loader.py` | CSV 로딩, 캐시, exact merge |
 | `collectors/dell_command_monitor.py` | Dell Precision T5/T7 Tower 계열의 DCM 감지, 다운로드, 무인 설치, namespace 준비 확인 |
-| `collectors/cpu_temperature.py` | Dell Command Monitor, 하드웨어 모니터, Thermal Zone 경로에서 CPU 온도 조회 및 CPU Package 우선 선택 |
+| `collectors/cpu_temperature.py` | Dell Command Monitor, 하드웨어 모니터, PerfRaw Thermal Zone, Thermal Zone 경로에서 CPU 온도 조회, `_Total` 집계값보다 개별 zone 우선 선택, `probe-temp`용 센서 식별 문자열 유지 |
+| `collectors/sampler.py` | `psutil` 기반 1초 실물 메모리/페이지 파일 상태, CPU, 디스크, 프로세스 샘플 수집 |
+| `collectors/aggregator.py` | 5초 윈도우 기준 CPU/메모리/스왑/디스크 요약 행 생성 |
+| `collectors/subprocess_utils.py` | PowerShell/설치기 표준출력의 안전 디코딩과 깨진 바이트 방어 |
 | `scripts/doc_sync_rules.toml` | 에이전트와 CI가 공유하는 문서 동기화 규칙 표 |
 | `scripts/verify_docs_sync.py` | 코드 변경과 활성 문서 변경의 동기화 검사 |
 | `scripts/run_ci_dashboard_smoke.py` | 샘플 CSV로 대시보드 스모크 테스트 실행 |
-| `dashboards/inspection_export.py` | 메인 화면 AOI 검사 결과 미리보기와 XLSX 다운로드 |
+| `scripts/verify_playwright_dashboards.js` | Playwright MCP로 실제 Streamlit 대시보드를 열고 스크린샷/콘솔 로그 아티팩트를 생성 |
+| `dashboards/inspection_export.py` | 메인 화면 AOI 검사 결과 미리보기와 인스펙터 메모리 옵션형 XLSX 다운로드 |
 | `inspector_logs/` | AOI / Inspector 로그 경로 해석과 이벤트 파싱 코어 |
 | `tools/playwright-mcp/` | Codex용 Playwright MCP 로컬 패키지와 실행/검증 스크립트 |
 | `parsers.py` | Top 5 문자열 파싱 |

@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from collectors.subprocess_utils import run_text_capture
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CACHE_DIR = Path(os.environ.get("LOCALAPPDATA") or tempfile.gettempdir()) / "PC-monitor-Tools" / "dcm-cache"
@@ -71,7 +72,7 @@ DCM_PACKAGES = (
 
 def _run_powershell(script: str, timeout_sec: float = 5.0) -> str:
     try:
-        completed = subprocess.run(
+        completed = run_text_capture(
             [
                 "powershell.exe",
                 "-NoProfile",
@@ -79,11 +80,8 @@ def _run_powershell(script: str, timeout_sec: float = 5.0) -> str:
                 "-Command",
                 script,
             ],
-            capture_output=True,
-            text=True,
             timeout=timeout_sec,
             creationflags=CREATE_NO_WINDOW,
-            check=False,
         )
     except (FileNotFoundError, OSError, subprocess.SubprocessError):
         return ""
@@ -209,13 +207,10 @@ def _prepare_installer(package: DcmPackage) -> Path:
 
 
 def _run_installer(installer_path: Path) -> tuple[int, str, str]:
-    completed = subprocess.run(
+    completed = run_text_capture(
         [str(installer_path), "/s"],
-        capture_output=True,
-        text=True,
         timeout=900,
         creationflags=CREATE_NO_WINDOW,
-        check=False,
     )
     return completed.returncode, completed.stdout.strip(), completed.stderr.strip()
 

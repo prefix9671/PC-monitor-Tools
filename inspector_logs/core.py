@@ -54,14 +54,20 @@ INSPECTION_RECORD_COLUMNS = [
     "System_Memory_Timestamp",
 ]
 
-INSPECTION_EXPORT_COLUMNS = {
-    "Timestamp": "측정시간",
+INSPECTION_PREVIEW_COLUMNS = {
     "Inspection_No": "NO",
     "Inspector_Frame_Sec": "Frame",
     "Inspector_Total_Sec": "Total",
-    "Inspector_WorkingSet_GB": "Memory (인스펙터)",
-    "System_Memory_Used_GB": "Memory (시스템)",
+    "Inspector_WorkingSet_GB": "메모리 (인스펙터)",
+    "System_Memory_Used_GB": "메모리 (시스템)",
 }
+
+INSPECTION_EXPORT_BASE_COLUMNS = [
+    "Inspection_No",
+    "Inspector_Frame_Sec",
+    "Inspector_Total_Sec",
+    "System_Memory_Used_GB",
+]
 
 
 def _split_path_input(path_input: str | Iterable[str] | None) -> list[str]:
@@ -408,18 +414,57 @@ def select_inspection_records(
     return selected.reset_index(drop=True)
 
 
-def format_inspection_export_dataframe(inspection_records: pd.DataFrame) -> pd.DataFrame:
+def _format_inspection_dataframe(
+    inspection_records: pd.DataFrame,
+    selected_columns: list[str],
+    renamed_columns: dict[str, str],
+) -> pd.DataFrame:
     if inspection_records is None or inspection_records.empty:
-        return pd.DataFrame(columns=list(INSPECTION_EXPORT_COLUMNS.values()))
+        return pd.DataFrame(columns=list(renamed_columns.values()))
 
-    export_df = inspection_records[list(INSPECTION_EXPORT_COLUMNS.keys())].copy()
-    export_df["Timestamp"] = pd.to_datetime(export_df["Timestamp"], errors="coerce")
-    export_df["Inspection_No"] = pd.to_numeric(export_df["Inspection_No"], errors="coerce").astype("Int64")
-    export_df["Inspector_Frame_Sec"] = pd.to_numeric(export_df["Inspector_Frame_Sec"], errors="coerce").round(2)
-    export_df["Inspector_Total_Sec"] = pd.to_numeric(export_df["Inspector_Total_Sec"], errors="coerce").round(2)
-    export_df["Inspector_WorkingSet_GB"] = pd.to_numeric(export_df["Inspector_WorkingSet_GB"], errors="coerce").round(3)
-    export_df["System_Memory_Used_GB"] = pd.to_numeric(export_df["System_Memory_Used_GB"], errors="coerce").round(3)
-    return export_df.rename(columns=INSPECTION_EXPORT_COLUMNS)
+    export_df = inspection_records[selected_columns].copy()
+    if "Inspection_No" in export_df.columns:
+        export_df["Inspection_No"] = pd.to_numeric(export_df["Inspection_No"], errors="coerce").astype("Int64")
+    if "Inspector_Frame_Sec" in export_df.columns:
+        export_df["Inspector_Frame_Sec"] = pd.to_numeric(export_df["Inspector_Frame_Sec"], errors="coerce").round(2)
+    if "Inspector_Total_Sec" in export_df.columns:
+        export_df["Inspector_Total_Sec"] = pd.to_numeric(export_df["Inspector_Total_Sec"], errors="coerce").round(2)
+    if "Inspector_WorkingSet_GB" in export_df.columns:
+        export_df["Inspector_WorkingSet_GB"] = pd.to_numeric(export_df["Inspector_WorkingSet_GB"], errors="coerce").round(3)
+    if "System_Memory_Used_GB" in export_df.columns:
+        export_df["System_Memory_Used_GB"] = pd.to_numeric(export_df["System_Memory_Used_GB"], errors="coerce").round(3)
+    return export_df.rename(columns=renamed_columns)
+
+
+def format_inspection_preview_dataframe(inspection_records: pd.DataFrame) -> pd.DataFrame:
+    return _format_inspection_dataframe(
+        inspection_records=inspection_records,
+        selected_columns=list(INSPECTION_PREVIEW_COLUMNS.keys()),
+        renamed_columns=INSPECTION_PREVIEW_COLUMNS,
+    )
+
+
+def format_inspection_export_dataframe(
+    inspection_records: pd.DataFrame,
+    include_inspector_memory: bool = False,
+) -> pd.DataFrame:
+    selected_columns = INSPECTION_EXPORT_BASE_COLUMNS.copy()
+    renamed_columns = {
+        "Inspection_No": "NO",
+        "Inspector_Frame_Sec": "Frame",
+        "Inspector_Total_Sec": "Total",
+        "System_Memory_Used_GB": "메모리 (시스템)",
+    }
+
+    if include_inspector_memory:
+        selected_columns.append("Inspector_WorkingSet_GB")
+        renamed_columns["Inspector_WorkingSet_GB"] = "메모리 (인스펙터)"
+
+    return _format_inspection_dataframe(
+        inspection_records=inspection_records,
+        selected_columns=selected_columns,
+        renamed_columns=renamed_columns,
+    )
 
 
 def summarize_inspector_log_data(df: pd.DataFrame) -> dict[str, object]:

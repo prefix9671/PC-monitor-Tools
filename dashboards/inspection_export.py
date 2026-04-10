@@ -9,7 +9,7 @@ from plotly.subplots import make_subplots
 
 from excel_exporter import generate_inspection_excel
 from inspector_logs.core import (
-    format_inspection_export_dataframe,
+    format_inspection_preview_dataframe,
     select_inspection_records,
     summarize_inspection_records,
 )
@@ -23,7 +23,7 @@ GRAPH_TYPE_OPTIONS = {
 }
 
 TIME_COLUMNS = ["Frame", "Total"]
-MEMORY_COLUMNS = ["Memory (인스펙터)", "Memory (시스템)"]
+MEMORY_COLUMNS = ["메모리 (시스템)", "메모리 (인스펙터)"]
 
 COLOR_PRESET_ITEMS = [
     ("코랄 레드", "#FF6B6B"),
@@ -58,8 +58,8 @@ COLOR_PRESET_LABELS = [label for label, _ in COLOR_PRESET_ITEMS]
 DEFAULT_METRIC_COLOR_LABELS = {
     "Frame": "플럼 바이올렛",
     "Total": "선셋 오렌지",
-    "Memory (인스펙터)": "에메랄드",
-    "Memory (시스템)": "코발트 블루",
+    "메모리 (시스템)": "코발트 블루",
+    "메모리 (인스펙터)": "에메랄드",
 }
 
 DEFAULT_TABLE_COLOR_LABEL = "스틸 블루"
@@ -107,11 +107,10 @@ def _style_preview_table(preview_df: pd.DataFrame, accent_color: str, opacity: f
     return (
         preview_df.style.format(
             {
-                "측정시간": lambda value: value.strftime("%Y-%m-%d %H:%M:%S") if pd.notna(value) else "",
                 "Frame": "{:.2f}",
                 "Total": "{:.2f}",
-                "Memory (인스펙터)": "{:.3f}",
-                "Memory (시스템)": "{:.3f}",
+                "메모리 (시스템)": "{:.3f}",
+                "메모리 (인스펙터)": "{:.3f}",
             },
             na_rep="",
         )
@@ -140,7 +139,7 @@ def _build_preview_chart(
             return
 
         trace_name = metric_name
-        x_values = preview_df["측정시간"]
+        x_values = preview_df["NO"]
         y_values = preview_df[metric_name]
 
         if chart_key == "bar":
@@ -186,7 +185,7 @@ def _build_preview_chart(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         bargap=0.22,
     )
-    fig.update_xaxes(title_text="측정시간")
+    fig.update_xaxes(title_text="NO")
     fig.update_yaxes(title_text="검사 시간 (sec)", secondary_y=False)
     fig.update_yaxes(title_text="메모리 (GB)", secondary_y=True)
     return fig
@@ -260,7 +259,7 @@ def render_inspection_export_panel(st, inspection_records):
     st.session_state["inspection_export_end_no"] = end_no
 
     selected_records = select_inspection_records(inspection_records, start_no=start_no, end_no=end_no)
-    preview_df = format_inspection_export_dataframe(selected_records)
+    preview_df = format_inspection_preview_dataframe(selected_records)
 
     st.caption(f"선택 범위: NO {start_no} -> {end_no} / {len(preview_df)}건")
 
@@ -268,7 +267,9 @@ def render_inspection_export_panel(st, inspection_records):
         st.warning("미리보기 생성 중 일부 행이 제외되었습니다.")
 
     if selected_records["System_Memory_Used_GB"].isna().any():
-        st.warning("일부 검사 결과는 직전 시스템 메모리 샘플을 찾지 못해 `Memory (시스템)` 값이 비어 있습니다.")
+        st.warning("일부 검사 결과는 직전 시스템 메모리 샘플을 찾지 못해 `메모리 (시스템)` 값이 비어 있습니다.")
+    if selected_records["Inspector_WorkingSet_GB"].isna().any():
+        st.warning("일부 검사 결과는 AOI 로그 Working Set 정보를 찾지 못해 `메모리 (인스펙터)` 값이 비어 있습니다.")
 
     st.markdown("#### 표현 설정")
     style_col1, style_col2, style_col3 = st.columns(3)
@@ -290,7 +291,7 @@ def render_inspection_export_panel(st, inspection_records):
         "미리보기 그래프 항목",
         metric_options,
         default=default_metrics,
-        help="검사 시간과 메모리 지표를 동시에 비교할 수 있습니다.",
+        help="Frame, Total, 시스템 메모리 지표를 함께 비교할 수 있습니다.",
     )
 
     st.caption("항목별 색상은 이름으로 고르고, 화면 아래 배지에서 현재 선택을 바로 확인할 수 있습니다.")
@@ -326,6 +327,12 @@ def render_inspection_export_panel(st, inspection_records):
     styled_preview = _style_preview_table(preview_df, accent_color=table_color, opacity=table_opacity)
     st.dataframe(styled_preview, hide_index=True, width="stretch")
 
+    include_inspector_memory_in_xlsx = st.checkbox(
+        "XLSX에 인스펙터 메모리 포함",
+        value=False,
+        help="체크하면 `메모리 (시스템)` 오른쪽에 `메모리 (인스펙터)` 컬럼을 추가합니다.",
+    )
+
     file_model_token = _sanitize_file_token(selected_model)
     file_name = (
         f"Inspection_Results_{file_model_token}_NO{start_no:04d}-{end_no:04d}_"
@@ -334,7 +341,10 @@ def render_inspection_export_panel(st, inspection_records):
 
     st.download_button(
         label="검사 결과 XLSX 다운로드",
-        data=generate_inspection_excel(selected_records),
+        data=generate_inspection_excel(
+            selected_records,
+            include_inspector_memory=include_inspector_memory_in_xlsx,
+        ),
         file_name=file_name,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

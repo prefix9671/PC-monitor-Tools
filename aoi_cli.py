@@ -78,6 +78,7 @@ def _export_inspection_results(
     output_path: str,
     start_no: int | None,
     end_no: int | None,
+    include_inspector_memory: bool,
 ) -> int:
     raw_paths = "\n".join(aoi_paths)
     resolved_paths = resolve_inspector_log_paths(raw_paths)
@@ -102,7 +103,12 @@ def _export_inspection_results(
 
     output_file = Path(output_path).expanduser()
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    output_file.write_bytes(generate_inspection_excel(selected_records))
+    output_file.write_bytes(
+        generate_inspection_excel(
+            selected_records,
+            include_inspector_memory=include_inspector_memory,
+        )
+    )
 
     print(f"Resolved files: {len(resolved_paths)}")
     for path in resolved_paths:
@@ -166,6 +172,11 @@ def main() -> int:
         type=int,
         help="Last inspection NO to export. Defaults to the final available NO.",
     )
+    export_parser.add_argument(
+        "--include-inspector-memory",
+        action="store_true",
+        help="Include `메모리 (인스펙터)` to the right of `메모리 (시스템)` in the exported XLSX.",
+    )
 
     args = parser.parse_args()
 
@@ -178,6 +189,7 @@ def main() -> int:
             output_path=args.out,
             start_no=args.start_no,
             end_no=args.end_no,
+            include_inspector_memory=args.include_inspector_memory,
         )
 
     parser.print_help()

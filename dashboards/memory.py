@@ -101,10 +101,71 @@ def _build_external_inspector_df(df, extract_process_time_series):
     return inspector_ts[["Timestamp", "External_Inspector_GB"]]
 
 
+def _get_numeric_series(df, column_name):
+    if df is None or df.empty or column_name not in df.columns:
+        return pd.Series(dtype="float64")
+    return pd.to_numeric(df[column_name], errors="coerce").dropna()
+
+
+def _summarize_swap_usage(df):
+    usage_series = _get_numeric_series(df, "Swap_Usage(%)")
+    used_series = _get_numeric_series(df, "Swap_Used(GB)")
+    total_series = _get_numeric_series(df, "Swap_Total(GB)")
+
+    if usage_series.empty and used_series.empty and total_series.empty:
+        return {
+            "available": False,
+            "latest_used_gb": 0.0,
+            "peak_used_gb": 0.0,
+            "latest_usage_pct": 0.0,
+            "peak_usage_pct": 0.0,
+            "total_gb": 0.0,
+            "status_label": "로그 없음",
+            "message": "현재 로그에는 페이지 파일 사용량 컬럼이 없어 가상 메모리 상태를 표시할 수 없습니다.",
+            "message_level": "info",
+        }
+
+    latest_used_gb = float(used_series.iloc[-1]) if not used_series.empty else 0.0
+    peak_used_gb = float(used_series.max()) if not used_series.empty else latest_used_gb
+    latest_usage_pct = float(usage_series.iloc[-1]) if not usage_series.empty else 0.0
+    peak_usage_pct = float(usage_series.max()) if not usage_series.empty else latest_usage_pct
+    total_gb = float(total_series.iloc[-1]) if not total_series.empty else 0.0
+
+    if total_gb <= 0:
+        status_label = "페이지 파일 꺼짐"
+        message = "이 로그 구간에서는 페이지 파일 크기가 0GB로 보고되어 스왑 메모리를 사용할 수 없는 상태입니다."
+        message_level = "warning"
+    elif latest_used_gb <= 0 and latest_usage_pct <= 0:
+        status_label = "스왑 없음"
+        message = "현재 스왑된 메모리가 없습니다."
+        message_level = "info"
+    else:
+        status_label = "스왑 사용 중"
+        message = (
+            f"현재 페이지 파일에서 {latest_used_gb:.2f} GB "
+            f"({latest_usage_pct:.1f}%)를 사용 중이며, 이 구간 최대값은 "
+            f"{peak_used_gb:.2f} GB ({peak_usage_pct:.1f}%)입니다."
+        )
+        message_level = "warning"
+
+    return {
+        "available": True,
+        "latest_used_gb": latest_used_gb,
+        "peak_used_gb": peak_used_gb,
+        "latest_usage_pct": latest_usage_pct,
+        "peak_usage_pct": peak_usage_pct,
+        "total_gb": total_gb,
+        "status_label": status_label,
+        "message": message,
+        "message_level": message_level,
+    }
+
+
 def render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem, aoi_df=None):
     has_system_data = df is not None and not df.empty
     insp_df = _get_inspector_insp_df(aoi_df)
     inspector_mem_df = _get_inspector_mem_df(aoi_df)
+    swap_summary = _summarize_swap_usage(df) if has_system_data else None
 
     st.subheader("메모리 및 인스펙터 분석")
 
@@ -223,13 +284,34 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         st.plotly_chart(fig_mem, width="stretch")
+        if swap_summary and swap_summary["available"]:
+            swap_cols = st.columns(3)
+            swap_cols[0].metric(
+                "현재 페이지 파일 사용량",
+                f"{swap_summary['latest_used_gb']:.2f} GB",
+                delta=f"최대 {swap_summary['peak_used_gb']:.2f} GB",
+            )
+            swap_cols[1].metric(
+                "현재 스왑 사용률",
+                f"{swap_summary['latest_usage_pct']:.1f}%",
+                delta=f"최대 {swap_summary['peak_usage_pct']:.1f}%",
+            )
+            swap_cols[2].metric(
+                "가상 메모리 상태",
+                swap_summary["status_label"],
+                delta=f"총 페이지 파일 {swap_summary['total_gb']:.2f} GB",
+            )
+            if swap_summary["message_level"] == "warning":
+                st.warning(swap_summary["message"])
+            else:
+                st.info(swap_summary["message"])
         st.caption("짙은 파란 선: 5초 평균 기준 실물 메모리 사용률입니다.")
         st.caption("옅은 파란 영역: 위 실물 메모리 사용률을 면적으로 강조한 표시이며, 별도의 다른 지표는 아닙니다.")
         if "Swap_Usage(%)" in df.columns:
             st.caption("주황색 선: 디스크 스왑(페이지 파일) 사용률입니다. RAM에 있던 일부 메모리가 디스크로 밀려난 비율을 뜻합니다.")
             swap_peak = pd.to_numeric(df["Swap_Usage(%)"], errors="coerce").fillna(0).max()
             if swap_peak <= 0:
-                st.caption("이번 선택 구간에서는 스왑 사용률이 거의 0%라 주황색 선이 보이지 않거나 바닥에 붙어 있을 수 있습니다.")
+                st.caption("이번 선택 구간에서는 현재 스왑된 메모리가 없어 주황색 선이 보이지 않거나 바닥에 붙어 있을 수 있습니다.")
         else:
             st.caption("현재 로그에는 스왑 사용률 컬럼이 없어 디스크 스왑 메모리 선은 표시되지 않습니다.")
         st.divider()

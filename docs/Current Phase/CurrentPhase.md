@@ -1,6 +1,6 @@
 # Current Phase
 
-Updated On: 2026-04-02  
+Updated On: 2026-04-09  
 Status: Active
 
 ## 현재 단계
@@ -14,7 +14,7 @@ Status: Active
 - UI: Streamlit + Plotly
 - 데이터 결합: `resource/process` exact merge
 - 배포: `run_app.py` + `monitor.spec` + `build.bat`
-- 운영 하드웨어 기준: Dell T5820 / T5860 / T7860 계열 제어 PC에서는 Dell Command Monitor 기반 CPU 온도 경로를 우선 사용하고, 일반 PC는 하드웨어 모니터 fallback 경로를 사용
+- 운영 하드웨어 기준: Dell T5820 / T5860 / T7860 계열 제어 PC에서는 Dell Command Monitor 기반 CPU 온도 경로를 우선 사용하고, 일반 PC는 하드웨어 모니터와 Thermal Zone fallback 경로를 사용합니다. 어드벤텍 IPC 같은 장비는 `Win32_PerfRawData_Counters_ThermalZoneInformation` Kelvin 경로를 포함합니다.
 
 ## 이미 완료된 큰 변화
 
@@ -30,6 +30,7 @@ Status: Active
 - 리스크, 우선순위, 운영 기준이 실제로 바뀌는 경우에만 `CurrentPhase.md`를 필수 갱신 대상으로 유지
 - 로그 스키마 변경이 대시보드와 파서를 깨지 않는지 확인
 - 패키징 흐름에서 실제 기준 파일이 무엇인지 문서에 명확히 유지
+- Playwright MCP 기반 WEB 대시보드 검증은 stdio 호환 구성이 유지되는지 함께 확인
 
 ## 활성 리스크
 

@@ -21,6 +21,9 @@ class MetricSample:
     top_mem_processes: List[Dict]
     top_disk_read_processes: List[Dict]
     top_disk_write_processes: List[Dict]
+    swap_used_gb: float = 0.0
+    swap_total_gb: float = 0.0
+    swap_usage_pct: float = 0.0
 
 @dataclass
 class WindowState:
