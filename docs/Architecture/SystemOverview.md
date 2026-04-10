@@ -27,7 +27,10 @@ Status: Active
 | 수집 CLI | `cli.py` | 수집기 시작 전 Dell 대상 장비의 DCM 부트스트랩과 CPU 온도 센서 진단 파라미터 처리 |
 | 수집 루프 | `collectors/core.py` | 1초 샘플링과 5초 집계 주기 제어 |
 | DCM 부트스트랩 | `collectors/dell_command_monitor.py` | Dell Precision T5/T7 Tower 계열이면 DCM 설치/준비 상태를 확인하고 필요 시 공식 패키지를 자동 설치 |
-| CPU 온도 프로브 | `collectors/cpu_temperature.py` | Dell 대상 장비에서는 DCM WMI를 우선, 일반 PC에서는 LibreHardwareMonitor, OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone 순으로 CPU 온도 센서 조회하고 `_Total` 집계 Thermal Zone보다 개별 zone을 우선 선택 |
+| CPU 온도 프로브 | `collectors/cpu_temperature.py` | Dell 대상 장비에서는 DCM WMI를 우선, 일반 PC에서는 `pythonnet + LibreHardwareMonitorLib.dll` 워커가 30초마다 `CPU Core #n` 최고온도를 JSON 상태 파일로 갱신하고 실패 시 OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone 순으로 fallback |
+| LHM 브리지 | `collectors/libre_hardware_monitor.py` | EXE에 동봉된 `lhm-bundle/` 또는 로컬 vendor 번들을 우선 찾고, 없을 때만 캐시/다운로드 경로로 내려받아 `pythonnet`으로 `LibreHardwareMonitorLib.dll`을 로드 |
+| CPU 온도 워커 | `collectors/cpu_temperature_worker.py` | 일반 PC용 백그라운드 워커로 30초마다 CPU 코어 최고온도를 측정해 로컬 JSON 상태 파일에 기록 |
+| CPU 온도 진단 | `collectors/cpu_temperature_diagnostics.py` | 앱 하단 테스트 버튼과 연동되어 현재 워커 상태, provider별 raw 조회 결과, 선택된 센서를 상세 로그로 남김 |
 | 샘플링 | `collectors/sampler.py` | CPU, CPU 온도, 실물 메모리, 페이지 파일 기반 가상 메모리, 디스크, 프로세스 정보 수집 |
 | subprocess 디코딩 보호 | `collectors/subprocess_utils.py` | PowerShell/설치기 stdout/stderr를 바이트 기준으로 안전 디코딩해 메모리 압박이나 비정상 출력에서도 `UnicodeDecodeError` 없이 수집 경로를 유지 |
 | 집계 | `collectors/aggregator.py` | 윈도우 평균/피크 계산, 5초 구간 최고 CPU 온도, 스왑 최고값, Top N 포맷 생성 |
@@ -53,7 +56,7 @@ Status: Active
 ## 데이터 흐름
 
 ```text
-CpuTemperatureProbe -> Sampler (1s) -> WindowState accumulate -> Aggregator (5s max temp) -> resource/process CSV
+LibreHardwareMonitor worker (30s core max) -> JSON state -> CpuTemperatureProbe -> Sampler (1s) -> WindowState accumulate -> Aggregator (5s max temp) -> resource/process CSV
 CSV files -> data_loader.load_data() -> merged DataFrame -> dashboards/*.py
 AOI log path -> inspector_logs.core.load_inspector_log_data() -> Inspector event DataFrame
 Inspector event DataFrame + system monitor DataFrame -> inspector_logs.core.build_inspection_records() -> numbered inspection export rows
@@ -67,10 +70,16 @@ Inspector event DataFrame -> memory dashboard
 - `collectors/sampler.py`는 Windows 10/11에서 `psutil.swap_memory()`를 사용해 페이지 파일 기반 가상 메모리 상태를 읽고, `Swap_Used(GB)`, `Swap_Total(GB)`, `Swap_Usage(%)`로 기록합니다.
 - `collectors/subprocess_utils.py`는 PowerShell/설치기 표준출력을 `text=True` 대신 바이트로 받은 뒤 다중 인코딩 후보와 `errors="replace"` fallback으로 디코딩해 `_readerthread`의 `UnicodeDecodeError`를 방지합니다.
 - `cli.py start`와 `cli.py probe-temp`는 Dell Precision T5/T7 Tower 계열 장비를 감지하면 `collectors/dell_command_monitor.py`를 통해 DCM 설치/준비를 먼저 시도합니다.
-- `collectors/cpu_temperature.py`는 Dell 대상 장비에서 `root\dcim\sysman/DCIM_NumericSensor`가 준비된 경우에만 이를 사용하고, 일반 PC나 DCM 미준비 상태에서는 `LibreHardwareMonitor`, `OpenHardwareMonitor`, `Win32_PerfRawData_Counters_ThermalZoneInformation`, `MSAcpi_ThermalZoneTemperature`를 순차 탐색합니다.
+- `collectors/cpu_temperature.py`는 Dell 대상 장비에서 `root\dcim\sysman/DCIM_NumericSensor`가 준비된 경우에만 이를 사용하고, 일반 PC에서는 `collectors/cpu_temperature_worker.py`가 갱신한 JSON 상태를 우선 읽습니다.
+- 일반 PC용 워커는 먼저 EXE 내부 `_MEIPASS\lhm-bundle` 또는 EXE 옆 `lhm-bundle\`을 확인하고, 그 안에 동봉된 LibreHardwareMonitor 번들을 우선 사용합니다.
+- 동봉된 번들이 없을 때만 `collectors/libre_hardware_monitor.py`가 LibreHardwareMonitor 최신 공식 릴리스를 `LOCALAPPDATA\PC-monitor-Tools\lhm-cache\`에 캐시하고, `pythonnet`으로 `LibreHardwareMonitorLib.dll`을 로드합니다.
+- 일반 PC CPU 온도는 LibreHardwareMonitor `Temperature` 센서 중 `CPU Core #n` 형태의 물리 코어 센서만 대상으로 삼고, `Core Max`, `Core Average`, `Distance to TjMax`, `CPU Package`는 메인 지표에서 제외한 뒤 최고값 하나만 사용합니다.
+- 일반 PC 워커 상태가 비어 있거나 실패하면 `OpenHardwareMonitor`, `Win32_PerfRawData_Counters_ThermalZoneInformation`, `MSAcpi_ThermalZoneTemperature`를 순차 fallback 합니다.
+- `app.py` 하단의 `CPU 온도 테스트 실행 및 로그 저장` 버튼은 현재 worker 상태, local bundle 발견 여부, force refresh 결과, provider별 raw record preview를 `C:\SystemLogs\cpu_temp_diagnostic_*.log`와 `cpu_temp_diagnostic_latest.log`로 저장합니다.
+- `app.py` 하단의 `CPU 온도 테스트 실행 및 로그 저장` 버튼은 `collectors/cpu_temperature_diagnostics.py`를 호출해 현재 worker 상태, force refresh 결과, provider별 raw record preview를 `C:\SystemLogs\cpu_temp_diagnostic_*.log`와 `cpu_temp_diagnostic_latest.log`로 저장합니다.
 - `Win32_PerfRawData_Counters_ThermalZoneInformation` 경로는 어드벤텍 IPC 같은 산업용 PC에서 노출되는 Kelvin 기반 온도 값을 읽고, `353 -> 79.85°C`, `3530 -> 79.85°C` 규칙으로 섭씨로 환산합니다.
 - PerfRaw / Thermal Zone selector 는 `0` 이하 값을 버리고, `_Total` 같은 집계 레코드보다 개별 zone 을 먼저 평가한 뒤 그 안에서 가장 높은 유효 온도를 선택합니다.
-- `cli.py probe-temp`는 현재 선택된 provider 이름뿐 아니라 가능할 때 `Name`/`InstanceName` 기반 센서 식별 문자열도 함께 출력합니다.
+- `cli.py probe-temp`는 현재 선택된 provider 이름뿐 아니라 가능할 때 `CPU Core #n` 또는 `Name`/`InstanceName` 기반 센서 식별 문자열도 함께 출력합니다.
 - Dell DCM 온도 센서는 `UnitModifier`가 실제 온도 스케일과 어긋나는 경우가 있어, CPU 온도처럼 그럴듯한 직접 읽기값이 있으면 이를 우선 사용하고 스케일 값은 fallback으로만 사용합니다.
 - Dell Command Monitor 또는 하드웨어 모니터 계열에서 `CPU Package` 센서가 보이면 이를 메인 지표로 우선 사용하고, 없으면 CPU 관련 온도 센서 중 최고값을 선택합니다.
 - `dashboards/storage.py`는 대용량 로그를 위해 차트 품질 모드를 제공합니다.

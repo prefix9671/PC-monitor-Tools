@@ -161,6 +161,52 @@ def _summarize_swap_usage(df):
     }
 
 
+def _coerce_plotly_datetime(value):
+    if hasattr(value, "to_pydatetime"):
+        return value.to_pydatetime()
+    return value
+
+
+def _add_swap_activity_overlay(fig, swap_start, swap_end):
+    start_x = _coerce_plotly_datetime(swap_start)
+    end_x = _coerce_plotly_datetime(swap_end)
+
+    fig.add_shape(
+        type="line",
+        x0=start_x,
+        x1=start_x,
+        y0=0,
+        y1=1,
+        xref="x",
+        yref="paper",
+        line=dict(width=2, dash="dash", color="red"),
+    )
+    fig.add_annotation(
+        x=start_x,
+        y=1,
+        xref="x",
+        yref="paper",
+        text="스왑 시작",
+        showarrow=False,
+        yshift=10,
+    )
+
+    if pd.notnull(swap_end) and swap_end >= swap_start:
+        fig.add_shape(
+            type="rect",
+            x0=start_x,
+            x1=end_x,
+            y0=0,
+            y1=1,
+            xref="x",
+            yref="paper",
+            fillcolor="red",
+            opacity=0.1,
+            layer="below",
+            line=dict(width=0),
+        )
+
+
 def render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem, aoi_df=None):
     has_system_data = df is not None and not df.empty
     insp_df = _get_inspector_insp_df(aoi_df)
@@ -239,21 +285,7 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
 
             swap_start = df[df["Swap_Usage(%)"] > 1]["Timestamp"].min()
             if pd.notnull(swap_start):
-                fig_mem.add_vline(
-                    x=swap_start,
-                    line_width=2,
-                    line_dash="dash",
-                    line_color="red",
-                    annotation_text="스왑 시작",
-                )
-                fig_mem.add_vrect(
-                    x0=swap_start,
-                    x1=df["Timestamp"].max(),
-                    fillcolor="red",
-                    opacity=0.1,
-                    layer="below",
-                    line_width=0,
-                )
+                _add_swap_activity_overlay(fig_mem, swap_start, df["Timestamp"].max())
 
         if "Mem_Used(GB)" in df.columns and df["Mem_Used(GB)"].notna().any():
             try:

@@ -1,7 +1,19 @@
 # Changelog
 
-Updated On: 2026-04-09  
+Updated On: 2026-04-10  
 Status: Active
+
+## [2026-04-10] - 일반 PC CPU 코어 최고온도 워커 전환
+
+### 변경 사항
+
+- 일반 PC와 어드벤텍 IPC 계열의 CPU 온도 경로를 `pythonnet + LibreHardwareMonitorLib.dll` 기반 백그라운드 워커로 전환했습니다.
+- 워커는 EXE에 동봉된 `lhm-bundle`을 우선 사용하고, 없을 때만 LibreHardwareMonitor 최신 공식 릴리스를 로컬 캐시에 내려받아 `CPU Core #n` 온도 센서만 대상으로 읽고, 30초마다 최고 코어 온도 하나를 JSON 상태 파일로 갱신합니다.
+- Dell Precision T5/T7 Tower 계열은 기존 Dell Command Monitor 우선 경로를 그대로 유지합니다.
+- 일반 PC에서 워커가 실패하거나 코어 센서를 만들지 못하면 OpenHardwareMonitor, PerfRaw Thermal Zone, MSAcpi Thermal Zone 순으로 fallback 합니다.
+- `run_app.py`, `monitor.spec`, `requirements.txt`를 갱신해 EXE 환경에서도 `cpu-temp-worker` 분기와 `pythonnet` 런타임 파일이 함께 포함되도록 정리했습니다.
+- 앱 본문 맨 아래에 `CPU 온도 테스트 실행 및 로그 저장` 버튼을 추가해, 현장 PC에서 상세 진단 로그를 `C:\SystemLogs\cpu_temp_diagnostic_*.log`로 바로 남길 수 있게 했습니다.
+- 추가로 `scripts/prepare_lhm_bundle.py`와 `monitor.spec`를 연결해 LibreHardwareMonitor 번들을 EXE와 함께 동봉하도록 바꿨고, 런타임은 동봉 번들을 먼저 사용해 SSL 인증서 이슈가 있는 현장 PC에서도 오프라인으로 동작할 수 있게 했습니다.
 
 ## [2026-04-08] - 검사 결과 XLSX 컬럼 단순화
 

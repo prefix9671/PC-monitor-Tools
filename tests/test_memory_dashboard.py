@@ -106,6 +106,29 @@ class TestSwapMonitoring(unittest.TestCase):
         self.assertTrue(any("현재 스왑된 메모리가 없습니다." in message for message in st.info_messages))
         self.assertEqual(1, len(st.plotly_figures))
 
+    def test_render_memory_dashboard_marks_swap_start_without_timestamp_axis_error(self):
+        st = FakeStreamlit()
+        df = pd.DataFrame(
+            {
+                "Timestamp": pd.to_datetime(
+                    ["2026-04-10 09:00:00", "2026-04-10 09:00:05", "2026-04-10 09:00:10"]
+                ),
+                "Mem_Used(GB)": [8.1, 8.4, 8.6],
+                "Mem_Usage_Avg(%)": [50.5, 52.0, 53.0],
+                "Swap_Used(GB)": [0.0, 0.2, 0.3],
+                "Swap_Total(GB)": [8.0, 8.0, 8.0],
+                "Swap_Usage(%)": [0.0, 2.5, 3.4],
+            }
+        )
+
+        render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem="16")
+
+        self.assertEqual(1, len(st.plotly_figures))
+        self.assertTrue(st.warning_messages)
+        memory_fig = st.plotly_figures[0]
+        self.assertGreaterEqual(len(memory_fig.layout.shapes), 2)
+        self.assertTrue(memory_fig.layout.annotations)
+
 
 if __name__ == "__main__":
     unittest.main()

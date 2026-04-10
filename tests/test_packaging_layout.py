@@ -45,6 +45,7 @@ class TestPackagingLayout(unittest.TestCase):
 
         self.assertIn(".artifacts", contents)
         self.assertIn("RELEASE_ROOT", contents)
+        self.assertIn("scripts\\prepare_lhm_bundle.py", contents)
         self.assertNotIn('copy "Monitor.ps1"', contents)
         self.assertNotIn('dist\\Manual.zip', contents)
 
@@ -52,7 +53,16 @@ class TestPackagingLayout(unittest.TestCase):
         contents = (REPO_ROOT / "monitor.spec").read_text(encoding="utf-8")
 
         self.assertIn("manual_site_dir = Path('.artifacts/manual-site')", contents)
+        self.assertIn("lhm_bundle_dir = Path('.artifacts/vendor/lhm-bundle')", contents)
+        self.assertIn("datas.append((str(lhm_bundle_dir), 'lhm-bundle'))", contents)
+        self.assertIn("collect_data_files('pythonnet')", contents)
+        self.assertIn("'clr'", contents)
         self.assertNotIn("('Monitor.ps1', '.')", contents)
+
+    def test_requirements_include_pythonnet(self):
+        contents = (REPO_ROOT / "requirements.txt").read_text(encoding="utf-8")
+
+        self.assertIn("pythonnet", contents)
 
 
 if __name__ == "__main__":

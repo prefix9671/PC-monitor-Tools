@@ -5,6 +5,7 @@ from PyInstaller.utils.hooks import collect_data_files, copy_metadata, collect_s
 manual_site_dir = Path('.artifacts/manual-site')
 if not manual_site_dir.exists():
     manual_site_dir = Path('site')
+lhm_bundle_dir = Path('.artifacts/vendor/lhm-bundle')
 
 datas = [
     ('app.py', '.'),
@@ -19,8 +20,12 @@ datas = [
     ('dashboards', 'dashboards'),
     (str(manual_site_dir), 'site'),
 ]
+if lhm_bundle_dir.exists():
+    datas.append((str(lhm_bundle_dir), 'lhm-bundle'))
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit')
+datas += collect_data_files('pythonnet')
+datas += collect_data_files('clr_loader')
 
 hidden_imports = [
     'streamlit',
@@ -32,12 +37,17 @@ hidden_imports = [
     'streamlit.runtime.state',
     'streamlit.runtime.state.session_state',
     'plotly',
-    'pandas'
+    'pandas',
+    'clr',
+    'pythonnet',
+    'clr_loader',
 ]
 hidden_imports += collect_submodules(
     'streamlit',
     filter=lambda name: not name.startswith('streamlit.external.langchain'),
 )
+hidden_imports += collect_submodules('pythonnet')
+hidden_imports += collect_submodules('clr_loader')
 
 block_cipher = None
 

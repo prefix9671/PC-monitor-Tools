@@ -92,9 +92,10 @@ async function main() {
 
     const memory = await callTool('browser_run_code', {
       code: `async (page) => {
-        const select = page.locator('[data-baseweb="select"]').last();
+        await page.getByText('대시보드 보기 선택').waitFor({ timeout: 60000 });
+        const select = page.locator('[data-baseweb="select"]').nth(1);
         await select.click();
-        await page.locator('[role="option"]').nth(1).click();
+        await page.getByRole('option', { name: '메모리 + 인스펙터 대시보드' }).click();
         await page.getByRole('heading', { name: '메모리 및 인스펙터 분석' }).waitFor({ timeout: 60000 });
         return {
           heading: await page.getByRole('heading', { name: '메모리 및 인스펙터 분석' }).textContent(),
@@ -114,9 +115,10 @@ async function main() {
 
     const storage = await callTool('browser_run_code', {
       code: `async (page) => {
-        const select = page.locator('[data-baseweb="select"]').last();
+        await page.getByText('대시보드 보기 선택').waitFor({ timeout: 60000 });
+        const select = page.locator('[data-baseweb="select"]').nth(1);
         await select.click();
-        await page.locator('[role="option"]').nth(2).click();
+        await page.getByRole('option', { name: '스토리지 대시보드' }).click();
         await page.getByRole('heading', { name: '스토리지 성능 분석' }).waitFor({ timeout: 60000 });
         return {
           heading: await page.getByRole('heading', { name: '스토리지 성능 분석' }).textContent(),
@@ -134,13 +136,12 @@ async function main() {
       fullPage: true,
     });
 
-    await callTool('browser_navigate', { url: targetUrl });
     const custom = await callTool('browser_run_code', {
       code: `async (page) => {
-        await page.getByRole('heading', { name: '시스템 자원 대시보드' }).waitFor({ timeout: 60000 });
-        const select = page.locator('[data-baseweb="select"]').last();
+        await page.getByText('대시보드 보기 선택').waitFor({ timeout: 60000 });
+        const select = page.locator('[data-baseweb="select"]').nth(1);
         await select.click();
-        await page.locator('[role="option"]').nth(3).click();
+        await page.getByRole('option', { name: '사용자 정의 그래프' }).click();
         await page.getByRole('heading', { name: '사용자 정의 시각화' }).waitFor({ timeout: 60000 });
         await page.getByText('엑셀(.xlsx) 다운로드').waitFor({ timeout: 60000 });
         return {

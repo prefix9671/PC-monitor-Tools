@@ -1,10 +1,22 @@
 import json
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Iterable, Optional
 
-from collectors.dell_command_monitor import should_use_dell_command_monitor_provider
+from collectors.cpu_temperature_worker import (
+    DEFAULT_STATE_PATH,
+    capture_and_write_state,
+    load_state_payload,
+)
+from collectors.dell_command_monitor import (
+    get_system_identity,
+    resolve_dcm_package,
+    should_use_dell_command_monitor_provider,
+)
+from collectors.libre_hardware_monitor import LIBRE_HARDWARE_MONITOR_CORE_MAX_PROVIDER
 from collectors.subprocess_utils import run_text_capture
 
 
@@ -339,8 +351,13 @@ def _select_perf_raw_thermal_zone_temperature(records: Iterable[dict[str, Any]])
 
 class CpuTemperatureProbe:
     _DCM_PROVIDER = ("DellCommandMonitor", DELL_COMMAND_MONITOR_SCRIPT, _select_dell_command_monitor_selection)
-    _FALLBACK_PROVIDERS = (
+    _DELL_FALLBACK_PROVIDERS = (
         ("LibreHardwareMonitor", LIBRE_HARDWARE_MONITOR_SCRIPT, _select_max_sensor_selection),
+        ("OpenHardwareMonitor", OPEN_HARDWARE_MONITOR_SCRIPT, _select_max_sensor_selection),
+        ("PerfRawThermalZone", PERF_RAW_THERMAL_ZONE_SCRIPT, _select_perf_raw_thermal_zone_selection),
+        ("MSAcpiThermalZone", MS_ACPI_THERMAL_ZONE_SCRIPT, _select_max_thermal_zone_selection),
+    )
+    _NON_DELL_FALLBACK_PROVIDERS = (
         ("OpenHardwareMonitor", OPEN_HARDWARE_MONITOR_SCRIPT, _select_max_sensor_selection),
         ("PerfRawThermalZone", PERF_RAW_THERMAL_ZONE_SCRIPT, _select_perf_raw_thermal_zone_selection),
         ("MSAcpiThermalZone", MS_ACPI_THERMAL_ZONE_SCRIPT, _select_max_thermal_zone_selection),
@@ -351,12 +368,21 @@ class CpuTemperatureProbe:
         retry_interval_sec: float = 30.0,
         command_timeout_sec: float = 1.5,
         enable_dell_command_monitor: Optional[bool] = None,
+        worker_interval_sec: float = 30.0,
+        state_path: Optional[Path] = None,
+        system_identity: Optional[tuple[str, str]] = None,
     ):
         self.retry_interval_sec = retry_interval_sec
         self.command_timeout_sec = command_timeout_sec
+        self.worker_interval_sec = worker_interval_sec
         self.source_name: Optional[str] = None
         self.source_detail: Optional[str] = None
         self._last_probe_time = 0.0
+        self._worker_process: Optional[subprocess.Popen] = None
+        self._state_path = Path(state_path) if state_path is not None else DEFAULT_STATE_PATH
+        self._state_path.parent.mkdir(parents=True, exist_ok=True)
+        manufacturer, model = system_identity or get_system_identity()
+        self.is_target_dell_system = resolve_dcm_package(manufacturer, model) is not None
         if enable_dell_command_monitor is None:
             self.enable_dell_command_monitor = should_use_dell_command_monitor_provider(timeout_sec=command_timeout_sec)
         else:
@@ -364,9 +390,106 @@ class CpuTemperatureProbe:
 
     @property
     def _providers(self):
-        if self.enable_dell_command_monitor:
-            return (self._DCM_PROVIDER, *self._FALLBACK_PROVIDERS)
-        return self._FALLBACK_PROVIDERS
+        if self.is_target_dell_system:
+            if self.enable_dell_command_monitor:
+                return (self._DCM_PROVIDER, *self._DELL_FALLBACK_PROVIDERS)
+            return self._DELL_FALLBACK_PROVIDERS
+        return self._NON_DELL_FALLBACK_PROVIDERS
+
+    def _build_worker_command(self, once: bool = False) -> list[str]:
+        command = []
+        if getattr(sys, "frozen", False):
+            command = [
+                sys.executable,
+                "cpu-temp-worker",
+            ]
+        else:
+            command = [
+                sys.executable,
+                "-m",
+                "collectors.cpu_temperature_worker",
+            ]
+
+        command.extend(
+            [
+                "--state-path",
+                str(self._state_path),
+                "--interval-sec",
+                str(self.worker_interval_sec),
+            ]
+        )
+        if once:
+            command.append("--once")
+        return command
+
+    def _load_worker_selection(self) -> Optional[TemperatureSelection]:
+        payload = load_state_payload(self._state_path)
+        if not payload or payload.get("status") != "ok":
+            return None
+
+        sampled_at_epoch = _coerce_float(payload.get("sampled_at_epoch"))
+        if sampled_at_epoch is None:
+            return None
+
+        max_age_sec = max(self.worker_interval_sec * 3.0, 90.0)
+        if (time.time() - sampled_at_epoch) > max_age_sec:
+            return None
+
+        value_c = _coerce_float(payload.get("value_c"))
+        if not _is_plausible_temperature_celsius(value_c):
+            return None
+
+        detail = str(payload.get("detail", "")).strip() or None
+        provider_name = str(payload.get("provider_name", "")).strip() or LIBRE_HARDWARE_MONITOR_CORE_MAX_PROVIDER
+        self.source_name = provider_name
+        self.source_detail = detail
+        return TemperatureSelection(value_c=value_c, detail=detail)
+
+    def _ensure_non_dell_worker(self) -> None:
+        if self._worker_process is not None and self._worker_process.poll() is None:
+            return
+
+        try:
+            self._worker_process = subprocess.Popen(
+                self._build_worker_command(once=False),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=CREATE_NO_WINDOW,
+            )
+        except (FileNotFoundError, OSError, subprocess.SubprocessError):
+            self._worker_process = None
+
+    def _refresh_non_dell_state_once(self) -> Optional[TemperatureSelection]:
+        try:
+            if capture_and_write_state(self._state_path):
+                return self._load_worker_selection()
+        except Exception:
+            return None
+        return None
+
+    def _read_non_dell_celsius(self, force_refresh: bool = False) -> Optional[float]:
+        if force_refresh:
+            selection = self._refresh_non_dell_state_once()
+            if selection is not None:
+                return round(selection.value_c, 1)
+        else:
+            selection = self._load_worker_selection()
+            if selection is not None:
+                return round(selection.value_c, 1)
+            self._ensure_non_dell_worker()
+            selection = self._refresh_non_dell_state_once()
+            if selection is not None:
+                return round(selection.value_c, 1)
+
+        self.source_name = None
+        self.source_detail = None
+
+        for provider_name, script, selector in self._providers:
+            value = self._query_provider(provider_name, script, selector)
+            if value is not None:
+                return value
+
+        return None
 
     def _run_powershell(self, script: str) -> str:
         try:
@@ -403,6 +526,9 @@ class CpuTemperatureProbe:
         return round(selected.value_c, 1)
 
     def read_celsius(self, force_refresh: bool = False) -> Optional[float]:
+        if not self.is_target_dell_system:
+            return self._read_non_dell_celsius(force_refresh=force_refresh)
+
         now = time.monotonic()
         if not force_refresh and self.source_name is None and (now - self._last_probe_time) < self.retry_interval_sec:
             return None
@@ -426,3 +552,17 @@ class CpuTemperatureProbe:
                 return value
 
         return None
+
+    def close(self) -> None:
+        if self._worker_process is None:
+            return
+        if self._worker_process.poll() is not None:
+            self._worker_process = None
+            return
+        try:
+            self._worker_process.terminate()
+            self._worker_process.wait(timeout=3)
+        except (OSError, subprocess.SubprocessError):
+            pass
+        finally:
+            self._worker_process = None

@@ -11,6 +11,9 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "start":
         from cli import main as cli_main
         sys.exit(cli_main())
+    if len(sys.argv) > 1 and sys.argv[1] == "cpu-temp-worker":
+        from collectors.cpu_temperature_worker import main as worker_main
+        sys.exit(worker_main(sys.argv[2:]))
         
     # Otherwise, launch Streamlit dashboard
     sys.argv = [

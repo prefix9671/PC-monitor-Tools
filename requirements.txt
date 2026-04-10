@@ -5,3 +5,4 @@ pyinstaller
 openpyxl
 mkdocs-material
 psutil
+pythonnet

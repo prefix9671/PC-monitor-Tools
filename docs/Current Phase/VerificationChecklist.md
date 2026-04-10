@@ -20,7 +20,10 @@ Status: Active
 - Dell Precision T5/T7 Tower 제어 PC라면 `start` 또는 `probe-temp` 실행 시 DCM 자동 설치/준비 메시지가 보이는지 확인
 - Dell 제어 PC라면 `probe-temp`가 가능할 때 `Source: DellCommandMonitor`를 우선 보고하는지 확인
 - Dell 제어 PC라면 CPU 온도가 `5.x°C`처럼 비현실적으로 낮게 표시되지 않고, 실제 장비 상태에 맞는 값으로 보이는지 확인
-- 일반 PC라면 DCM 설치 시도를 건너뛰고 Libre/OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone fallback으로 계속 동작하는지 확인
+- 일반 PC라면 DCM 설치 시도를 건너뛰고 EXE에 동봉된 `lhm-bundle`을 우선 사용해 `pythonnet` 워커를 기동하는지 확인
+- 일반 PC라면 `probe-temp` 또는 상태 JSON 에서 `Source: LibreHardwareMonitorCoreMax`와 `CPU Core #n` 형태의 `Sensor` 문자열을 우선 확인
+- 일반 PC라면 워커가 30초 간격으로 JSON 상태 파일을 갱신하고, 동봉 번들이 없거나 실패할 때만 OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone fallback 으로 계속 동작하는지 확인
+- 앱 맨 아래 `CPU 온도 테스트 실행 및 로그 저장` 버튼을 눌렀을 때 `C:\SystemLogs\cpu_temp_diagnostic_*.log`와 `cpu_temp_diagnostic_latest.log`가 생성되고, force refresh 결과와 provider별 raw preview가 포함되는지 확인
 - 어드벤텍 IPC 또는 동일한 `Win32_PerfRawData_Counters_ThermalZoneInformation` 노출 장비라면 raw 값 `353`이 약 `79.9°C`, `3530`이 약 `79.9°C`로 해석되는지 확인
 - 어드벤텍 IPC 또는 동일 클래스 장비라면 `_Total` 집계 레코드와 개별 Thermal Zone 이 함께 있을 때 `probe-temp`의 `Sensor` 출력으로 실제 선택된 zone 을 확인하고, 개별 zone 최대값이 `CPU_Temp(C)`에 반영되는지 확인
 - 메모리 압박 또는 비정상 콘솔 출력이 섞여도 PowerShell/설치기 stdout/stderr 디코딩에서 `UnicodeDecodeError`가 나지 않고 수집이 계속되는지 확인
@@ -54,6 +57,7 @@ Status: Active
 - 최근 로그를 읽어 `CPU`, `Memory`, `Storage`, `Custom Graph`가 모두 뜨는지 확인
 - `CPU 대시보드`에서 `CPU 사용률과 온도`, `CPU 온도 추이`가 함께 보이고, 온도가 5초 구간 최고값 기준으로 표시되는지 확인
 - `메모리 + 인스펙터 대시보드`에서 페이지 파일 사용량, 스왑 사용률, 가상 메모리 상태가 함께 보이고 `0`이면 `현재 스왑된 메모리가 없습니다`로 안내되는지 확인
+- 스왑 사용률이 1%를 넘는 구간이 있는 로그에서도 메모리 대시보드가 크래시하지 않고, `스왑 시작` 점선/배경 강조가 타임스탬프 축에서 정상 표시되는지 확인
 - 어드벤텍 IPC 로그를 사용한다면 `CPU_Temp(C)`가 `_Total` 평균성 레코드가 아니라 개별 Thermal Zone 최대값에 맞게 표시되는지 함께 확인
 - 주요 버튼, 메뉴, 차트 제목, KPI 라벨이 한국어 UI 기준으로 자연스럽게 보이는지 확인
 - `Time Range` 슬라이더와 `Start Time` / `End Time` 직접 입력이 함께 동작하는지 확인
@@ -75,6 +79,7 @@ Status: Active
 
 - `.\venv\Scripts\python -m mkdocs build`
 - 관련 기능이 CLI 진입점과 연결된다면 최소 Smoke Test를 추가 수행
+- 일반 PC CPU 온도 워커를 변경했다면 개발 환경 또는 빌드 산출물에서 `cpu-temp-worker --once` 경로가 예외 없이 실행되고, 릴리스 폴더 또는 EXE 내부에 `lhm-bundle`이 포함되는지 확인
 - 필요 시 `build.bat` 실행 후 산출물 확인
 - `Architecture/RuntimeAndPackaging.md`와 `Wiki/Changelog.md` 업데이트
 

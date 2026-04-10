@@ -1,4 +1,5 @@
 # app.py
+import json
 import os
 import subprocess
 import sys
@@ -9,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from collectors.cpu_temperature_diagnostics import write_cpu_temperature_diagnostic_log
 from config import DEFAULT_LOG_DIR, MANUAL_SITE_DIR
 from dashboards.cpu import render_cpu_dashboard
 from dashboards.custom import render_custom_dashboard
@@ -40,6 +42,7 @@ inspection_records_df = None
 system_target_files = []
 resolved_aoi_paths = []
 loaded_aoi_sources = []
+st.session_state.setdefault("cpu_temp_diagnostic_result", None)
 
 
 with st.sidebar:
@@ -435,3 +438,45 @@ else:
         f"시스템 모니터 CSV를 업로드하거나 {DEFAULT_LOG_DIR}에 로그가 있는지 확인하세요. "
         "또는 AOI / 인스펙터 로그를 업로드해 주세요."
     )
+
+st.markdown("---")
+st.subheader("CPU 온도 진단")
+st.caption(
+    "일반 PC는 LibreHardwareMonitor 코어 온도 워커 상태와 fallback provider 결과를 함께 점검하고, "
+    f"로그는 {DEFAULT_LOG_DIR}에 저장합니다."
+)
+
+if st.button("CPU 온도 테스트 실행 및 로그 저장", key="cpu_temp_diagnostic_button"):
+    with st.spinner("CPU 온도 진단 로그를 수집하는 중입니다..."):
+        try:
+            diagnostics, log_path, latest_path = write_cpu_temperature_diagnostic_log(DEFAULT_LOG_DIR)
+            st.session_state["cpu_temp_diagnostic_result"] = {
+                "diagnostics": diagnostics,
+                "log_path": str(log_path),
+                "latest_path": str(latest_path),
+            }
+            st.success(f"CPU 온도 진단 로그를 저장했습니다: {log_path}")
+        except Exception as exc:
+            st.session_state["cpu_temp_diagnostic_result"] = {
+                "error": str(exc),
+            }
+            st.error(f"CPU 온도 진단에 실패했습니다: {exc}")
+
+cpu_temp_diagnostic_result = st.session_state.get("cpu_temp_diagnostic_result")
+if cpu_temp_diagnostic_result:
+    if cpu_temp_diagnostic_result.get("error"):
+        st.error(f"최근 CPU 온도 진단 실패: {cpu_temp_diagnostic_result['error']}")
+    else:
+        diagnostics = cpu_temp_diagnostic_result["diagnostics"]
+        force_refresh_probe = diagnostics.get("force_refresh_probe") or {}
+        st.write(f"- 마지막 진단 시각: **{diagnostics.get('generated_at', 'N/A')}**")
+        st.write(f"- 진단 로그: **{cpu_temp_diagnostic_result['log_path']}**")
+        st.write(f"- 최신 로그 별칭: **{cpu_temp_diagnostic_result['latest_path']}**")
+        st.write(f"- 강제 새로고침 값: **{force_refresh_probe.get('value_c', 'N/A')}°C**")
+        st.write(f"- 선택 source: **{force_refresh_probe.get('source_name', 'Unavailable')}**")
+        st.write(f"- 선택 sensor: **{force_refresh_probe.get('source_detail', 'N/A')}**")
+        with st.expander("CPU 온도 진단 JSON 보기", expanded=False):
+            st.code(
+                json.dumps(cpu_temp_diagnostic_result["diagnostics"], ensure_ascii=False, indent=2),
+                language="json",
+            )

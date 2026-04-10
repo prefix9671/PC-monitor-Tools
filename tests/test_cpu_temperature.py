@@ -1,10 +1,13 @@
 import io
+import json
 import math
 import os
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stdout
+from pathlib import Path
 from unittest.mock import patch
 
 import pandas as pd
@@ -26,6 +29,11 @@ from collectors.cpu_temperature import (
     _select_perf_raw_thermal_zone_temperature,
     _select_max_sensor_temperature,
     _select_max_thermal_zone_temperature,
+)
+from collectors.libre_hardware_monitor import (
+    LIBRE_HARDWARE_MONITOR_CORE_MAX_PROVIDER,
+    _is_cpu_core_sensor_name,
+    _select_hottest_cpu_core_candidate,
 )
 from collectors.models import MetricSample, WindowState
 from collectors.writers import OutputsWriter
@@ -177,8 +185,45 @@ class TestCpuTemperatureCore(unittest.TestCase):
 
         self.assertAlmostEqual(79.85, _select_perf_raw_thermal_zone_temperature(records), places=2)
 
-    def test_probe_provider_order_includes_perf_raw_before_msacpi(self):
-        probe = CpuTemperatureProbe(enable_dell_command_monitor=False)
+    def test_lhm_core_sensor_name_matches_only_numbered_core_sensors(self):
+        self.assertTrue(_is_cpu_core_sensor_name("CPU Core #1"))
+        self.assertTrue(_is_cpu_core_sensor_name("Core 7"))
+        self.assertFalse(_is_cpu_core_sensor_name("CPU Package"))
+        self.assertFalse(_is_cpu_core_sensor_name("Core Max"))
+        self.assertFalse(_is_cpu_core_sensor_name("CPU Core #1 Distance to TjMax"))
+
+    def test_select_hottest_cpu_core_candidate_uses_max_core_value(self):
+        selected = _select_hottest_cpu_core_candidate(
+            [
+                {"value_c": 71.1, "sensor_name": "CPU Core #1"},
+                {"value_c": 82.4, "sensor_name": "CPU Core #4"},
+                {"value_c": 79.8, "sensor_name": "CPU Core #2"},
+            ]
+        )
+
+        self.assertEqual("CPU Core #4", selected["sensor_name"])
+        self.assertEqual(82.4, selected["value_c"])
+
+    def test_probe_provider_order_for_non_dell_uses_openhardwaremonitor_then_thermal_zone_fallbacks(self):
+        probe = CpuTemperatureProbe(
+            enable_dell_command_monitor=False,
+            system_identity=("Advantech", "ARK-3534"),
+        )
+
+        self.assertEqual(
+            [
+                "OpenHardwareMonitor",
+                "PerfRawThermalZone",
+                "MSAcpiThermalZone",
+            ],
+            [provider_name for provider_name, *_ in probe._providers],
+        )
+
+    def test_probe_provider_order_for_dell_keeps_legacy_fallbacks(self):
+        probe = CpuTemperatureProbe(
+            enable_dell_command_monitor=False,
+            system_identity=("Dell Inc.", "Precision 5820 Tower"),
+        )
 
         self.assertEqual(
             [
@@ -189,6 +234,33 @@ class TestCpuTemperatureCore(unittest.TestCase):
             ],
             [provider_name for provider_name, *_ in probe._providers],
         )
+
+    def test_non_dell_probe_reads_worker_state_before_fallbacks(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_path = Path(temp_dir) / "cpu-core-temp-state.json"
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "status": "ok",
+                        "provider_name": LIBRE_HARDWARE_MONITOR_CORE_MAX_PROVIDER,
+                        "value_c": 73.4,
+                        "detail": "Intel Xeon | CPU Core #4 | /intelcpu/0/temperature/4",
+                        "sampled_at_epoch": time.time(),
+                    }
+                ),
+                encoding="utf-8",
+            )
+            probe = CpuTemperatureProbe(
+                enable_dell_command_monitor=False,
+                system_identity=("Advantech", "ARK-3534"),
+                state_path=state_path,
+            )
+
+            value = probe.read_celsius()
+
+            self.assertEqual(73.4, value)
+            self.assertEqual(LIBRE_HARDWARE_MONITOR_CORE_MAX_PROVIDER, probe.source_name)
+            self.assertEqual("Intel Xeon | CPU Core #4 | /intelcpu/0/temperature/4", probe.source_detail)
 
     def test_aggregator_uses_max_cpu_temperature_over_window(self):
         state = WindowState(window_start=0.0)

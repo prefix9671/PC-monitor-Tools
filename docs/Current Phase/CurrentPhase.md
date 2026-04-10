@@ -1,6 +1,6 @@
 # Current Phase
 
-Updated On: 2026-04-09  
+Updated On: 2026-04-10  
 Status: Active
 
 ## 현재 단계
@@ -14,7 +14,7 @@ Status: Active
 - UI: Streamlit + Plotly
 - 데이터 결합: `resource/process` exact merge
 - 배포: `run_app.py` + `monitor.spec` + `build.bat`
-- 운영 하드웨어 기준: Dell T5820 / T5860 / T7860 계열 제어 PC에서는 Dell Command Monitor 기반 CPU 온도 경로를 우선 사용하고, 일반 PC는 하드웨어 모니터와 Thermal Zone fallback 경로를 사용합니다. 어드벤텍 IPC 같은 장비는 `Win32_PerfRawData_Counters_ThermalZoneInformation` Kelvin 경로를 포함합니다.
+- 운영 하드웨어 기준: Dell T5820 / T5860 / T7860 계열 제어 PC에서는 Dell Command Monitor 기반 CPU 온도 경로를 우선 사용하고, 일반 PC는 EXE에 동봉된 `lhm-bundle` 또는 로컬 bundle 을 사용하는 `pythonnet + LibreHardwareMonitorLib.dll` 워커가 `CPU Core #n` 최고온도를 30초마다 갱신합니다. 어드벤텍 IPC 같은 장비는 워커 실패 시 `Win32_PerfRawData_Counters_ThermalZoneInformation` Kelvin fallback 경로를 포함합니다.
 
 ## 이미 완료된 큰 변화
 

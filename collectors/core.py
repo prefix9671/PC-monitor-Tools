@@ -63,3 +63,5 @@ class MonitorEngine:
         except Exception as e:
             print(f"Error in collector loop: {e}", file=sys.stderr)
             traceback.print_exc()
+        finally:
+            self.sampler.close()

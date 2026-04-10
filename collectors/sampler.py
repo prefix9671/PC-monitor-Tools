@@ -239,3 +239,6 @@ class Sampler:
             swap_total_gb=swap_total_gb,
             swap_usage_pct=swap_usage_pct,
         )
+
+    def close(self):
+        self.cpu_temperature_probe.close()

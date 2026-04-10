@@ -41,6 +41,17 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo ========================================
+echo   Preparing LibreHardwareMonitor Bundle
+echo ========================================
+call .\venv\Scripts\python.exe scripts\prepare_lhm_bundle.py
+
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] LibreHardwareMonitor bundle preparation failed!
+    pause
+    exit /b %ERRORLEVEL%
+)
+
+echo ========================================
 echo   Building and Renaming to: %BASENAME%.exe
 echo ========================================
 

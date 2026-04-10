@@ -10,6 +10,7 @@ Status: Active
 ## 현재 신뢰성 가정
 
 - 수집은 `psutil` 기반의 별도 프로세스로 수행됩니다.
+- 일반 PC CPU 코어 온도는 `pythonnet + LibreHardwareMonitorLib.dll` 백그라운드 워커가 별도로 측정해 JSON 상태 파일로 넘깁니다.
 - 분석은 저장된 CSV를 읽는 방식이므로 운영 대상 프로세스와 분리됩니다.
 - 원시 1초 샘플은 5초 윈도우로 집계되어 대시보드에서 다루기 쉬운 형태로 정리됩니다.
 
@@ -19,6 +20,8 @@ Status: Active
 
 - 수집기와 대시보드는 분리되어 있어 분석 UI가 수집 파이프라인을 직접 막지 않습니다.
 - 수집 결과는 파일로 남기므로 나중에 다시 로드해 비교할 수 있습니다.
+- LibreHardwareMonitor 번들을 EXE에 함께 동봉해, 현장 PC의 SSL 인증서나 외부망 차단 때문에 GitHub 다운로드가 막혀도 기본 온도 경로를 유지할 수 있습니다.
+- 일반 PC CPU 코어 온도는 별도 워커와 파일 기반 handoff 를 써서, 1초 샘플링 루프가 하드웨어 센서 초기화나 DLL 로드 비용에 직접 묶이지 않습니다.
 
 ### 시간축 일관성
 
@@ -38,6 +41,7 @@ Status: Active
 - 로그를 보존해 장애 재분석 가능
 - CI에서 단위 테스트, 대시보드 스모크, 문서 동기화 검사를 함께 돌려 회귀를 더 일찍 발견 가능
 - PyInstaller가 실제 미사용 optional 모듈에 끌려가지 않도록 패키징 대상을 좁혀 빌드 경고 노이즈를 줄일 수 있음
+- 일반 PC CPU 온도 경로는 동봉된 LibreHardwareMonitor 번들을 우선 사용하고, 추가로 캐시/다운로드와 OpenHardwareMonitor / Thermal Zone fallback 을 유지해 현장 대응 폭을 넓힐 수 있음
 - Playwright MCP 브라우저 검증은 stdio 직결 구성으로 유지해 GUI 자동화에서 연결 실패 가능성을 낮출 수 있음
 - 작업 완료 후 `scripts/verify_playwright_dashboards.js`로 실제 Streamlit 대시보드 4종을 다시 열어 보고, 스크린샷과 콘솔 메시지를 아티팩트로 남길 수 있음
 
