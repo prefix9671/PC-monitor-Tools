@@ -89,6 +89,7 @@ Status: Active
 
 - `.\venv\Scripts\python -m mkdocs build`
 - `.\venv\Scripts\python scripts\run_prebuild_regression.py`
+- `git cl` 오류를 확인해야 하면 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_git_cl.ps1`를 실행해, GitHub 원격에서의 비필수 경고인지 depot_tools 환경 누락인지 먼저 구분
 - 관련 기능이 CLI 진입점과 연결된다면 최소 Smoke Test를 추가 수행
 - 일반 PC CPU 온도 워커를 변경했다면 개발 환경 또는 빌드 산출물에서 `cpu-temp-worker --once` 경로가 예외 없이 실행되고, 릴리스 폴더 또는 EXE 내부에 `lhm-bundle`이 포함되는지 확인
 - 필요 시 `build.bat` 실행 후 산출물 확인

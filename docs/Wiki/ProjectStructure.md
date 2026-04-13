@@ -63,6 +63,7 @@ PC-monitor-Tools/
 | `scripts/doc_sync_rules.toml` | 에이전트와 CI가 공유하는 문서 동기화 규칙 표 |
 | `scripts/verify_docs_sync.py` | 코드 변경과 활성 문서 변경의 동기화 검사 |
 | `scripts/prepare_lhm_bundle.py` | LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비 |
+| `scripts/check_git_cl.ps1` | 현재 저장소의 `git cl` 오류가 GitHub 원격 기준 비필수 상황인지, 실제 `git-cl` 실행 파일 누락인지 진단 |
 | `scripts/capture_user_manual_assets.js` | headless Playwright로 유저 매뉴얼용 진입점/모니터링, 대시보드, AOI 업로드, XLSX 내보내기 스크린샷을 raw/approved 단계로 캡처 |
 | `scripts/run_prebuild_regression.py` | 빌드 전 회귀 러너. 단위 테스트, AOI CLI, 대시보드 스모크, 문서 동기화, MkDocs, headless Playwright를 순차 실행 |
 | `scripts/run_ci_dashboard_smoke.py` | 샘플 CSV로 대시보드 스모크 테스트 실행 |

@@ -3,6 +3,13 @@
 Updated On: 2026-04-13  
 Status: Active
 
+## [2026-04-13] - GitHub 원격 기준 git cl 진단 스크립트 추가
+
+### 변경 사항
+
+- `scripts/check_git_cl.ps1`를 추가해 현재 저장소에서 `git cl` 오류가 depot_tools 미설치 같은 실제 환경 문제인지, 아니면 GitHub 원격이라 애초에 `git cl`이 필요 없는 상황인지 바로 판별할 수 있게 했습니다.
+- 이 저장소는 GitHub pull request 흐름을 기본 게시 경로로 유지하므로, `git cl`이 없더라도 GitHub 원격에서는 `not-required`로 안내하고 `git push` 및 PR 비교 URL을 함께 출력하도록 정리했습니다.
+
 ## [2026-04-13] - AOI 12시간 샘플 XLSX와 build 전 headless Playwright 회귀
 
 ### 변경 사항
