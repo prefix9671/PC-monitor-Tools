@@ -1,4 +1,5 @@
 import argparse
+import fnmatch
 import subprocess
 import sys
 import tomllib
@@ -20,6 +21,7 @@ class DocSyncRule:
 class DocSyncConfig:
     doc_prefix: str
     generated_prefixes: tuple[str, ...]
+    ignored_globs: tuple[str, ...]
     code_change_exempt_prefixes: tuple[str, ...]
     baseline_required_docs: tuple[str, ...]
     rules: tuple[DocSyncRule, ...]
@@ -39,6 +41,7 @@ def load_rule_config(path: Path | None = None) -> DocSyncConfig:
     return DocSyncConfig(
         doc_prefix=_normalize_path(meta["doc_prefix"]),
         generated_prefixes=tuple(_normalize_path(prefix) for prefix in meta["generated_prefixes"]),
+        ignored_globs=tuple(_normalize_path(pattern) for pattern in meta.get("ignored_globs", [])),
         code_change_exempt_prefixes=tuple(
             _normalize_path(prefix) for prefix in meta["code_change_exempt_prefixes"]
         ),
@@ -70,6 +73,14 @@ def _looks_like_changed(path: str, prefixes: tuple[str, ...]) -> bool:
     return any(path == prefix or path.startswith(prefix) for prefix in prefixes)
 
 
+def _matches_ignored_glob(path: str, patterns: tuple[str, ...]) -> bool:
+    return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
+
+
+def _is_ignored_path(path: str, config: DocSyncConfig) -> bool:
+    return _matches_ignored_glob(path, config.ignored_globs)
+
+
 def _is_generated_path(path: str, config: DocSyncConfig) -> bool:
     return _looks_like_changed(path, config.generated_prefixes)
 
@@ -94,7 +105,11 @@ def collect_changed_files(base_ref: str | None) -> list[str]:
 
 def evaluate_changed_files(changed_files: list[str], config: DocSyncConfig | None = None) -> list[str]:
     active_config = config or load_rule_config()
-    changed_set = {_normalize_path(path) for path in changed_files}
+    changed_set = {
+        _normalize_path(path)
+        for path in changed_files
+        if not _is_ignored_path(_normalize_path(path), active_config)
+    }
     missing_messages = []
 
     for rule in active_config.rules:
@@ -132,7 +147,11 @@ def main() -> int:
 
     try:
         config = load_rule_config()
-        changed_files = collect_changed_files(args.base_ref)
+        changed_files = [
+            path
+            for path in collect_changed_files(args.base_ref)
+            if not _is_ignored_path(path, config)
+        ]
     except (KeyError, RuntimeError, tomllib.TOMLDecodeError, OSError) as exc:
         print(f"[ERROR] {exc}")
         return 1

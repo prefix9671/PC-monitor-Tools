@@ -61,6 +61,45 @@ class TestVerifyDocsSync(unittest.TestCase):
         self.assertTrue(any("CurrentPhase.md" in message for message in missing))
         self.assertTrue(any("ReliabilityReport.md" in message for message in missing))
 
+    def test_packaging_helper_script_requires_packaging_docs(self):
+        missing = evaluate_changed_files(
+            [
+                "scripts/publish_release_to_share.ps1",
+                "docs/Current Phase/VerificationChecklist.md",
+            ]
+        )
+
+        self.assertTrue(any("packaging-or-runtime" in message for message in missing))
+        self.assertTrue(any("RuntimeAndPackaging.md" in message for message in missing))
+        self.assertTrue(any("CurrentPhase.md" in message for message in missing))
+        self.assertTrue(any("ReliabilityReport.md" in message for message in missing))
+
+    def test_playwright_regression_change_requires_runtime_reliability_and_verification_docs(self):
+        missing = evaluate_changed_files(
+            [
+                "scripts/verify_playwright_prebuild_regression.js",
+                "docs/Current Phase/VerificationChecklist.md",
+            ]
+        )
+
+        self.assertTrue(any("playwright-or-regression-automation" in message for message in missing))
+        self.assertTrue(any("RuntimeAndPackaging.md" in message for message in missing))
+        self.assertTrue(any("ReliabilityReport.md" in message for message in missing))
+        self.assertFalse(any("Baseline docs rule" in message for message in missing))
+
+    def test_local_bug_logs_and_playwright_artifacts_are_ignored(self):
+        missing = evaluate_changed_files(
+            [
+                "bug/operation_0319_north side grab.log",
+                "tests/operation.log",
+                "tools/playwright-mcp/01-home-desktop.png",
+                "tools/playwright-mcp/03-main-screen-snapshot.md",
+                "tools/playwright-mcp/console-errors.txt",
+            ]
+        )
+
+        self.assertEqual([], missing)
+
     def test_expected_doc_set_passes(self):
         missing = evaluate_changed_files(
             [

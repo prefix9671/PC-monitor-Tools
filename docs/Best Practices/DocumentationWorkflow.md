@@ -21,6 +21,8 @@ Status: Active
   사람이 읽는 기준 문서입니다. 에이전트와 개발자는 여기의 설명을 먼저 따릅니다.
 - `scripts/doc_sync_rules.toml`
   `scripts/verify_docs_sync.py`와 CI가 함께 쓰는 기계 판독 규칙 소스입니다.
+- `scripts/verify_docs_sync.py`
+  문서 매핑과 활성 문서 동기화만 검사합니다. 단위 테스트나 headless Playwright 회귀 실행기는 아니며, 실제 회귀 실행은 `scripts/run_prebuild_regression.py`가 담당합니다.
 - `AGENTS.md`
   저장소 진입 규칙과 문서 트리만 요약하고, 세부 매핑은 이 문서를 참조합니다.
 
@@ -33,12 +35,14 @@ Status: Active
 5. 새 문서를 만들었다면 `ActiveDocs.md`에 등록합니다.
 6. `mkdocs build`로 링크와 렌더를 확인합니다.
 7. 코드 변경이 있다면 `scripts/verify_docs_sync.py`로 문서 동기화를 확인합니다.
+8. 브라우저 회귀나 build 전 실행 게이트까지 확인해야 하는 작업이면 `scripts/run_prebuild_regression.py`를 별도로 실행합니다.
 
 ## 작업 마감 체크
 
 - 비사소한 코드 변경이 있었다면 기본적으로 `docs/Current Phase/VerificationChecklist.md`를 같은 변경 안에서 업데이트합니다.
 - 우선순위, 리스크, 운영 기준이 바뀌었다면 `docs/Current Phase/CurrentPhase.md`를 함께 업데이트합니다.
 - 런타임, 패키징, CI 변경은 `docs/Wiki/ReliabilityReport.md`를 자동 요구 대상으로 취급합니다.
+- Playwright 회귀 자동화, headless 브라우저 검증, MCP 런처 변경은 `docs/Architecture/RuntimeAndPackaging.md`, `docs/Wiki/ReliabilityReport.md`, `docs/Current Phase/VerificationChecklist.md`를 자동 요구 대상으로 취급합니다.
 - 위 규칙의 자동 판정은 `scripts/doc_sync_rules.toml`을 기준으로 하고, `scripts/verify_docs_sync.py`가 이를 검사합니다.
 
 ## PowerShell 인코딩 규칙
@@ -55,6 +59,7 @@ Status: Active
 | 모듈 구조 변경 | `Architecture/SystemOverview.md`, `Wiki/ProjectStructure.md` |
 | 실행/배포 흐름 변경 | `Architecture/RuntimeAndPackaging.md`, `Wiki/Changelog.md`, `Wiki/ReliabilityReport.md`, `Current Phase/CurrentPhase.md` |
 | CI 또는 검증 자동화 변경 | `Wiki/ReliabilityReport.md`, `Current Phase/VerificationChecklist.md` |
+| Playwright / 회귀 자동화 변경 | `Architecture/RuntimeAndPackaging.md`, `Wiki/ReliabilityReport.md`, `Current Phase/VerificationChecklist.md` |
 | 테스트 절차 변경 | `Current Phase/VerificationChecklist.md`, 필요 시 `Best Practices/EngineeringGuidelines.md` |
 | UI/사용 흐름 변경 | `Wiki/UserManual.md`, 필요 시 `Wiki/Changelog.md` |
 | 우선순위/리스크/운영 기준 변경 | `Current Phase/CurrentPhase.md` |

@@ -6,6 +6,8 @@ set "MANUAL_SITE_DIR=%ARTIFACT_ROOT%\manual-site"
 set "PYI_BUILD_DIR=%ARTIFACT_ROOT%\pyinstaller\build"
 set "PYI_DIST_DIR=%ARTIFACT_ROOT%\pyinstaller\dist"
 set "RELEASE_ROOT=%ARTIFACT_ROOT%\releases"
+set "NETWORK_RELEASE_HOST=192.168.1.13"
+set "NETWORK_RELEASE_SHARE=sqa"
 
 if not exist "%ARTIFACT_ROOT%" mkdir "%ARTIFACT_ROOT%"
 if not exist "%RELEASE_ROOT%" mkdir "%RELEASE_ROOT%"
@@ -94,6 +96,16 @@ echo Zipping Manual...
 if exist "%RELEASE_DIR%\Manual.zip" del "%RELEASE_DIR%\Manual.zip"
 powershell.exe -NoProfile -Command "Compress-Archive -Path '%MANUAL_SITE_DIR%\*' -DestinationPath '%RELEASE_DIR%\Manual.zip' -Force"
 
+echo ========================================
+echo   Publishing Release To Network Share
+echo ========================================
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\publish_release_to_share.ps1" -SourceDir "%RELEASE_DIR%" -ReleaseName "%BASENAME%" -TargetServer "%NETWORK_RELEASE_HOST%" -TargetShare "%NETWORK_RELEASE_SHARE%"
+
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Network share publish failed!
+    pause
+    exit /b %ERRORLEVEL%
+)
 
 
 echo ========================================
@@ -101,5 +113,6 @@ echo   Build Completed:
 echo   - %RELEASE_DIR%\%BASENAME%.exe
 echo   - %RELEASE_DIR%\start_monitor.bat
 echo   - %RELEASE_DIR%\Manual.zip
+echo   - QA share release bundle published to \\%NETWORK_RELEASE_HOST%\%NETWORK_RELEASE_SHARE%\...
 echo ========================================
 :: pause

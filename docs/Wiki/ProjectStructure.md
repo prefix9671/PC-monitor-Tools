@@ -61,9 +61,10 @@ PC-monitor-Tools/
 | `collectors/aggregator.py` | 5초 윈도우 기준 CPU/메모리/스왑/디스크 요약 행 생성 |
 | `collectors/subprocess_utils.py` | PowerShell/설치기 표준출력의 안전 디코딩과 깨진 바이트 방어 |
 | `scripts/doc_sync_rules.toml` | 에이전트와 CI가 공유하는 문서 동기화 규칙 표 |
-| `scripts/verify_docs_sync.py` | 코드 변경과 활성 문서 변경의 동기화 검사 |
+| `scripts/verify_docs_sync.py` | 코드 변경과 활성 문서 변경의 동기화 검사. Playwright 회귀 자체를 실행하지는 않지만, 관련 자동화 스크립트 변경 시 필요한 문서 갱신을 강제 |
 | `scripts/prepare_lhm_bundle.py` | LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비 |
 | `scripts/check_git_cl.ps1` | 현재 저장소의 `git cl` 오류가 GitHub 원격 기준 비필수 상황인지, 실제 `git-cl` 실행 파일 누락인지 진단 |
+| `scripts/publish_release_to_share.ps1` | 로컬 release bundle 을 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴`에 복사하고, 현재 빌드를 제외한 이전 버전 폴더는 `old/`로 이동 |
 | `scripts/capture_user_manual_assets.js` | headless Playwright로 유저 매뉴얼용 진입점/모니터링, 대시보드, AOI 업로드, XLSX 내보내기 스크린샷을 raw/approved 단계로 캡처 |
 | `scripts/run_prebuild_regression.py` | 빌드 전 회귀 러너. 단위 테스트, AOI CLI, 대시보드 스모크, 문서 동기화, MkDocs, headless Playwright를 순차 실행 |
 | `scripts/run_ci_dashboard_smoke.py` | 샘플 CSV로 대시보드 스모크 테스트 실행 |
@@ -76,7 +77,7 @@ PC-monitor-Tools/
 | `parsers.py` | Top 5 문자열 파싱 |
 | `excel_exporter.py` | 엑셀 내보내기 |
 | `verify_dashboards.py` | 헤드리스 대시보드 자가 점검 |
-| `build.bat` | 문서 사이트와 EXE 빌드 |
+| `build.bat` | 문서 사이트와 EXE 빌드, QA 공유 폴더 최신본 동기화 |
 
 ## `docs` 구조
 
@@ -101,6 +102,7 @@ docs/
 - `.artifacts/manual-assets/entry-monitoring/`과 `.artifacts/manual-assets/dashboards-inspector/`은 유저 매뉴얼용 실UI 캡처의 raw, approved, summary 산출물 경로입니다.
 - `bug/` 아래의 로그는 수동 재현과 실데이터 검증용 입력으로 사용하며, 이번 AOI 12시간 샘플 검증 기준 로그는 `bug/operation_0319_north side grab.log` 입니다.
 - `tests/test_inspector_logs.py`에는 AOI 이벤트 `datetime64[us]`와 시스템 메모리 `datetime64[ns]`가 섞여도 검사 결과 역매칭이 깨지지 않는 회귀 테스트가 포함됩니다.
+- `scripts/verify_docs_sync.py`는 `bug/`, `tests/*.log`, `tools/playwright-mcp/*.png`, `tools/playwright-mcp/*-snapshot.md`, `tools/playwright-mcp/*.txt` 같은 로컬 검증 입력/산출물은 문서 동기화 대상 변경으로 취급하지 않습니다.
 - `docs/images/manual/`에는 검수 완료 후 매뉴얼 본문에 실제로 포함되는 승인 스크린샷만 둡니다.
 - 현재 문서 탐색 시작점은 `docs/ActiveDocs.md` 입니다.
 - 더 상세한 아키텍처 설명은 [../Architecture/SystemOverview.md](../Architecture/SystemOverview.md)를 참고합니다.

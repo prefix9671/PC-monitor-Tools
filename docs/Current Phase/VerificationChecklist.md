@@ -11,6 +11,7 @@ Status: Active
 - `docs/ActiveDocs.md` 기준으로 문서 경로와 우선순위가 유지되는지 확인
 - 빌드 또는 최종 패키징 전에는 `.\venv\Scripts\python scripts\run_prebuild_regression.py`를 먼저 실행
 - `.\venv\Scripts\python scripts\verify_docs_sync.py`
+- `scripts\verify_docs_sync.py`는 문서 동기화만 검사하므로, Playwright나 단위 테스트 실행 자체는 `scripts\run_prebuild_regression.py`로 별도 확인
 - 비사소한 코드 변경이 있었다면 이 문서(`docs/Current Phase/VerificationChecklist.md`)가 같은 변경 안에서 갱신되었는지 확인
 - 우선순위, 리스크, 운영 기준이 바뀌었다면 `docs/Current Phase/CurrentPhase.md`도 함께 갱신되었는지 확인
 
@@ -63,6 +64,7 @@ Status: Active
   별도 터미널에서 `node.exe .\scripts\verify_playwright_dashboards.js http://127.0.0.1:8502`
   완료 후 `.artifacts\playwright-dashboard-test\dashboard-summary.json`, `01-home.png`, `02-cpu.png`, `03-memory.png`, `04-storage.png`, `05-custom.png`, `console-messages.md`를 확인
 - `scripts\run_prebuild_regression.py`는 repo-local bug 입력 파일 업로드 기준으로 headless Playwright 회귀를 수행하며, 각 step의 실패 조건과 STDOUT을 `.artifacts\prebuild-regression\`과 `.artifacts\playwright-prebuild-regression\`에 남김
+- `scripts\verify_docs_sync.py`는 `scripts\run_prebuild_regression.py`, `scripts\verify_playwright_dashboards.js`, `scripts\verify_playwright_prebuild_regression.js`, `tools\playwright-mcp\*.ps1` 변경 시 관련 활성 문서 갱신도 함께 요구
 - headless Playwright 회귀의 대표 실패 조건:
   페이지 미기동, 시스템 CSV 업로드 후 차트 미렌더, AOI 업로드 후 NO input 미생성, 시간 필터 후 NO 범위 미축소
 - 최근 로그를 읽어 `CPU`, `Memory`, `Storage`, `Custom Graph`가 모두 뜨는지 확인
@@ -91,6 +93,9 @@ Status: Active
 - `.\venv\Scripts\python -m mkdocs build`
 - `.\venv\Scripts\python scripts\run_prebuild_regression.py`
 - `git cl` 오류를 확인해야 하면 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_git_cl.ps1`를 실행해, GitHub 원격에서의 비필수 경고인지 depot_tools 환경 누락인지 먼저 구분
+- `build.bat`를 실행해 로컬 release bundle 과 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\` 복사가 모두 완료되는지 확인
+- QA 공유 폴더 direct copy 가 실패하면 Windows Credential Manager 자격증명 입력 프롬프트가 뜨고, 이를 저장한 뒤 재시도되는지 확인
+- QA 공유 폴더 루트에는 현재 빌드 폴더만 남고, 이전 버전 폴더가 `\\192.168.1.13\sqa\113_테스트 툴\old\` 아래로 이동하는지 확인
 - 관련 기능이 CLI 진입점과 연결된다면 최소 Smoke Test를 추가 수행
 - 일반 PC CPU 온도 워커를 변경했다면 개발 환경 또는 빌드 산출물에서 `cpu-temp-worker --once` 경로가 예외 없이 실행되고, 릴리스 폴더 또는 EXE 내부에 `lhm-bundle`이 포함되는지 확인
 - 필요 시 `build.bat` 실행 후 산출물 확인

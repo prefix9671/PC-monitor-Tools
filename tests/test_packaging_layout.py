@@ -47,6 +47,9 @@ class TestPackagingLayout(unittest.TestCase):
         self.assertIn("RELEASE_ROOT", contents)
         self.assertIn("scripts\\run_prebuild_regression.py", contents)
         self.assertIn("scripts\\prepare_lhm_bundle.py", contents)
+        self.assertIn("scripts\\publish_release_to_share.ps1", contents)
+        self.assertIn("NETWORK_RELEASE_HOST", contents)
+        self.assertIn("NETWORK_RELEASE_SHARE", contents)
         self.assertNotIn('copy "Monitor.ps1"', contents)
         self.assertNotIn('dist\\Manual.zip', contents)
 
@@ -68,10 +71,17 @@ class TestPackagingLayout(unittest.TestCase):
     def test_prebuild_regression_scripts_exist(self):
         python_runner = (REPO_ROOT / "scripts" / "run_prebuild_regression.py").read_text(encoding="utf-8")
         playwright_runner = (REPO_ROOT / "scripts" / "verify_playwright_prebuild_regression.js").read_text(encoding="utf-8")
+        publish_runner = (REPO_ROOT / "scripts" / "publish_release_to_share.ps1").read_text(encoding="utf-8")
 
         self.assertIn("headless-playwright-regression", python_runner)
         self.assertIn("inspection-time-filter", playwright_runner)
         self.assertIn("FAILS IF:", playwright_runner)
+        self.assertIn("Get-Credential", publish_runner)
+        self.assertIn("cmdkey.exe", publish_runner)
+        self.assertIn("Get-DefaultTargetFolderName", publish_runner)
+        self.assertIn("Archive-PreviousReleases", publish_runner)
+        self.assertIn("Join-Path $CopyRoot \"old\"", publish_runner)
+        self.assertIn("192.168.1.13", publish_runner)
 
 
 if __name__ == "__main__":

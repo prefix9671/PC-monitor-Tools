@@ -3,6 +3,24 @@
 Updated On: 2026-04-13  
 Status: Active
 
+## [2026-04-13] - 빌드 산출물 QA 공유 폴더 동시 배포
+
+### 변경 사항
+
+- `build.bat`가 로컬 `.artifacts/releases/<빌드명>/` 생성 뒤 `scripts/publish_release_to_share.ps1`를 호출해 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\`에도 같은 release bundle 을 복사하도록 확장했습니다.
+- QA 공유 폴더 경로는 스크립트 기본값으로 고정하고, 자격증명은 환경 변수 대신 Windows Credential Manager 또는 현재 Windows 세션 자격증명을 우선 사용하도록 정리했습니다.
+- direct copy 가 실패하면 한 번만 사용자에게 자격증명을 묻고, 이를 Windows Credential Manager에 저장한 뒤 재시도하도록 보강했습니다.
+- 새 릴리스 복사가 끝나면 QA 공유 폴더 루트에는 최신 빌드만 남기고, 이전 버전 폴더는 `old/` 아래로 이동하도록 정리했습니다.
+- packaging 테스트는 새 네트워크 배포 스크립트 존재와 `build.bat` 연결을 함께 확인하도록 보강했습니다.
+
+## [2026-04-13] - 문서 동기화 검증기의 Playwright 회귀 매핑 보강
+
+### 변경 사항
+
+- `scripts/verify_docs_sync.py`가 headless Playwright 회귀를 직접 실행하는 도구는 아니라는 점을 문서에 명확히 적고, 실제 실행기는 계속 `scripts/run_prebuild_regression.py`임을 정리했습니다.
+- `scripts/doc_sync_rules.toml`에 Playwright 회귀 스크립트와 MCP 런처를 별도 추적 대상으로 추가해, 이 자동화가 바뀌면 `RuntimeAndPackaging`, `VerificationChecklist`, `ReliabilityReport` 문서를 함께 갱신하도록 보강했습니다.
+- `bug/`, `tests/*.log`, `tools/playwright-mcp/*.png`, `*-snapshot.md`, `*.txt` 같은 로컬 검증 입력/산출물은 문서 동기화 기준 변경으로 오인하지 않도록 제외 규칙을 추가했습니다.
+
 ## [2026-04-13] - GitHub 원격 기준 git cl 진단 스크립트 추가
 
 ### 변경 사항

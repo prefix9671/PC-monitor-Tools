@@ -8,6 +8,13 @@ generated_prefixes = [
   "__pycache__/",
   "dashboards/__pycache__/",
 ]
+ignored_globs = [
+  "bug/**",
+  "tests/*.log",
+  "tools/playwright-mcp/*.png",
+  "tools/playwright-mcp/*-snapshot.md",
+  "tools/playwright-mcp/*.txt",
+]
 code_change_exempt_prefixes = [
   "AGENTS.md",
   "README.md",
@@ -54,6 +61,8 @@ trigger_prefixes = [
   "Monitor.ps1",
   "mkdocs.yml",
   "test_portable.bat",
+  "scripts/prepare_lhm_bundle.py",
+  "scripts/publish_release_to_share.ps1",
 ]
 required_docs = [
   "docs/Architecture/RuntimeAndPackaging.md",
@@ -70,6 +79,22 @@ trigger_prefixes = [
   "scripts/run_ci_dashboard_smoke.py",
 ]
 required_docs = [
+  "docs/Wiki/ReliabilityReport.md",
+]
+
+[[rules]]
+name = "playwright-or-regression-automation"
+trigger_prefixes = [
+  "scripts/run_prebuild_regression.py",
+  "scripts/verify_playwright_dashboards.js",
+  "scripts/verify_playwright_prebuild_regression.js",
+  "scripts/capture_user_manual_assets.js",
+  "tools/playwright-mcp/launch-playwright-mcp.ps1",
+  "tools/playwright-mcp/verify-playwright-mcp.ps1",
+]
+required_docs = [
+  "docs/Architecture/RuntimeAndPackaging.md",
+  "docs/Current Phase/VerificationChecklist.md",
   "docs/Wiki/ReliabilityReport.md",
 ]
 
