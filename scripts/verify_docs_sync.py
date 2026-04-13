@@ -28,7 +28,8 @@ class DocSyncConfig:
 
 
 def _normalize_path(path: str) -> str:
-    return path.replace("\\", "/")
+    normalized = path.strip().strip('"')
+    return normalized.replace("\\", "/")
 
 
 def load_rule_config(path: Path | None = None) -> DocSyncConfig:
@@ -59,10 +60,12 @@ def load_rule_config(path: Path | None = None) -> DocSyncConfig:
 
 def _run_git(*args: str) -> list[str]:
     completed = subprocess.run(
-        ["git", *args],
+        ["git", "-c", "core.quotePath=false", *args],
         check=False,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if completed.returncode != 0:
         raise RuntimeError(completed.stderr.strip() or completed.stdout.strip() or "git command failed")

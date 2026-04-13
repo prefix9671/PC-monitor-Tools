@@ -12,6 +12,7 @@ Status: Active
 - 빌드 또는 최종 패키징 전에는 `.\venv\Scripts\python scripts\run_prebuild_regression.py`를 먼저 실행
 - `.\venv\Scripts\python scripts\verify_docs_sync.py`
 - `scripts\verify_docs_sync.py`는 문서 동기화만 검사하므로, Playwright나 단위 테스트 실행 자체는 `scripts\run_prebuild_regression.py`로 별도 확인
+- `scripts\verify_docs_sync.py`가 한글 경로를 포함한 `bug\` 입력 파일과 로컬 Playwright 산출물을 quoted path/UTF-8 출력 환경에서도 계속 무시하는지 확인
 - 비사소한 코드 변경이 있었다면 이 문서(`docs/Current Phase/VerificationChecklist.md`)가 같은 변경 안에서 갱신되었는지 확인
 - 우선순위, 리스크, 운영 기준이 바뀌었다면 `docs/Current Phase/CurrentPhase.md`도 함께 갱신되었는지 확인
 

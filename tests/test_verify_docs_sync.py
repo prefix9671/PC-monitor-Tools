@@ -1,11 +1,13 @@
 import os
 import sys
 import unittest
+from unittest.mock import patch
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from scripts.verify_docs_sync import evaluate_changed_files
+from scripts import verify_docs_sync
 
 
 class TestVerifyDocsSync(unittest.TestCase):
@@ -99,6 +101,30 @@ class TestVerifyDocsSync(unittest.TestCase):
         )
 
         self.assertEqual([], missing)
+
+    def test_quoted_bug_paths_are_ignored(self):
+        missing = evaluate_changed_files(
+            [
+                '"bug/20260410-메모리 대시보드 버그/process_20260410.csv"',
+                '"bug/20260410-메모리 대시보드 버그/resource_20260410.csv"',
+            ]
+        )
+
+        self.assertEqual([], missing)
+
+    def test_run_git_uses_utf8_decoding_for_non_ascii_paths(self):
+        class Completed:
+            returncode = 0
+            stdout = "bug/20260410-메모리 대시보드 버그/resource_20260410.csv\n"
+            stderr = ""
+
+        with patch("scripts.verify_docs_sync.subprocess.run", return_value=Completed()) as run_mock:
+            lines = verify_docs_sync._run_git("status", "--short")
+
+        self.assertEqual(["bug/20260410-메모리 대시보드 버그/resource_20260410.csv"], lines)
+        _, kwargs = run_mock.call_args
+        self.assertEqual("utf-8", kwargs["encoding"])
+        self.assertEqual("replace", kwargs["errors"])
 
     def test_expected_doc_set_passes(self):
         missing = evaluate_changed_files(
