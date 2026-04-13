@@ -107,6 +107,7 @@ def _export_inspection_results(
         generate_inspection_excel(
             selected_records,
             include_inspector_memory=include_inspector_memory,
+            sample_records=inspection_records,
         )
     )
 

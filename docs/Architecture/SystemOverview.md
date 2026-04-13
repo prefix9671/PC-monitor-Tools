@@ -1,6 +1,6 @@
 # System Overview
 
-Updated On: 2026-04-10  
+Updated On: 2026-04-13  
 Status: Active
 
 ## 시스템 개요
@@ -36,9 +36,9 @@ Status: Active
 | 집계 | `collectors/aggregator.py` | 윈도우 평균/피크 계산, 5초 구간 최고 CPU 온도, 스왑 최고값, Top N 포맷 생성 |
 | 기록 | `collectors/writers.py` | 날짜별 CSV와 요약 로그 기록, 새 로그 컬럼 등장 시 헤더 재작성 |
 | 데이터 로딩 | `data_loader.py` | `resource_*.csv`와 `process_*.csv` 병합 |
-| AOI 로그 코어 | `inspector_logs/core.py` | AOI / Inspector 로그 경로 해석, `Model Open` 파싱, 검사 NO 재구성, 시스템 메모리 역매칭 |
+| AOI 로그 코어 | `inspector_logs/core.py` | AOI / Inspector 로그 경로 해석, `Model Open` 파싱, 검사 NO 재구성, 시스템 메모리 역매칭, 시간 필터 기준 검사 결과 뷰와 12시간 샘플 블록 생성 |
 | AOI 로그 CLI | `aoi_cli.py` | AOI 로그 요약 확인과 검사 결과 XLSX export Smoke Test |
-| 검사 결과 Export UI | `dashboards/inspection_export.py` | 메인 화면에서 모델명, 검사 수, NO 범위, `NO/Frame/Total/메모리 (시스템)/메모리 (인스펙터)` 미리보기와 옵션형 XLSX 다운로드 제공 |
+| 검사 결과 Export UI | `dashboards/inspection_export.py` | 메인 화면에서 현재 시간 필터 기준 모델명, 검사 수, NO 범위, `NO/Frame/Total/메모리 (시스템)/메모리 (인스펙터)` 미리보기와 옵션형 XLSX 다운로드 제공 |
 | GUI 자동화 보조 | `tools/playwright-mcp/*` | 로컬 Playwright MCP 실행 래퍼와 WEB GUI 검증 Smoke Test |
 | 파싱 | `parsers.py` | Top 5 문자열 컬럼 파싱 |
 | 시각화 | `dashboards/*.py` | CPU, Memory, Storage, Custom 화면 렌더 |
@@ -60,6 +60,7 @@ LibreHardwareMonitor worker (30s core max) -> JSON state -> CpuTemperatureProbe 
 CSV files -> data_loader.load_data() -> merged DataFrame -> dashboards/*.py
 AOI log path -> inspector_logs.core.load_inspector_log_data() -> Inspector event DataFrame
 Inspector event DataFrame + system monitor DataFrame -> inspector_logs.core.build_inspection_records() -> numbered inspection export rows
+numbered inspection export rows + current time filter -> inspector_logs.core.filter/build sample helpers -> Inspection_Results + Inspection_12h_Samples workbook
 Inspector event DataFrame -> memory dashboard
 ```
 
@@ -85,7 +86,9 @@ Inspector event DataFrame -> memory dashboard
 - `dashboards/storage.py`는 대용량 로그를 위해 차트 품질 모드를 제공합니다.
 - `dashboards/cpu.py`는 `CPU_Temp(C)` 컬럼이 있을 때 사용률 복합 차트와 온도 전용 차트를 함께 표시합니다.
 - `dashboards/memory.py`는 시스템 메모리와 AOI / Inspector 로그를 함께 보여주는 `Memory AND Inspector` 대시보드로 확장되었고, 스왑 값이 0이면 현재 스왑된 메모리가 없다는 상태 메시지를 함께 표시합니다.
-- `dashboards/inspection_export.py`는 메인 화면에서 AOI 검사 결과를 `NO=1`부터 번호화하고, 미리보기에는 시스템/인스펙터 메모리를 함께 보여주며 XLSX는 인스펙터 메모리 컬럼을 옵션으로 내보냅니다.
+- `dashboards/inspection_export.py`는 메인 화면에서 AOI 검사 결과를 원본 `NO` 유지 기준으로 보여주고, 현재 시간 필터 범위 안에서 미리보기/XLSX를 계산합니다.
+- 검사 결과 XLSX는 기본 `Inspection_Results` 시트 외에 `Inspection_12h_Samples` 시트를 추가로 만들고, 시간 필터 시작 시각 기준 `+0h, +12h, ... +144h`마다 첫 10개를 블록형으로 적습니다.
+- `Inspection_12h_Samples`는 각 기준점 이후 현재 시간 필터 종료 시각 이내에서 찾은 첫 10개를 사용하며, 데이터가 없으면 마지막 데이터 시각 기준 안내 문구 또는 `데이터가 존재하지 않습니다`를 남깁니다.
 - `verify_dashboards.py`는 브라우저 없이도 대시보드가 크래시하지 않는지 빠르게 확인하는 헤드리스 점검 스크립트입니다.
 - `tools/playwright-mcp/`는 Codex Desktop이 로컬 Playwright MCP 서버를 통해 WEB 기반 GUI 검증을 수행할 수 있게 하는 보조 경로입니다.
 

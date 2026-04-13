@@ -1,6 +1,8 @@
 import streamlit.web.cli as stcli
 import os, sys
 
+from runtime_patches import apply_streamlit_runtime_patches
+
 def resolve_path(path):
     if getattr(sys, '_MEIPASS', False):
         return os.path.join(sys._MEIPASS, path)
@@ -16,6 +18,7 @@ if __name__ == "__main__":
         sys.exit(worker_main(sys.argv[2:]))
         
     # Otherwise, launch Streamlit dashboard
+    apply_streamlit_runtime_patches()
     sys.argv = [
         "streamlit",
         "run",

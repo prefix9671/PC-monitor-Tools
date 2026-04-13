@@ -6,7 +6,12 @@ import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from dashboards.inspection_export import COLOR_PRESET_MAP, _build_preview_chart, _hex_to_rgba
+from dashboards.inspection_export import (
+    COLOR_PRESET_MAP,
+    _build_preview_chart,
+    _format_time_filter_caption,
+    _hex_to_rgba,
+)
 
 
 class TestInspectionExportPanel(unittest.TestCase):
@@ -62,6 +67,16 @@ class TestInspectionExportPanel(unittest.TestCase):
 
         self.assertEqual(3, len(fig.data))
         self.assertTrue(all(trace.type == "bar" for trace in fig.data))
+
+    def test_format_time_filter_caption(self):
+        caption = _format_time_filter_caption(
+            pd.Timestamp("2026-03-18 00:00:00"),
+            pd.Timestamp("2026-03-18 12:00:00"),
+        )
+
+        self.assertIn("현재 시간 필터 기준", caption)
+        self.assertIn("2026-03-18 00:00:00", caption)
+        self.assertIn("2026-03-18 12:00:00", caption)
 
 
 if __name__ == "__main__":

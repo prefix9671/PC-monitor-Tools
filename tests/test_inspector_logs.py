@@ -9,7 +9,9 @@ import pandas as pd
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from inspector_logs.core import (
+    build_inspection_sample_sections,
     build_inspection_records,
+    filter_inspection_records_by_time_range,
     format_inspection_export_dataframe,
     format_inspection_preview_dataframe,
     load_inspector_log_data,
@@ -120,6 +122,123 @@ class TestInspectorLogs(unittest.TestCase):
 
         self.assertEqual(5, len(uploaded_df))
         self.assertIn("Inspector_WorkingSet_MB", uploaded_df.columns)
+
+    def test_filter_inspection_records_by_time_range_keeps_original_no(self):
+        inspection_records = pd.DataFrame(
+            {
+                "Timestamp": pd.to_datetime(
+                    [
+                        "2026-03-18 00:00:05",
+                        "2026-03-18 12:00:05",
+                        "2026-03-19 00:00:05",
+                    ]
+                ),
+                "SourceFile": ["sample.log"] * 3,
+                "Inspection_No": [101, 205, 309],
+                "Inspector_Model_Name": ["SAMPLE_MODEL_A"] * 3,
+                "Inspector_Frame_Sec": [1.0, 1.1, 1.2],
+                "Inspector_Total_Sec": [10.0, 11.0, 12.0],
+                "Inspector_Total_Frames": [10, 11, 12],
+                "Inspector_WorkingSet_KB": [1000.0, 1100.0, 1200.0],
+                "Inspector_WorkingSet_MB": [1.0, 1.1, 1.2],
+                "Inspector_WorkingSet_GB": [0.001, 0.0011, 0.0012],
+                "System_Memory_Used_GB": [20.0, 21.0, 22.0],
+                "System_Memory_Timestamp": pd.to_datetime(
+                    [
+                        "2026-03-18 00:00:00",
+                        "2026-03-18 12:00:00",
+                        "2026-03-19 00:00:00",
+                    ]
+                ),
+            }
+        )
+
+        filtered = filter_inspection_records_by_time_range(
+            inspection_records,
+            start_time="2026-03-18 12:00:00",
+            end_time="2026-03-19 00:10:00",
+        )
+
+        self.assertEqual([205, 309], filtered["Inspection_No"].tolist())
+
+    def test_build_inspection_sample_sections_uses_anchor_and_first_10_after_it(self):
+        inspection_records = pd.DataFrame(
+            {
+                "Timestamp": pd.to_datetime(
+                    [
+                        "2026-03-18 00:00:05",
+                        "2026-03-18 00:00:10",
+                        "2026-03-18 12:00:01",
+                        "2026-03-18 12:00:05",
+                        "2026-03-19 00:00:03",
+                        "2026-03-19 00:05:00",
+                    ]
+                ),
+                "SourceFile": ["sample.log"] * 6,
+                "Inspection_No": [1, 2, 11, 12, 21, 22],
+                "Inspector_Model_Name": ["SAMPLE_MODEL_A"] * 6,
+                "Inspector_Frame_Sec": [1.0, 1.1, 1.2, 1.3, 1.4, 1.5],
+                "Inspector_Total_Sec": [10.0, 10.1, 10.2, 10.3, 10.4, 10.5],
+                "Inspector_Total_Frames": [10, 10, 10, 10, 10, 10],
+                "Inspector_WorkingSet_KB": [1000.0] * 6,
+                "Inspector_WorkingSet_MB": [1.0] * 6,
+                "Inspector_WorkingSet_GB": [0.001, 0.0011, 0.0012, 0.0013, 0.0014, 0.0015],
+                "System_Memory_Used_GB": [20.0, 20.1, 20.2, 20.3, 20.4, 20.5],
+                "System_Memory_Timestamp": pd.to_datetime(
+                    [
+                        "2026-03-18 00:00:00",
+                        "2026-03-18 00:00:05",
+                        "2026-03-18 12:00:00",
+                        "2026-03-18 12:00:05",
+                        "2026-03-19 00:00:00",
+                        "2026-03-19 00:05:00",
+                    ]
+                ),
+            }
+        )
+
+        sample_sections = build_inspection_sample_sections(
+            inspection_records,
+            start_time="2026-03-18 00:00:00",
+            end_time="2026-03-19 12:10:00",
+            include_inspector_memory=True,
+        )
+
+        self.assertEqual([0, 12, 24, 36], [section["anchor_hours"] for section in sample_sections["sections"]])
+        self.assertEqual("rows", sample_sections["sections"][0]["status"])
+        self.assertEqual(1, int(sample_sections["sections"][0]["dataframe"].iloc[0]["NO"]))
+        self.assertEqual(11, int(sample_sections["sections"][1]["dataframe"].iloc[0]["NO"]))
+        self.assertEqual(21, int(sample_sections["sections"][2]["dataframe"].iloc[0]["NO"]))
+        self.assertEqual("메모리 (인스펙터)", sample_sections["sections"][0]["dataframe"].columns[-1])
+        self.assertEqual("message", sample_sections["sections"][3]["status"])
+        self.assertIn("마지막 데이터는", sample_sections["sections"][3]["message"])
+
+    def test_build_inspection_sample_sections_reports_no_data_when_filtered_range_is_empty(self):
+        inspection_records = pd.DataFrame(
+            {
+                "Timestamp": pd.to_datetime(["2026-03-18 00:00:05"]),
+                "SourceFile": ["sample.log"],
+                "Inspection_No": [1],
+                "Inspector_Model_Name": ["SAMPLE_MODEL_A"],
+                "Inspector_Frame_Sec": [1.0],
+                "Inspector_Total_Sec": [10.0],
+                "Inspector_Total_Frames": [10],
+                "Inspector_WorkingSet_KB": [1000.0],
+                "Inspector_WorkingSet_MB": [1.0],
+                "Inspector_WorkingSet_GB": [0.001],
+                "System_Memory_Used_GB": [20.0],
+                "System_Memory_Timestamp": pd.to_datetime(["2026-03-18 00:00:00"]),
+            }
+        )
+
+        sample_sections = build_inspection_sample_sections(
+            inspection_records,
+            start_time="2026-03-19 00:00:00",
+            end_time="2026-03-19 12:00:00",
+        )
+
+        self.assertEqual("message", sample_sections["sections"][0]["status"])
+        self.assertEqual("데이터가 존재하지 않습니다.", sample_sections["sections"][0]["message"])
 
 
 if __name__ == "__main__":

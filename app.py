@@ -27,8 +27,10 @@ from data_loader import (
 )
 from inspector_logs.core import build_inspection_records, resolve_inspector_log_paths
 from parsers import extract_process_time_series, parse_process_column
+from runtime_patches import apply_streamlit_runtime_patches
 
 
+apply_streamlit_runtime_patches()
 st.set_page_config(page_title="시스템 자원 모니터", page_icon="📊", layout="wide")
 
 st.title("시스템 자원 대시보드")
@@ -42,6 +44,9 @@ inspection_records_df = None
 system_target_files = []
 resolved_aoi_paths = []
 loaded_aoi_sources = []
+inspection_filter_start = None
+inspection_filter_end = None
+inspection_filter_end_user_specified = False
 st.session_state.setdefault("cpu_temp_diagnostic_result", None)
 
 
@@ -253,9 +258,11 @@ with st.sidebar:
                         st.warning(manual_range["error"])
                         start_time = pd.to_datetime(time_range[0])
                         end_time = pd.to_datetime(time_range[1])
+                        inspection_filter_end_user_specified = False
                     else:
                         start_time = manual_range["resolved_start"]
                         end_time = manual_range["resolved_end"]
+                        inspection_filter_end_user_specified = manual_range["requested_end"] is not None
                         st.caption(
                             "적용된 수동 범위: "
                             f"{start_time.strftime('%Y-%m-%d %H:%M:%S')} -> "
@@ -279,12 +286,19 @@ with st.sidebar:
                 else:
                     start_time = pd.to_datetime(time_range[0])
                     end_time = pd.to_datetime(time_range[1])
+                    inspection_filter_end_user_specified = False
+
+                inspection_filter_start = start_time
+                inspection_filter_end = end_time
 
                 if has_system_data:
                     df = filter_dataframe_by_time_range(df, start_time, end_time)
                 if has_inspector_data:
                     aoi_df = filter_dataframe_by_time_range(aoi_df, start_time, end_time)
             else:
+                inspection_filter_start = min_time
+                inspection_filter_end = max_time
+                inspection_filter_end_user_specified = False
                 st.info("데이터가 1개뿐이라 시간 필터를 건너뜁니다.")
 
         st.divider()
@@ -432,7 +446,13 @@ if has_system_data or has_inspector_data:
 
     if inspection_records_df is not None:
         st.markdown("---")
-        render_inspection_export_panel(st, inspection_records_df)
+        render_inspection_export_panel(
+            st,
+            inspection_records_df,
+            filter_start_time=inspection_filter_start,
+            filter_end_time=inspection_filter_end,
+            filter_end_user_specified=inspection_filter_end_user_specified,
+        )
 else:
     st.info(
         f"시스템 모니터 CSV를 업로드하거나 {DEFAULT_LOG_DIR}에 로그가 있는지 확인하세요. "

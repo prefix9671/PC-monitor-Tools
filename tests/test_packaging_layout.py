@@ -45,6 +45,7 @@ class TestPackagingLayout(unittest.TestCase):
 
         self.assertIn(".artifacts", contents)
         self.assertIn("RELEASE_ROOT", contents)
+        self.assertIn("scripts\\run_prebuild_regression.py", contents)
         self.assertIn("scripts\\prepare_lhm_bundle.py", contents)
         self.assertNotIn('copy "Monitor.ps1"', contents)
         self.assertNotIn('dist\\Manual.zip', contents)
@@ -63,6 +64,14 @@ class TestPackagingLayout(unittest.TestCase):
         contents = (REPO_ROOT / "requirements.txt").read_text(encoding="utf-8")
 
         self.assertIn("pythonnet", contents)
+
+    def test_prebuild_regression_scripts_exist(self):
+        python_runner = (REPO_ROOT / "scripts" / "run_prebuild_regression.py").read_text(encoding="utf-8")
+        playwright_runner = (REPO_ROOT / "scripts" / "verify_playwright_prebuild_regression.js").read_text(encoding="utf-8")
+
+        self.assertIn("headless-playwright-regression", python_runner)
+        self.assertIn("inspection-time-filter", playwright_runner)
+        self.assertIn("FAILS IF:", playwright_runner)
 
 
 if __name__ == "__main__":

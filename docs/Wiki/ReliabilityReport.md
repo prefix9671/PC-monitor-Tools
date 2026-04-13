@@ -1,6 +1,6 @@
 # Reliability Report
 
-Updated On: 2026-04-10  
+Updated On: 2026-04-13  
 Status: Active
 
 ## 개요
@@ -44,6 +44,9 @@ Status: Active
 - 일반 PC CPU 온도 경로는 동봉된 LibreHardwareMonitor 번들을 우선 사용하고, 추가로 캐시/다운로드와 OpenHardwareMonitor / Thermal Zone fallback 을 유지해 현장 대응 폭을 넓힐 수 있음
 - Playwright MCP 브라우저 검증은 stdio 직결 구성으로 유지해 GUI 자동화에서 연결 실패 가능성을 낮출 수 있음
 - 작업 완료 후 `scripts/verify_playwright_dashboards.js`로 실제 Streamlit 대시보드 4종을 다시 열어 보고, 스크린샷과 콘솔 메시지를 아티팩트로 남길 수 있음
+- `scripts/run_prebuild_regression.py`는 bug 폴더의 고정 입력 로그와 headless Playwright를 묶어, 빌드 전에 같은 회귀 시나리오를 반복 실행할 수 있음
+- prebuild regression step마다 실패 조건과 STDOUT을 별도 로그/JSON으로 남겨 현장 재현이나 원격 디버깅에 유리함
+- 브라우저 탭 종료나 headless 캡처 종료 시 Streamlit/Tornado가 남기던 반복 `WebSocketClosedError` noise 를 런타임 패치로 줄여, 실제 오류와 종료 노이즈를 구분하기 쉬움
 
 ## 현재 한계와 주의점
 
@@ -53,6 +56,7 @@ Status: Active
 - 문서 동기화가 느슨해지면 운영 기준과 검증 절차가 실제 코드보다 뒤처질 수 있으므로 `scripts/verify_docs_sync.py`를 유지해야 합니다.
 - 이 문서는 런타임, 패키징, CI 변경에서 자동 요구 대상으로 취급하고, 그 외 작업에서는 선택 검토 문서로 유지합니다.
 - Playwright MCP를 PowerShell 래퍼 경유 stdio로 연결하면 stdin 전달 문제로 initialize 실패가 날 수 있으므로, Codex 구성은 Node CLI 직결 상태를 유지해야 합니다.
+- headless Playwright regression은 repo-local `bug/` 입력 파일과 Edge headless 채널을 전제로 하므로, 해당 입력이나 브라우저가 없으면 packaging 전에 실패하도록 두었습니다.
 
 ## 결론
 

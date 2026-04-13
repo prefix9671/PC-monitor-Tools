@@ -69,6 +69,14 @@ INSPECTION_EXPORT_BASE_COLUMNS = [
     "System_Memory_Used_GB",
 ]
 
+INSPECTION_SAMPLE_EXPORT_BASE_COLUMNS = [
+    "Timestamp",
+    "Inspection_No",
+    "Inspector_Frame_Sec",
+    "Inspector_Total_Sec",
+    "System_Memory_Used_GB",
+]
+
 
 def _split_path_input(path_input: str | Iterable[str] | None) -> list[str]:
     if path_input is None:
@@ -414,6 +422,69 @@ def select_inspection_records(
     return selected.reset_index(drop=True)
 
 
+def filter_inspection_records_by_time_range(
+    inspection_records: pd.DataFrame,
+    start_time: object | None = None,
+    end_time: object | None = None,
+) -> pd.DataFrame:
+    if inspection_records is None or inspection_records.empty or "Timestamp" not in inspection_records.columns:
+        return _empty_inspection_records()
+
+    filtered = inspection_records.copy()
+    filtered["Timestamp"] = pd.to_datetime(filtered["Timestamp"], errors="coerce")
+    filtered = filtered.dropna(subset=["Timestamp"])
+
+    if start_time is not None:
+        resolved_start = pd.Timestamp(start_time)
+        filtered = filtered[filtered["Timestamp"] >= resolved_start]
+    if end_time is not None:
+        resolved_end = pd.Timestamp(end_time)
+        filtered = filtered[filtered["Timestamp"] <= resolved_end]
+
+    return filtered.reset_index(drop=True)
+
+
+def _format_elapsed_time_korean(delta: pd.Timedelta) -> str:
+    if pd.isna(delta):
+        return "0분"
+
+    total_seconds = max(int(delta.total_seconds()), 0)
+    total_minutes = total_seconds // 60
+    days, remaining_minutes = divmod(total_minutes, 24 * 60)
+    hours, minutes = divmod(remaining_minutes, 60)
+
+    parts: list[str] = []
+    if days:
+        parts.append(f"{days}일")
+    if hours:
+        parts.append(f"{hours}시간")
+    if minutes or not parts:
+        parts.append(f"{minutes}분")
+    return " ".join(parts)
+
+
+def resolve_inspection_sample_time_window(
+    inspection_records: pd.DataFrame,
+    start_time: object | None = None,
+    end_time: object | None = None,
+) -> tuple[pd.Timestamp | None, pd.Timestamp | None]:
+    if start_time is not None:
+        resolved_start = pd.Timestamp(start_time)
+    elif inspection_records is not None and not inspection_records.empty and "Timestamp" in inspection_records.columns:
+        resolved_start = pd.to_datetime(inspection_records["Timestamp"], errors="coerce").dropna().min()
+    else:
+        resolved_start = None
+
+    if end_time is not None:
+        resolved_end = pd.Timestamp(end_time)
+    elif inspection_records is not None and not inspection_records.empty and "Timestamp" in inspection_records.columns:
+        resolved_end = pd.to_datetime(inspection_records["Timestamp"], errors="coerce").dropna().max()
+    else:
+        resolved_end = None
+
+    return resolved_start, resolved_end
+
+
 def _format_inspection_dataframe(
     inspection_records: pd.DataFrame,
     selected_columns: list[str],
@@ -423,6 +494,8 @@ def _format_inspection_dataframe(
         return pd.DataFrame(columns=list(renamed_columns.values()))
 
     export_df = inspection_records[selected_columns].copy()
+    if "Timestamp" in export_df.columns:
+        export_df["Timestamp"] = pd.to_datetime(export_df["Timestamp"], errors="coerce")
     if "Inspection_No" in export_df.columns:
         export_df["Inspection_No"] = pd.to_numeric(export_df["Inspection_No"], errors="coerce").astype("Int64")
     if "Inspector_Frame_Sec" in export_df.columns:
@@ -465,6 +538,112 @@ def format_inspection_export_dataframe(
         selected_columns=selected_columns,
         renamed_columns=renamed_columns,
     )
+
+
+def format_inspection_sample_dataframe(
+    inspection_records: pd.DataFrame,
+    include_inspector_memory: bool = False,
+) -> pd.DataFrame:
+    selected_columns = INSPECTION_SAMPLE_EXPORT_BASE_COLUMNS.copy()
+    renamed_columns = {
+        "Timestamp": "Timestamp",
+        "Inspection_No": "NO",
+        "Inspector_Frame_Sec": "Frame",
+        "Inspector_Total_Sec": "Total",
+        "System_Memory_Used_GB": "메모리 (시스템)",
+    }
+
+    if include_inspector_memory:
+        selected_columns.append("Inspector_WorkingSet_GB")
+        renamed_columns["Inspector_WorkingSet_GB"] = "메모리 (인스펙터)"
+
+    return _format_inspection_dataframe(
+        inspection_records=inspection_records,
+        selected_columns=selected_columns,
+        renamed_columns=renamed_columns,
+    )
+
+
+def build_inspection_sample_sections(
+    inspection_records: pd.DataFrame,
+    start_time: object | None = None,
+    end_time: object | None = None,
+    include_inspector_memory: bool = False,
+    max_hours: int = 144,
+    interval_hours: int = 12,
+    rows_per_section: int = 10,
+) -> dict[str, object]:
+    effective_start, effective_end = resolve_inspection_sample_time_window(
+        inspection_records,
+        start_time=start_time,
+        end_time=end_time,
+    )
+    filtered_records = filter_inspection_records_by_time_range(
+        inspection_records,
+        start_time=effective_start,
+        end_time=effective_end,
+    )
+
+    if effective_start is None or effective_end is None or effective_start > effective_end:
+        return {
+            "effective_start": effective_start,
+            "effective_end": effective_end,
+            "sections": [],
+        }
+
+    sections: list[dict[str, object]] = []
+    max_offset_hours = min(max_hours, 144)
+
+    for offset_hours in range(0, max_offset_hours + 1, interval_hours):
+        anchor_timestamp = effective_start + pd.Timedelta(hours=offset_hours)
+        if anchor_timestamp > effective_end:
+            break
+
+        anchor_records = filtered_records[filtered_records["Timestamp"] >= anchor_timestamp].head(rows_per_section)
+        if not anchor_records.empty:
+            sections.append(
+                {
+                    "anchor_hours": offset_hours,
+                    "anchor_timestamp": anchor_timestamp,
+                    "status": "rows",
+                    "message": None,
+                    "dataframe": format_inspection_sample_dataframe(
+                        anchor_records.reset_index(drop=True),
+                        include_inspector_memory=include_inspector_memory,
+                    ),
+                }
+            )
+            continue
+
+        if filtered_records.empty:
+            message = "데이터가 존재하지 않습니다."
+        else:
+            last_before_anchor = filtered_records[filtered_records["Timestamp"] < anchor_timestamp]
+            if last_before_anchor.empty:
+                message = "데이터가 존재하지 않습니다."
+            else:
+                last_timestamp = pd.Timestamp(last_before_anchor.iloc[-1]["Timestamp"])
+                elapsed = _format_elapsed_time_korean(anchor_timestamp - last_timestamp)
+                message = (
+                    f"마지막 데이터는 {last_timestamp.strftime('%Y-%m-%d %H:%M:%S')}이며 "
+                    f"기준점보다 {elapsed} 이전 데이터가 최종 데이터입니다."
+                )
+
+        sections.append(
+            {
+                "anchor_hours": offset_hours,
+                "anchor_timestamp": anchor_timestamp,
+                "status": "message",
+                "message": message,
+                "dataframe": pd.DataFrame(),
+            }
+        )
+
+    return {
+        "effective_start": effective_start,
+        "effective_end": effective_end,
+        "sections": sections,
+    }
 
 
 def summarize_inspector_log_data(df: pd.DataFrame) -> dict[str, object]:

@@ -30,6 +30,17 @@ if exist "%RELEASE_ROOT%\%BASENAME%" (
 set "RELEASE_DIR=%RELEASE_ROOT%\%BASENAME%"
 
 echo ========================================
+echo   Running Pre-Build Regression Flow
+echo ========================================
+call .\venv\Scripts\python.exe scripts\run_prebuild_regression.py
+
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Pre-build regression flow failed!
+    pause
+    exit /b %ERRORLEVEL%
+)
+
+echo ========================================
 echo   Building Web Manual (MkDocs)
 echo ========================================
 call .\venv\Scripts\python.exe -m mkdocs build

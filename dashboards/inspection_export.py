@@ -9,6 +9,7 @@ from plotly.subplots import make_subplots
 
 from excel_exporter import generate_inspection_excel
 from inspector_logs.core import (
+    filter_inspection_records_by_time_range,
     format_inspection_preview_dataframe,
     select_inspection_records,
     summarize_inspection_records,
@@ -83,6 +84,15 @@ def _hex_to_rgba(hex_color: str, opacity: float) -> str:
     green = int(normalized[2:4], 16)
     blue = int(normalized[4:6], 16)
     return f"rgba({red}, {green}, {blue}, {opacity:.2f})"
+
+
+def _format_time_filter_caption(filter_start_time, filter_end_time) -> str:
+    if filter_start_time is None or filter_end_time is None:
+        return "현재 로드된 AOI 로그 전체 범위를 기준으로 표시합니다."
+
+    start_label = pd.Timestamp(filter_start_time).strftime("%Y-%m-%d %H:%M:%S")
+    end_label = pd.Timestamp(filter_end_time).strftime("%Y-%m-%d %H:%M:%S")
+    return f"현재 시간 필터 기준: {start_label} -> {end_label}"
 
 
 def _style_preview_table(preview_df: pd.DataFrame, accent_color: str, opacity: float):
@@ -208,12 +218,27 @@ def _render_color_badges(st, metric_color_labels: dict[str, str], table_color_la
     st.markdown("".join(badge_parts), unsafe_allow_html=True)
 
 
-def render_inspection_export_panel(st, inspection_records):
+def render_inspection_export_panel(
+    st,
+    inspection_records,
+    filter_start_time=None,
+    filter_end_time=None,
+    filter_end_user_specified=False,
+):
     st.subheader("검사 결과 XLSX 내보내기")
 
-    summary = summarize_inspection_records(inspection_records)
+    filtered_records = filter_inspection_records_by_time_range(
+        inspection_records,
+        start_time=filter_start_time,
+        end_time=filter_end_time,
+    )
+
+    summary = summarize_inspection_records(filtered_records)
     if summary["rows"] == 0 or summary["no_range"] is None:
-        st.info("현재 불러온 AOI / 인스펙터 로그에는 번호화할 검사 결과가 없습니다.")
+        if filter_start_time is not None or filter_end_time is not None:
+            st.info("현재 시간 필터 범위에는 번호화할 검사 결과가 없습니다.")
+        else:
+            st.info("현재 불러온 AOI / 인스펙터 로그에는 번호화할 검사 결과가 없습니다.")
         return
 
     min_no, max_no = summary["no_range"]
@@ -231,7 +256,8 @@ def render_inspection_export_panel(st, inspection_records):
     if len(summary["model_names"]) > 1:
         st.caption(f"감지된 모델명: {', '.join(summary['model_names'])}")
 
-    st.caption("이 내보내기 영역은 현재 불러온 AOI 로그 전체 기준으로 NO를 매기며, 대시보드 시간 필터와는 별도로 동작합니다.")
+    st.caption(_format_time_filter_caption(filter_start_time, filter_end_time))
+    st.caption("NO는 원본 AOI 로그 기준 번호를 유지하며, 현재 시간 필터에 포함된 검사 결과만 표시합니다.")
 
     range_col1, range_col2 = st.columns(2)
     with range_col1:
@@ -258,7 +284,7 @@ def render_inspection_export_panel(st, inspection_records):
     st.session_state["inspection_export_start_no"] = start_no
     st.session_state["inspection_export_end_no"] = end_no
 
-    selected_records = select_inspection_records(inspection_records, start_no=start_no, end_no=end_no)
+    selected_records = select_inspection_records(filtered_records, start_no=start_no, end_no=end_no)
     preview_df = format_inspection_preview_dataframe(selected_records)
 
     st.caption(f"선택 범위: NO {start_no} -> {end_no} / {len(preview_df)}건")
@@ -344,6 +370,10 @@ def render_inspection_export_panel(st, inspection_records):
         data=generate_inspection_excel(
             selected_records,
             include_inspector_memory=include_inspector_memory_in_xlsx,
+            sample_records=filtered_records,
+            sample_start_time=filter_start_time,
+            sample_end_time=filter_end_time,
+            end_time_user_specified=filter_end_user_specified,
         ),
         file_name=file_name,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

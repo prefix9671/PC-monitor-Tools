@@ -1,7 +1,16 @@
 # Changelog
 
-Updated On: 2026-04-10  
+Updated On: 2026-04-13  
 Status: Active
+
+## [2026-04-13] - AOI 12시간 샘플 XLSX와 build 전 headless Playwright 회귀
+
+### 변경 사항
+
+- AOI 검사 결과 XLSX에 `Inspection_12h_Samples` 시트를 추가하고, 현재 시간 필터 시작 시각 기준 `+0h, +12h, ... +144h` 블록별 첫 10개 샘플을 함께 내보내도록 확장했습니다.
+- AOI 검사 결과 미리보기, 그래프, XLSX 다운로드가 현재 시간 필터 범위를 그대로 따르되 원본 `NO`는 유지하도록 정리했습니다.
+- `scripts/run_prebuild_regression.py`와 `scripts/verify_playwright_prebuild_regression.js`를 추가해, build 전 회귀 절차에 AOI 업로드/시간 필터까지 포함한 headless Playwright 검증을 정식 편입했습니다.
+- 새 prebuild regression은 각 step의 실패 조건과 STDOUT을 `.artifacts/prebuild-regression/` 및 `.artifacts/playwright-prebuild-regression/`에 남기고, `build.bat`가 이를 선행 게이트로 실행합니다.
 
 ## [2026-04-10] - 일반 PC CPU 코어 최고온도 워커 전환
 
