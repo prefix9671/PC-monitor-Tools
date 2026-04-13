@@ -63,6 +63,13 @@ class TestPackagingLayout(unittest.TestCase):
         self.assertIn("'clr'", contents)
         self.assertNotIn("('Monitor.ps1', '.')", contents)
 
+    def test_streamlit_upload_limit_is_pinned_to_one_gigabyte(self):
+        config_contents = (REPO_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+        run_app_contents = (REPO_ROOT / "run_app.py").read_text(encoding="utf-8")
+
+        self.assertIn("maxUploadSize = 1024", config_contents)
+        self.assertIn("--server.maxUploadSize=1024", run_app_contents)
+
     def test_requirements_include_pythonnet(self):
         contents = (REPO_ROOT / "requirements.txt").read_text(encoding="utf-8")
 

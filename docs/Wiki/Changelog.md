@@ -1,7 +1,15 @@
 # Changelog
 
-Updated On: 2026-04-13  
+Updated On: 2026-04-14  
 Status: Active
+
+## [2026-04-14] - AOI 1GB 업로드 브랜치 main 반영
+
+### 변경 사항
+
+- 별도 브랜치에 남아 있던 AOI / 인스펙터 1GB 업로드 설정을 `main`에 반영해, 개발 환경은 `.streamlit/config.toml`, EXE 경로는 `run_app.py --server.maxUploadSize=1024`로 같은 한도를 유지하도록 정리했습니다.
+- `inspector_logs/core.py`는 큰 단일 로그에 청크 단위 스레드 병렬화, 여러 로그 입력에 파일 단위 스레드 병렬화를 사용하도록 복원해 장시간 운전 로그 파싱 경로를 `main`으로 통합했습니다.
+- 관련 회귀 테스트와 운영 문서를 함께 갱신하고, 병합 전 `main` 기준 회귀 검증으로 동작 여부를 다시 확인했습니다.
 
 ## [2026-04-13] - 빌드 산출물 QA 공유 폴더 동시 배포
 

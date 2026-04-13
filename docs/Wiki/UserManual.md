@@ -1,6 +1,6 @@
 # User Manual
 
-Updated On: 2026-04-13  
+Updated On: 2026-04-14  
 Status: Active
 
 이 문서는 현재 Streamlit 대시보드와 수집기 사용 방법을 설명합니다. 사용자 화면 기준 명칭은 한국어 UI에 맞춰 표기합니다.
@@ -110,8 +110,10 @@ EXE 동봉 번들이 없을 때만 LibreHardwareMonitor 최신 공식 릴리스�
 ### AOI / 인스펙터 로그
 
 - `AOI / 인스펙터 로그 업로드`에서 `Browse files`를 눌러 TXT 또는 LOG 파일을 직접 선택할 수 있습니다.
+- 업로드 한도는 1GB입니다. 장시간 운전 로그도 UI 업로드 경로로 바로 확인할 수 있습니다.
 - 개발자가 아닌 블랙박스 테스터도 파일 탐색기에서 바로 선택해 사용할 수 있습니다.
 - 원본 TXT / LOG는 수정하지 않고, 필요한 `Model Open`, `InspTime`, `Working Set Memory Size` 라인만 읽어 별도 시계열과 검사 결과 표로 정리합니다.
+- 큰 단일 로그는 내부적으로 여러 청크로 나눠 병렬 파싱하고, 여러 로그를 함께 올리면 파일 단위 병렬 파싱을 사용합니다.
 - 필요할 때만 `고급: 경로로 AOI / 인스펙터 로그 불러오기`를 열어 경로 입력 방식을 사용할 수 있습니다.
 - 예시 경로: `C:\Inspector\shared\operation_0319_north side grab`
 

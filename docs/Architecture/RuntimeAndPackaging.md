@@ -1,6 +1,6 @@
 # Runtime And Packaging
 
-Updated On: 2026-04-13  
+Updated On: 2026-04-14  
 Status: Active
 
 ## 실행 모드
@@ -18,18 +18,21 @@ Status: Active
 
 - 대시보드: `.\venv\Scripts\python -m streamlit run app.py`
 - 수집기: `.\venv\Scripts\python cli.py start`
+- AOI / 인스펙터 업로드 한도: `.streamlit/config.toml` 기준 1GB
 
 ### 패키징 환경
 
 - 대시보드 실행 파일: `SystemResourceMonitor*.exe`
 - 수집기 시작 래퍼: `start_monitor.bat`
 - EXE 내부 분기: `run_app.py`
+- AOI / 인스펙터 업로드 한도: `run_app.py --server.maxUploadSize=1024` 기준 1GB
 
 ## 관련 파일 역할
 
 | 파일 | 역할 |
 |---|---|
 | `run_app.py` | EXE 환경에서 대시보드/수집기 분기 |
+| `.streamlit/config.toml` | 개발 환경 Streamlit 업로드 한도를 1GB로 고정 |
 | `runtime_patches.py` | Streamlit/Tornado 런타임에서 브라우저 종료 시 발생하는 알려진 WebSocket disconnect noise 를 완화 |
 | `collectors/cpu_temperature_worker.py` | 일반 PC CPU 코어 최고온도 워커 엔트리 |
 | `collectors/libre_hardware_monitor.py` | LibreHardwareMonitor 다운로드/캐시와 `pythonnet` DLL 로드 |
@@ -65,6 +68,7 @@ Status: Active
 - 문서 사이트는 `mkdocs build` 결과로 `.artifacts/manual-site/`에 생성됩니다.
 - `.artifacts/`, `build/`, `dist/`, `site/`는 생성 산출물이므로 소스 코드의 출처로 사용하지 않습니다.
 - 수집기 실행의 현재 기준 래퍼는 `start_monitor.bat` 입니다.
+- 개발 환경은 `.streamlit/config.toml`, EXE 환경은 `run_app.py --server.maxUploadSize=1024`로 AOI / 인스펙터 로그 업로드 한도 1GB를 동일하게 유지합니다.
 - `build.bat`는 로컬 `.artifacts/releases/<빌드명>/` 생성 후 `scripts/publish_release_to_share.ps1`를 호출해 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\`에도 같은 bundle 을 복사합니다.
 - QA 공유 폴더 복사는 먼저 Windows Credential Manager 또는 현재 Windows 세션 자격증명으로 직접 시도합니다.
 - direct copy 가 실패하면 `scripts/publish_release_to_share.ps1`가 사용자에게 한 번만 자격증명을 묻고, 이를 Windows Credential Manager에 저장한 뒤 다시 복사합니다. 기본 사용자 제안값은 `qa`입니다.

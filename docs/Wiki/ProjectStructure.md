@@ -1,12 +1,13 @@
 # Project Structure
 
-Updated On: 2026-04-13  
+Updated On: 2026-04-14  
 Status: Active
 
 ## 루트 구조
 
 ```text
 PC-monitor-Tools/
+├─ .streamlit/
 ├─ aoi_cli.py
 ├─ app.py
 ├─ cli.py
@@ -46,10 +47,11 @@ PC-monitor-Tools/
 
 | 파일 | 설명 |
 |---|---|
+| `.streamlit/config.toml` | 개발 환경 Streamlit 업로드 한도 설정. AOI / 인스펙터 로그 1GB 제한 유지 |
 | `app.py` | Streamlit 메인 앱 |
 | `aoi_cli.py` | AOI / Inspector 로그 요약 및 XLSX export CLI. 기본 결과 시트와 12시간 샘플 시트를 함께 생성 |
 | `cli.py` | 수집기 시작과 CPU 온도 센서 진단 CLI |
-| `run_app.py` | 패키징된 EXE의 단일 진입점 |
+| `run_app.py` | 패키징된 EXE의 단일 진입점. Streamlit 업로드 한도 1GB를 함께 고정 |
 | `runtime_patches.py` | Streamlit/Tornado의 알려진 WebSocket disconnect traceback noise 를 완화하는 런타임 패치 |
 | `data_loader.py` | CSV 로딩, 캐시, exact merge |
 | `collectors/dell_command_monitor.py` | Dell Precision T5/T7 Tower 계열의 DCM 감지, 다운로드, 무인 설치, namespace 준비 확인 |

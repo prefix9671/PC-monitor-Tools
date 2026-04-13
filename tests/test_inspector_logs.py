@@ -3,6 +3,7 @@ import unittest
 import os
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -146,6 +147,81 @@ class TestInspectorLogs(unittest.TestCase):
 
         self.assertEqual(5, len(uploaded_df))
         self.assertIn("Inspector_WorkingSet_MB", uploaded_df.columns)
+
+    def test_large_single_file_uses_parallel_chunk_executor(self):
+        parallel_log_path = Path(self.temp_dir.name) / "parallel_parse.log"
+        parallel_log_path.write_text(
+            "\n".join(
+                [
+                    "20260318_174405 | debug    | (22376) |Model Open : SAMPLE_MODEL_A",
+                    "20260318_174406 | debug    | (105760) |Memory|Working Set Memory Size | 47487856 KB",
+                    "20260318_174407 | debug    | (22376) |InspTime|Frame : 1.19 sec|Total : 38.13 sec / 32 frame",
+                    "noise line that should be ignored",
+                    "20260318_174411 | debug    | (105760) |Memory|Working Set Memory Size | 50000000 KB",
+                    "20260318_174412 | debug    | (22376) |InspTime|Frame : 1.50 sec|Total : 40.00 sec / 33 frame",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        class RecordingExecutor:
+            used = False
+            max_workers = None
+
+            def __init__(self, max_workers):
+                RecordingExecutor.used = True
+                RecordingExecutor.max_workers = max_workers
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def map(self, func, iterable):
+                return map(func, iterable)
+
+        with patch("inspector_logs.core.INSPECTOR_PARSE_MIN_LINE_COUNT_FOR_PARALLEL", 4), patch(
+            "inspector_logs.core.INSPECTOR_PARSE_CHUNK_LINE_COUNT", 2
+        ), patch("inspector_logs.core.concurrent.futures.ThreadPoolExecutor", RecordingExecutor):
+            df = load_inspector_log_data(str(parallel_log_path))
+
+        self.assertTrue(RecordingExecutor.used)
+        self.assertGreaterEqual(RecordingExecutor.max_workers, 2)
+        self.assertEqual(5, len(df))
+        self.assertEqual(
+            ["model_open", "working_set", "insp_time", "working_set", "insp_time"],
+            df["Inspector_Event_Type"].tolist(),
+        )
+
+    def test_large_uploaded_file_uses_parallel_chunk_executor(self):
+        raw_bytes = self.log_path.read_bytes()
+
+        class RecordingExecutor:
+            used = False
+            max_workers = None
+
+            def __init__(self, max_workers):
+                RecordingExecutor.used = True
+                RecordingExecutor.max_workers = max_workers
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def map(self, func, iterable):
+                return map(func, iterable)
+
+        with patch("inspector_logs.core.INSPECTOR_PARSE_MIN_LINE_COUNT_FOR_PARALLEL", 4), patch(
+            "inspector_logs.core.INSPECTOR_PARSE_CHUNK_LINE_COUNT", 2
+        ), patch("inspector_logs.core.concurrent.futures.ThreadPoolExecutor", RecordingExecutor):
+            df = load_inspector_log_data_from_uploads([(self.log_path.name, raw_bytes)])
+
+        self.assertTrue(RecordingExecutor.used)
+        self.assertGreaterEqual(RecordingExecutor.max_workers, 2)
+        self.assertEqual(5, len(df))
 
     def test_filter_inspection_records_by_time_range_keeps_original_no(self):
         inspection_records = pd.DataFrame(

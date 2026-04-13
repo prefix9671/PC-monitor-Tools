@@ -1,6 +1,6 @@
 # Current Phase
 
-Updated On: 2026-04-13  
+Updated On: 2026-04-14  
 Status: Active
 
 ## 현재 단계
@@ -15,6 +15,7 @@ Status: Active
 - 데이터 결합: `resource/process` exact merge
 - 배포: `run_app.py` + `monitor.spec` + `build.bat`
 - 빌드 게이트: `scripts/run_prebuild_regression.py` 선행 통과 후 패키징
+- AOI / 인스펙터 업로드 한도: 1GB
 - 빌드 산출물: 로컬 `.artifacts/releases/<빌드명>/`과 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\` 동시 배포, 서버 루트는 최신 빌드 1개만 유지하고 이전 버전은 `old/`로 아카이브
 - 운영 하드웨어 기준: Dell T5820 / T5860 / T7860 계열 제어 PC에서는 Dell Command Monitor 기반 CPU 온도 경로를 우선 사용하고, 일반 PC는 EXE에 동봉된 `lhm-bundle` 또는 로컬 bundle 을 사용하는 `pythonnet + LibreHardwareMonitorLib.dll` 워커가 `CPU Core #n` 최고온도를 30초마다 갱신합니다. 어드벤텍 IPC 같은 장비는 워커 실패 시 `Win32_PerfRawData_Counters_ThermalZoneInformation` Kelvin fallback 경로를 포함합니다.
 
@@ -31,6 +32,7 @@ Status: Active
 - 비사소한 코드 변경에는 `VerificationChecklist.md`를 기본 문서 게이트로 유지
 - 리스크, 우선순위, 운영 기준이 실제로 바뀌는 경우에만 `CurrentPhase.md`를 필수 갱신 대상으로 유지
 - 로그 스키마 변경이 대시보드와 파서를 깨지 않는지 확인
+- AOI / 인스펙터 대용량 업로드와 멀티스레드 파싱 경로가 `main`에 유지되는지 확인
 - 패키징 흐름에서 실제 기준 파일이 무엇인지 문서에 명확히 유지
 - QA 공유 폴더 동시 배포가 기본 흐름으로 유지되는지, 자격증명 방식이 Windows Credential Manager 기준인지, 서버 루트 정리가 최신본 1개 + `old/` 아카이브 규칙을 지키는지 확인
 - Playwright MCP 기반 WEB 대시보드 검증은 stdio 호환 구성이 유지되는지 함께 확인

@@ -1,6 +1,6 @@
 # Verification Checklist
 
-Updated On: 2026-04-13  
+Updated On: 2026-04-14  
 Status: Active
 
 구현을 마친 뒤에는 변경 종류에 따라 아래 검증을 수행합니다.
@@ -39,7 +39,9 @@ Status: Active
 
 - `.\venv\Scripts\python aoi_cli.py summary --path ".\bug\operation_0319_north side grab.log"`
 - `.\venv\Scripts\python aoi_cli.py export --path ".\bug\operation_0319_north side grab.log" --out ".\inspection_export.xlsx"`
+- 개발 경로 `.streamlit/config.toml`과 EXE 경로 `run_app.py`가 모두 1GB 업로드 한도를 유지하는지 확인
 - AOI 경로가 파일, 폴더, 확장자 없는 기본 경로를 모두 처리하는지 확인
+- 큰 단일 인스펙터 로그는 청크 단위 스레드 병렬화, 여러 인스펙터 로그는 파일 단위 스레드 병렬화가 사용되는지 확인
 - `Memory AND Inspector Dashboard`에서 인스펙터 요약 지표와 외부 시스템 메모리 비교가 보이는지 확인
 - 메인 화면 대시보드 아래 `검사 결과 XLSX 내보내기` 영역에서 모델명, 총 검사 수, 시작/종료 NO, 미리보기, 다운로드가 모두 보이는지 확인
 - 미리보기 표와 그래프가 `메모리 (인스펙터)`를 다시 함께 표시하는지 확인

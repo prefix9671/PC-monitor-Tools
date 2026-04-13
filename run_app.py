@@ -24,5 +24,6 @@ if __name__ == "__main__":
         "run",
         resolve_path("app.py"),
         "--global.developmentMode=false",
+        "--server.maxUploadSize=1024",
     ]
     sys.exit(stcli.main())

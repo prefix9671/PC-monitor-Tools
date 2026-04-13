@@ -1,6 +1,6 @@
 # System Overview
 
-Updated On: 2026-04-13  
+Updated On: 2026-04-14  
 Status: Active
 
 ## 시스템 개요
@@ -43,6 +43,7 @@ Status: Active
 | 파싱 | `parsers.py` | Top 5 문자열 컬럼 파싱 |
 | 시각화 | `dashboards/*.py` | CPU, Memory, Storage, Custom 화면 렌더 |
 | 엑셀 내보내기 | `excel_exporter.py` | 선택 컬럼을 `.xlsx`로 생성 |
+| Streamlit 업로드 설정 | `.streamlit/config.toml` | 개발 환경 AOI / 인스펙터 업로드 한도를 1GB로 고정 |
 
 ## 현재 아키텍처 계약
 
@@ -87,6 +88,8 @@ Inspector event DataFrame -> memory dashboard
 - `dashboards/cpu.py`는 `CPU_Temp(C)` 컬럼이 있을 때 사용률 복합 차트와 온도 전용 차트를 함께 표시합니다.
 - `dashboards/memory.py`는 시스템 메모리와 AOI / Inspector 로그를 함께 보여주는 `Memory AND Inspector` 대시보드로 확장되었고, 스왑 값이 0이면 현재 스왑된 메모리가 없다는 상태 메시지를 함께 표시합니다.
 - `dashboards/inspection_export.py`는 메인 화면에서 AOI 검사 결과를 원본 `NO` 유지 기준으로 보여주고, 현재 시간 필터 범위 안에서 미리보기/XLSX를 계산합니다.
+- `load_inspector_log_data()`와 `load_inspector_log_data_from_uploads()`는 큰 단일 로그는 청크 단위, 여러 로그는 파일 단위 스레드 병렬화를 사용해 AOI 파싱 시간을 줄입니다.
+- Streamlit 대시보드 업로드 경로는 `.streamlit/config.toml`과 `run_app.py --server.maxUploadSize=1024`를 함께 사용해 개발/EXE 모두 1GB 업로드 한도를 유지합니다.
 - `inspector_logs/core.py`는 AOI 이벤트와 시스템 메모리 로그를 `merge_asof` 하기 전에 양쪽 `Timestamp`를 모두 `datetime64[ns]`로 맞춰, Python 3.13 / 최신 pandas 조합에서도 `datetime64[us]` 대 `datetime64[ns]` 타입 충돌 없이 동작하도록 유지합니다.
 - 검사 결과 XLSX는 기본 `Inspection_Results` 시트 외에 `Inspection_12h_Samples` 시트를 추가로 만들고, 시간 필터 시작 시각 기준 `+0h, +12h, ... +144h`마다 첫 10개를 블록형으로 적습니다.
 - `Inspection_12h_Samples`는 각 기준점 이후 현재 시간 필터 종료 시각 이내에서 찾은 첫 10개를 사용하며, 데이터가 없으면 마지막 데이터 시각 기준 안내 문구 또는 `데이터가 존재하지 않습니다`를 남깁니다.

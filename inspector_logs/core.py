@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import concurrent.futures
+import os
 import re
 from pathlib import Path
 from typing import Iterable
@@ -8,6 +10,9 @@ import pandas as pd
 
 INSPECTOR_PROCESS_LABEL = "인스펙터 앱 (로그)"
 SUPPORTED_LOG_SUFFIXES = (".log", ".txt")
+INSPECTOR_PARSE_CHUNK_LINE_COUNT = 250_000
+INSPECTOR_PARSE_MIN_LINE_COUNT_FOR_PARALLEL = 500_000
+INSPECTOR_PARSE_MAX_WORKERS = 8
 
 INSPTIME_PATTERN = re.compile(
     r"(?P<stamp>\d{8}_\d{6}).*?\|InspTime\|"
@@ -208,33 +213,138 @@ def _parse_line(line: str, source_file: str) -> dict[str, object] | None:
     return None
 
 
+def _parse_lines_chunk(lines: list[str], source_file: str) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for line in lines:
+        normalized_line = line.lower()
+        if (
+            "|insptime|" not in normalized_line
+            and "working set memory size" not in normalized_line
+            and "model open" not in normalized_line
+        ):
+            continue
+        parsed = _parse_line(line, source_file)
+        if parsed is not None:
+            rows.append(parsed)
+    return rows
+
+
+def _parse_lines_chunk_task(task: tuple[list[str], str]) -> list[dict[str, object]]:
+    chunk_lines, source_file = task
+    return _parse_lines_chunk(chunk_lines, source_file)
+
+
+def _resolve_parse_worker_count(work_item_count: int) -> int:
+    cpu_count = os.cpu_count() or 1
+    return min(INSPECTOR_PARSE_MAX_WORKERS, cpu_count, max(1, work_item_count))
+
+
+def _load_rows_from_text_lines(
+    lines: list[str],
+    source_file: str,
+    allow_parallel_chunks: bool = True,
+) -> list[dict[str, object]]:
+    if not lines:
+        return []
+
+    if (
+        not allow_parallel_chunks
+        or len(lines) < INSPECTOR_PARSE_MIN_LINE_COUNT_FOR_PARALLEL
+    ):
+        return _parse_lines_chunk(lines, source_file)
+
+    chunk_count = (len(lines) + INSPECTOR_PARSE_CHUNK_LINE_COUNT - 1) // INSPECTOR_PARSE_CHUNK_LINE_COUNT
+    max_workers = _resolve_parse_worker_count(chunk_count)
+    if chunk_count < 2 or max_workers < 2:
+        return _parse_lines_chunk(lines, source_file)
+
+    rows: list[dict[str, object]] = []
+    tasks = (
+        (lines[index:index + INSPECTOR_PARSE_CHUNK_LINE_COUNT], source_file)
+        for index in range(0, len(lines), INSPECTOR_PARSE_CHUNK_LINE_COUNT)
+    )
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for chunk_rows in executor.map(_parse_lines_chunk_task, tasks):
+            rows.extend(chunk_rows)
+    return rows
+
+
+def _load_rows_from_path(log_path: Path, allow_parallel_chunks: bool = True) -> list[dict[str, object]]:
+    return _load_rows_from_text_lines(
+        _read_text_lines(log_path),
+        log_path.name,
+        allow_parallel_chunks=allow_parallel_chunks,
+    )
+
+
+def _load_rows_from_path_task(task: tuple[Path, bool]) -> list[dict[str, object]]:
+    log_path, allow_parallel_chunks = task
+    return _load_rows_from_path(log_path, allow_parallel_chunks=allow_parallel_chunks)
+
+
+def _load_rows_from_uploaded_file(
+    file_name: str,
+    raw_bytes: bytes,
+    allow_parallel_chunks: bool = True,
+) -> list[dict[str, object]]:
+    return _load_rows_from_text_lines(
+        _decode_text_lines(raw_bytes),
+        file_name,
+        allow_parallel_chunks=allow_parallel_chunks,
+    )
+
+
+def _load_rows_from_uploaded_file_task(task: tuple[str, bytes, bool]) -> list[dict[str, object]]:
+    file_name, raw_bytes, allow_parallel_chunks = task
+    return _load_rows_from_uploaded_file(
+        file_name,
+        raw_bytes,
+        allow_parallel_chunks=allow_parallel_chunks,
+    )
+
+
 def load_inspector_log_data(path_input: str | Iterable[str] | None) -> pd.DataFrame:
     resolved_paths = resolve_inspector_log_paths(path_input)
     rows: list[dict[str, object]] = []
 
-    for log_path in resolved_paths:
-        for line in _read_text_lines(log_path):
-            normalized_line = line.lower()
-            if "|insptime|" not in normalized_line and "working set memory size" not in normalized_line and "model open" not in normalized_line:
-                continue
-            parsed = _parse_line(line, log_path.name)
-            if parsed is not None:
-                rows.append(parsed)
+    if len(resolved_paths) <= 1:
+        for log_path in resolved_paths:
+            rows.extend(_load_rows_from_path(log_path, allow_parallel_chunks=True))
+        return _rows_to_dataframe(rows)
+
+    max_workers = _resolve_parse_worker_count(len(resolved_paths))
+    if max_workers < 2:
+        for log_path in resolved_paths:
+            rows.extend(_load_rows_from_path(log_path, allow_parallel_chunks=False))
+        return _rows_to_dataframe(rows)
+
+    tasks = [(log_path, False) for log_path in resolved_paths]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for file_rows in executor.map(_load_rows_from_path_task, tasks):
+            rows.extend(file_rows)
 
     return _rows_to_dataframe(rows)
 
 
 def load_inspector_log_data_from_uploads(uploaded_files: Iterable[tuple[str, bytes]] | None) -> pd.DataFrame:
+    uploaded_file_list = list(uploaded_files or [])
     rows: list[dict[str, object]] = []
 
-    for file_name, raw_bytes in uploaded_files or []:
-        for line in _decode_text_lines(raw_bytes):
-            normalized_line = line.lower()
-            if "|insptime|" not in normalized_line and "working set memory size" not in normalized_line and "model open" not in normalized_line:
-                continue
-            parsed = _parse_line(line, file_name)
-            if parsed is not None:
-                rows.append(parsed)
+    if len(uploaded_file_list) <= 1:
+        for file_name, raw_bytes in uploaded_file_list:
+            rows.extend(_load_rows_from_uploaded_file(file_name, raw_bytes, allow_parallel_chunks=True))
+        return _rows_to_dataframe(rows)
+
+    max_workers = _resolve_parse_worker_count(len(uploaded_file_list))
+    if max_workers < 2:
+        for file_name, raw_bytes in uploaded_file_list:
+            rows.extend(_load_rows_from_uploaded_file(file_name, raw_bytes, allow_parallel_chunks=False))
+        return _rows_to_dataframe(rows)
+
+    tasks = [(file_name, raw_bytes, False) for file_name, raw_bytes in uploaded_file_list]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for file_rows in executor.map(_load_rows_from_uploaded_file_task, tasks):
+            rows.extend(file_rows)
 
     return _rows_to_dataframe(rows)
 

@@ -135,7 +135,7 @@ with st.sidebar:
         accept_multiple_files=True,
         help="파일 탐색기에서 AOI / 인스펙터 TXT 또는 LOG 파일을 직접 선택합니다.",
     )
-    st.caption("권장: Browse files로 AOI / 인스펙터 TXT 또는 LOG 파일을 직접 선택하세요.")
+    st.caption("권장: Browse files로 AOI / 인스펙터 TXT 또는 LOG 파일을 직접 선택하세요. 업로드 제한은 1GB입니다.")
 
     aoi_frames = []
     if uploaded_aoi_files:

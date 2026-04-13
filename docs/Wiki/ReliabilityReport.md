@@ -1,6 +1,6 @@
 # Reliability Report
 
-Updated On: 2026-04-13  
+Updated On: 2026-04-14  
 Status: Active
 
 ## 개요
@@ -49,6 +49,8 @@ Status: Active
 - prebuild regression step마다 실패 조건과 STDOUT을 별도 로그/JSON으로 남겨 현장 재현이나 원격 디버깅에 유리함
 - 로컬 릴리스와 QA 공유 폴더 릴리스가 같은 `build.bat` 경로에서 동시에 생성되므로, QA 전달 누락을 packaging 단계에서 더 일찍 발견할 수 있음
 - QA 공유 폴더 루트에서 최신 릴리스만 남기고 이전 버전은 `old/`로 이동하므로, 현장에서 최신본을 찾는 시간이 줄어듦
+- AOI / 인스펙터 로그 업로드는 개발/패키징 모두 1GB로 고정되어, 장시간 운전 로그를 UI 업로드 경로로 재현하기 쉬움
+- AOI 파서는 큰 단일 로그는 청크 단위, 여러 로그는 파일 단위 스레드 병렬화를 사용해 장시간 로그 재검증의 체감 대기 시간을 줄임
 - 브라우저 탭 종료나 headless 캡처 종료 시 Streamlit/Tornado가 남기던 반복 `WebSocketClosedError` noise 를 런타임 패치로 줄여, 실제 오류와 종료 노이즈를 구분하기 쉬움
 
 ## 현재 한계와 주의점
