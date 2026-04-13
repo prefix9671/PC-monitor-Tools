@@ -78,6 +78,13 @@ INSPECTION_SAMPLE_EXPORT_BASE_COLUMNS = [
 ]
 
 
+def _normalize_datetime_series(series: pd.Series) -> pd.Series:
+    normalized = pd.to_datetime(series, errors="coerce")
+    if normalized.empty:
+        return normalized
+    return normalized.astype("datetime64[ns]")
+
+
 def _split_path_input(path_input: str | Iterable[str] | None) -> list[str]:
     if path_input is None:
         return []
@@ -237,7 +244,7 @@ def _rows_to_dataframe(rows: list[dict[str, object]]) -> pd.DataFrame:
         return pd.DataFrame(columns=INSPECTOR_COLUMNS)
 
     df = pd.DataFrame(rows, columns=INSPECTOR_COLUMNS)
-    df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+    df["Timestamp"] = _normalize_datetime_series(df["Timestamp"])
     return (
         df.dropna(subset=["Timestamp"])
         .sort_values("Timestamp", kind="mergesort")
@@ -273,7 +280,7 @@ def build_inspection_records(inspector_df: pd.DataFrame, system_df: pd.DataFrame
         return _empty_inspection_records()
 
     events = inspector_df.copy()
-    events["Timestamp"] = pd.to_datetime(events["Timestamp"], errors="coerce")
+    events["Timestamp"] = _normalize_datetime_series(events["Timestamp"])
     events = (
         events.dropna(subset=["Timestamp"])
         .sort_values("Timestamp", kind="mergesort")
@@ -369,7 +376,7 @@ def build_inspection_records(inspector_df: pd.DataFrame, system_df: pd.DataFrame
 
     if system_df is not None and not system_df.empty and {"Timestamp", "Mem_Used(GB)"}.issubset(system_df.columns):
         system_memory = system_df[["Timestamp", "Mem_Used(GB)"]].copy()
-        system_memory["Timestamp"] = pd.to_datetime(system_memory["Timestamp"], errors="coerce")
+        system_memory["Timestamp"] = _normalize_datetime_series(system_memory["Timestamp"])
         system_memory["Mem_Used(GB)"] = pd.to_numeric(system_memory["Mem_Used(GB)"], errors="coerce")
         system_memory = (
             system_memory.dropna(subset=["Timestamp", "Mem_Used(GB)"])
@@ -431,7 +438,7 @@ def filter_inspection_records_by_time_range(
         return _empty_inspection_records()
 
     filtered = inspection_records.copy()
-    filtered["Timestamp"] = pd.to_datetime(filtered["Timestamp"], errors="coerce")
+    filtered["Timestamp"] = _normalize_datetime_series(filtered["Timestamp"])
     filtered = filtered.dropna(subset=["Timestamp"])
 
     if start_time is not None:
@@ -495,7 +502,7 @@ def _format_inspection_dataframe(
 
     export_df = inspection_records[selected_columns].copy()
     if "Timestamp" in export_df.columns:
-        export_df["Timestamp"] = pd.to_datetime(export_df["Timestamp"], errors="coerce")
+        export_df["Timestamp"] = _normalize_datetime_series(export_df["Timestamp"])
     if "Inspection_No" in export_df.columns:
         export_df["Inspection_No"] = pd.to_numeric(export_df["Inspection_No"], errors="coerce").astype("Int64")
     if "Inspector_Frame_Sec" in export_df.columns:

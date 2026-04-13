@@ -115,6 +115,30 @@ class TestInspectorLogs(unittest.TestCase):
             export_with_inspector_df.columns.tolist(),
         )
 
+    def test_build_inspection_records_normalizes_datetime_precision_for_merge_asof(self):
+        df = load_inspector_log_data(str(self.base_path)).copy()
+        df["Timestamp"] = df["Timestamp"].astype("datetime64[us]")
+        system_df = pd.DataFrame(
+            {
+                "Timestamp": pd.Series(
+                    pd.to_datetime(
+                        [
+                            "2026-03-18 17:44:06",
+                            "2026-03-18 17:44:10",
+                        ]
+                    )
+                ).astype("datetime64[ns]"),
+                "Mem_Used(GB)": [28.5, 29.0],
+            }
+        )
+
+        records = build_inspection_records(df, system_df)
+
+        self.assertEqual(2, len(records))
+        self.assertEqual("datetime64[ns]", str(records["Timestamp"].dtype))
+        self.assertAlmostEqual(28.5, float(records.iloc[0]["System_Memory_Used_GB"]), places=2)
+        self.assertAlmostEqual(29.0, float(records.iloc[1]["System_Memory_Used_GB"]), places=2)
+
     def test_parse_uploaded_log_payload(self):
         uploaded_df = load_inspector_log_data_from_uploads(
             [(self.log_path.name, self.log_path.read_bytes())]

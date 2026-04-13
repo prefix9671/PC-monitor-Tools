@@ -14,7 +14,8 @@ from collectors.subprocess_utils import (
 
 
 class TestSubprocessUtils(unittest.TestCase):
-    def test_decode_subprocess_text_replaces_invalid_bytes_when_all_codecs_fail(self):
+    @patch("collectors.subprocess_utils.locale.getpreferredencoding", return_value="utf-8")
+    def test_decode_subprocess_text_replaces_invalid_bytes_when_all_codecs_fail(self, _preferred_encoding_mock):
         decoded = decode_subprocess_text(b"\x80CPU")
 
         self.assertIn("CPU", decoded)

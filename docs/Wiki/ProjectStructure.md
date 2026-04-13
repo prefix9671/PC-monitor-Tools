@@ -71,7 +71,7 @@ PC-monitor-Tools/
 | `scripts/verify_playwright_prebuild_regression.js` | repo-local bug 입력 파일을 업로드해 AOI 패널/시간 필터까지 포함한 headless Playwright 회귀를 수행 |
 | `requirements.txt` | 런타임/빌드 의존성 목록. 일반 PC CPU 코어 온도 경로를 위해 `pythonnet` 포함 |
 | `dashboards/inspection_export.py` | 메인 화면 AOI 검사 결과 미리보기와 인스펙터 메모리 옵션형 XLSX 다운로드. 현재 시간 필터 범위를 그대로 반영 |
-| `inspector_logs/` | AOI / Inspector 로그 경로 해석, 이벤트 파싱, 원본 NO 유지형 시간 필터링, 12시간 샘플 블록 생성 코어 |
+| `inspector_logs/` | AOI / Inspector 로그 경로 해석, 이벤트 파싱, 원본 NO 유지형 시간 필터링, `merge_asof`용 `datetime64[ns]` 정밀도 정규화, 12시간 샘플 블록 생성 코어 |
 | `tools/playwright-mcp/` | Codex용 Playwright MCP 로컬 패키지와 실행/검증 스크립트 |
 | `parsers.py` | Top 5 문자열 파싱 |
 | `excel_exporter.py` | 엑셀 내보내기 |
@@ -100,6 +100,7 @@ docs/
 - `.artifacts/`는 수동 빌드와 CI가 공통으로 사용하는 생성 산출물 경로입니다.
 - `.artifacts/manual-assets/entry-monitoring/`과 `.artifacts/manual-assets/dashboards-inspector/`은 유저 매뉴얼용 실UI 캡처의 raw, approved, summary 산출물 경로입니다.
 - `bug/` 아래의 로그는 수동 재현과 실데이터 검증용 입력으로 사용하며, 이번 AOI 12시간 샘플 검증 기준 로그는 `bug/operation_0319_north side grab.log` 입니다.
+- `tests/test_inspector_logs.py`에는 AOI 이벤트 `datetime64[us]`와 시스템 메모리 `datetime64[ns]`가 섞여도 검사 결과 역매칭이 깨지지 않는 회귀 테스트가 포함됩니다.
 - `docs/images/manual/`에는 검수 완료 후 매뉴얼 본문에 실제로 포함되는 승인 스크린샷만 둡니다.
 - 현재 문서 탐색 시작점은 `docs/ActiveDocs.md` 입니다.
 - 더 상세한 아키텍처 설명은 [../Architecture/SystemOverview.md](../Architecture/SystemOverview.md)를 참고합니다.
