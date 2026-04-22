@@ -1,6 +1,6 @@
 # Project Structure
 
-Updated On: 2026-04-14  
+Updated On: 2026-04-21  
 Status: Active
 
 ## 루트 구조
@@ -49,10 +49,11 @@ PC-monitor-Tools/
 |---|---|
 | `.streamlit/config.toml` | 개발 환경 Streamlit 업로드 한도 설정. AOI / 인스펙터 로그 1GB 제한 유지 |
 | `app.py` | Streamlit 메인 앱 |
+| `config.py` | 시스템 로그 경로, AOI 자동 로드 기본 경로 `C:\Inspector\shared\operation.txt`, 공용 색상/런타임 상수 |
 | `aoi_cli.py` | AOI / Inspector 로그 요약 및 XLSX export CLI. 기본 결과 시트와 12시간 샘플 시트를 함께 생성 |
 | `cli.py` | 수집기 시작과 CPU 온도 센서 진단 CLI |
 | `run_app.py` | 패키징된 EXE의 단일 진입점. Streamlit 업로드 한도 1GB를 함께 고정 |
-| `runtime_patches.py` | Streamlit/Tornado의 알려진 WebSocket disconnect traceback noise 를 완화하는 런타임 패치 |
+| `runtime_patches.py` | Streamlit/Tornado의 WebSocket disconnect, static asset flush `CancelledError`, gzip closed-file 종료 노이즈를 완화하는 런타임 패치 |
 | `data_loader.py` | CSV 로딩, 캐시, exact merge |
 | `collectors/dell_command_monitor.py` | Dell Precision T5/T7 Tower 계열의 DCM 감지, 다운로드, 무인 설치, namespace 준비 확인 |
 | `collectors/cpu_temperature.py` | Dell DCM 경로와 일반 PC `LibreHardwareMonitorCoreMax` 워커 상태 파일을 오케스트레이션하고, 실패 시 OpenHardwareMonitor/PerfRaw/Thermal Zone fallback 으로 연결 |
@@ -74,7 +75,7 @@ PC-monitor-Tools/
 | `scripts/verify_playwright_prebuild_regression.js` | repo-local bug 입력 파일을 업로드해 AOI 패널/시간 필터까지 포함한 headless Playwright 회귀를 수행 |
 | `requirements.txt` | 런타임/빌드 의존성 목록. 일반 PC CPU 코어 온도 경로를 위해 `pythonnet` 포함 |
 | `dashboards/inspection_export.py` | 메인 화면 AOI 검사 결과 미리보기와 인스펙터 메모리 옵션형 XLSX 다운로드. 현재 시간 필터 범위를 그대로 반영 |
-| `inspector_logs/` | AOI / Inspector 로그 경로 해석, 이벤트 파싱, 원본 NO 유지형 시간 필터링, `merge_asof`용 `datetime64[ns]` 정밀도 정규화, 12시간 샘플 블록 생성 코어 |
+| `inspector_logs/` | AOI / Inspector 로그 경로 해석, 이벤트 파싱, 원본 로그 재저장 payload / ZIP 생성, 원본 NO 유지형 시간 필터링, `merge_asof`용 `datetime64[ns]` 정밀도 정규화, 12시간 샘플 블록 생성 코어 |
 | `tools/playwright-mcp/` | Codex용 Playwright MCP 로컬 패키지와 실행/검증 스크립트 |
 | `parsers.py` | Top 5 문자열 파싱 |
 | `excel_exporter.py` | 엑셀 내보내기 |

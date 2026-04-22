@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import concurrent.futures
+import io
 import os
 import re
+import zipfile
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
@@ -147,6 +150,69 @@ def resolve_inspector_log_paths(path_input: str | Iterable[str] | None) -> list[
             resolved.append(resolved_path.resolve())
 
     return sorted(resolved, key=lambda path: str(path).lower())
+
+
+def load_inspector_log_payloads(path_input: str | Iterable[str] | None) -> list[tuple[str, bytes]]:
+    payloads: list[tuple[str, bytes]] = []
+    for path in resolve_inspector_log_paths(path_input):
+        payloads.append((path.name, path.read_bytes()))
+    return payloads
+
+
+def _build_unique_archive_member_name(file_name: str, used_names: set[str]) -> str:
+    normalized_name = Path(file_name).name or "operation.txt"
+    if normalized_name.lower() not in used_names:
+        used_names.add(normalized_name.lower())
+        return normalized_name
+
+    base_name = Path(normalized_name).stem or "operation"
+    suffix = Path(normalized_name).suffix or ".txt"
+    index = 2
+    while True:
+        candidate = f"{base_name}_{index}{suffix}"
+        if candidate.lower() not in used_names:
+            used_names.add(candidate.lower())
+            return candidate
+        index += 1
+
+
+def build_inspector_raw_download_artifact(
+    payloads: Iterable[tuple[str, bytes]],
+) -> dict[str, object] | None:
+    normalized_payloads: list[tuple[str, bytes]] = []
+    seen_payloads: set[tuple[str, bytes]] = set()
+    for file_name, raw_bytes in payloads:
+        if raw_bytes is None:
+            continue
+        normalized_name = Path(file_name).name or "operation.txt"
+        payload_key = (normalized_name.lower(), raw_bytes)
+        if payload_key in seen_payloads:
+            continue
+        seen_payloads.add(payload_key)
+        normalized_payloads.append((normalized_name, raw_bytes))
+
+    if not normalized_payloads:
+        return None
+
+    if len(normalized_payloads) == 1:
+        file_name, raw_bytes = normalized_payloads[0]
+        return {
+            "file_name": file_name,
+            "data": raw_bytes,
+            "mime": "text/plain",
+        }
+
+    buffer = io.BytesIO()
+    used_names: set[str] = set()
+    with zipfile.ZipFile(buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for file_name, raw_bytes in normalized_payloads:
+            archive.writestr(_build_unique_archive_member_name(file_name, used_names), raw_bytes)
+
+    return {
+        "file_name": f"inspector_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+        "data": buffer.getvalue(),
+        "mime": "application/zip",
+    }
 
 
 def _read_text_lines(path: Path) -> list[str]:

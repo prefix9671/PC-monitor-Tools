@@ -11,7 +11,7 @@ import pandas as pd
 import streamlit as st
 
 from collectors.cpu_temperature_diagnostics import write_cpu_temperature_diagnostic_log
-from config import DEFAULT_LOG_DIR, MANUAL_SITE_DIR
+from config import DEFAULT_INSPECTOR_LOG_PATH, DEFAULT_LOG_DIR, MANUAL_SITE_DIR
 from dashboards.cpu import render_cpu_dashboard
 from dashboards.custom import render_custom_dashboard
 from dashboards.inspection_export import render_inspection_export_panel
@@ -21,11 +21,14 @@ from data_loader import (
     collect_available_timestamps,
     filter_dataframe_by_time_range,
     load_data,
-    load_inspector_data,
     load_inspector_uploaded_data,
     resolve_time_filter_range,
 )
-from inspector_logs.core import build_inspection_records, resolve_inspector_log_paths
+from inspector_logs.core import (
+    build_inspection_records,
+    build_inspector_raw_download_artifact,
+    load_inspector_log_payloads,
+)
 from parsers import extract_process_time_series, parse_process_column
 from runtime_patches import apply_streamlit_runtime_patches
 
@@ -42,8 +45,8 @@ system_df_full = None
 aoi_df_full = None
 inspection_records_df = None
 system_target_files = []
-resolved_aoi_paths = []
 loaded_aoi_sources = []
+loaded_aoi_raw_payloads = []
 inspection_filter_start = None
 inspection_filter_end = None
 inspection_filter_end_user_specified = False
@@ -138,9 +141,26 @@ with st.sidebar:
     st.caption("권장: Browse files로 AOI / 인스펙터 TXT 또는 LOG 파일을 직접 선택하세요. 업로드 제한은 1GB입니다.")
 
     aoi_frames = []
+    default_aoi_payloads = load_inspector_log_payloads(DEFAULT_INSPECTOR_LOG_PATH)
+    if default_aoi_payloads:
+        try:
+            loaded_aoi_raw_payloads.extend(default_aoi_payloads)
+            default_aoi_df = load_inspector_uploaded_data(tuple(default_aoi_payloads))
+            if default_aoi_df is not None and not default_aoi_df.empty:
+                aoi_frames.append(default_aoi_df)
+                loaded_aoi_sources.extend(file_name for file_name, _ in default_aoi_payloads)
+                st.success(
+                    f"기본 경로 인스펙터 로그 {len(default_aoi_payloads)}개를 자동 업로드해 이벤트 {len(default_aoi_df)}행을 불러왔습니다."
+                )
+            else:
+                st.warning("기본 경로 인스펙터 로그는 자동 업로드했지만 InspTime / Working Set 라인을 찾지 못했습니다.")
+        except Exception as exc:
+            st.error(f"기본 경로 인스펙터 로그 자동 업로드에 실패했습니다: {exc}")
+
     if uploaded_aoi_files:
         try:
             uploaded_payloads = tuple((uploaded_file.name, uploaded_file.getvalue()) for uploaded_file in uploaded_aoi_files)
+            loaded_aoi_raw_payloads.extend(uploaded_payloads)
             uploaded_aoi_df = load_inspector_uploaded_data(uploaded_payloads)
             if uploaded_aoi_df is not None and not uploaded_aoi_df.empty:
                 aoi_frames.append(uploaded_aoi_df)
@@ -153,32 +173,20 @@ with st.sidebar:
         except Exception as exc:
             st.error(f"업로드한 AOI 로그를 불러오지 못했습니다: {exc}")
 
-    with st.expander("고급: 경로로 AOI / 인스펙터 로그 불러오기", expanded=False):
-        aoi_path_input = st.text_area(
-            "AOI 로그 파일 또는 폴더 경로",
-            value="",
-            height=90,
-            placeholder=r"C:\Inspector\shared\operation_0319_north side grab",
-        )
-        st.caption("파일 경로, 폴더 경로, 확장자 없는 기본 경로를 지원합니다. 한 줄에 하나씩 입력하세요.")
-
-        if aoi_path_input.strip():
-            try:
-                resolved_aoi_paths = resolve_inspector_log_paths(aoi_path_input)
-                if resolved_aoi_paths:
-                    path_aoi_df = load_inspector_data(aoi_path_input)
-                    if path_aoi_df is not None and not path_aoi_df.empty:
-                        aoi_frames.append(path_aoi_df)
-                        loaded_aoi_sources.extend(path.name for path in resolved_aoi_paths)
-                        st.success(
-                            f"경로에서 찾은 파일 {len(resolved_aoi_paths)}개에서 인스펙터 이벤트 {len(path_aoi_df)}행을 불러왔습니다."
-                        )
-                    else:
-                        st.warning("경로는 찾았지만 InspTime / Working Set 라인을 찾지 못했습니다.")
-                else:
-                    st.warning("입력한 경로와 일치하는 AOI 로그가 없습니다. 기본 경로만 넣으면 `.log`, `.txt`를 자동으로 확인합니다.")
-            except Exception as exc:
-                st.error(f"AOI 로그 경로를 불러오지 못했습니다: {exc}")
+    raw_download_artifact = build_inspector_raw_download_artifact(loaded_aoi_raw_payloads)
+    st.download_button(
+        "인스팩터 로그 다른 이름으로 저장",
+        data=raw_download_artifact["data"] if raw_download_artifact else b"",
+        file_name=raw_download_artifact["file_name"] if raw_download_artifact else "operation.txt",
+        mime=raw_download_artifact["mime"] if raw_download_artifact else "text/plain",
+        disabled=raw_download_artifact is None,
+        use_container_width=True,
+        help="현재 불러온 원본 인스팩터 로그를 그대로 다시 저장합니다.",
+    )
+    st.caption(
+        "기본 경로나 Browse files로 불러온 원본 인스팩터 로그를 다시 저장합니다. "
+        "브라우저 설정에 따라 저장 위치 선택 창이 열리거나 기본 다운로드 폴더로 저장될 수 있습니다."
+    )
 
     if aoi_frames:
         aoi_df = (

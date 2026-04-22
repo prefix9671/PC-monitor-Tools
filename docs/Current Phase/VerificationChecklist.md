@@ -1,6 +1,6 @@
 # Verification Checklist
 
-Updated On: 2026-04-14  
+Updated On: 2026-04-21  
 Status: Active
 
 구현을 마친 뒤에는 변경 종류에 따라 아래 검증을 수행합니다.
@@ -41,7 +41,9 @@ Status: Active
 - `.\venv\Scripts\python aoi_cli.py summary --path ".\bug\operation_0319_north side grab.log"`
 - `.\venv\Scripts\python aoi_cli.py export --path ".\bug\operation_0319_north side grab.log" --out ".\inspection_export.xlsx"`
 - 개발 경로 `.streamlit/config.toml`과 EXE 경로 `run_app.py`가 모두 1GB 업로드 한도를 유지하는지 확인
-- AOI 경로가 파일, 폴더, 확장자 없는 기본 경로를 모두 처리하는지 확인
+- 앱 진입 시 기본 AOI 경로 `C:\Inspector\shared\operation.txt`를 자동으로 시도하고, 해당 경로가 없을 때는 경고 없이 조용히 대기하는지 확인
+- 기본 경로에 로그가 있으면 파일 업로드와 같은 경로로 자동 업로드 처리되고, 성공 메시지와 `인스팩터 로그 다른 이름으로 저장` 버튼이 활성화되는지 확인
+- `인스팩터 로그 다른 이름으로 저장` 버튼이 현재 불러온 원본 TXT / LOG를 그대로 저장하고, 여러 파일이면 ZIP으로 묶는지 확인
 - 큰 단일 인스펙터 로그는 청크 단위 스레드 병렬화, 여러 인스펙터 로그는 파일 단위 스레드 병렬화가 사용되는지 확인
 - `Memory AND Inspector Dashboard`에서 인스펙터 요약 지표와 외부 시스템 메모리 비교가 보이는지 확인
 - 메인 화면 대시보드 아래 `검사 결과 XLSX 내보내기` 영역에서 모델명, 총 검사 수, 시작/종료 NO, 미리보기, 다운로드가 모두 보이는지 확인
@@ -61,7 +63,7 @@ Status: Active
 - `.\venv\Scripts\python verify_dashboards.py`
 - `.\venv\Scripts\python scripts\run_prebuild_regression.py`
 - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\playwright-mcp\verify-playwright-mcp.ps1`
-- 브라우저 탭 종료나 headless 캡처 종료 후 Streamlit 콘솔에 반복 `Task exception was never retrieved` / `WebSocketClosedError` traceback 이 남지 않는지 확인
+- 브라우저 탭 종료나 headless 캡처 종료 후 Streamlit 콘솔에 반복 `Task exception was never retrieved` / `WebSocketClosedError` traceback, `Exception in callback ... CancelledError`, `gzip ... I/O operation on closed file` 종료 노이즈가 남지 않는지 확인
 - 작업 완료 후 WEB 최종 검증 루틴:
   `.\venv\Scripts\python -m streamlit run app.py --server.headless true --server.port 8502`
   별도 터미널에서 `node.exe .\scripts\verify_playwright_dashboards.js http://127.0.0.1:8502`

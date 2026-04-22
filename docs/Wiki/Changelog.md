@@ -1,7 +1,16 @@
 # Changelog
 
-Updated On: 2026-04-14  
+Updated On: 2026-04-21  
 Status: Active
+
+## [2026-04-21] - AOI 기본 경로 자동 로드와 원본 재저장 버튼 추가
+
+### 변경 사항
+
+- AOI / 인스펙터 로그는 사이드바 렌더링 시 기본 경로 `C:\Inspector\shared\operation.txt`를 자동으로 먼저 확인하고, 파일이 있으면 사용자가 업로드한 것과 같은 payload 경로로 자동 업로드 처리하며, 파일이 없으면 경고 없이 조용히 대기하도록 바꿨습니다.
+- 기존 `고급: 경로로 AOI / 인스펙터 로그 불러오기` UI는 제거하고, 대신 현재 불러온 원본 TXT / LOG를 그대로 다시 저장하는 `인스팩터 로그 다른 이름으로 저장` 버튼을 추가했습니다.
+- 원본 로그 저장은 한 파일이면 원래 파일명 그대로, 여러 파일이면 ZIP 묶음으로 저장되도록 정리했습니다.
+- 추가로 `runtime_patches.py`가 브라우저 종료 시 `WebSocketClosedError`뿐 아니라 static asset flush `CancelledError`와 `gzip ... I/O operation on closed file` 종료 노이즈도 함께 흡수하도록 보강했습니다.
 
 ## [2026-04-14] - AOI 1GB 업로드 브랜치 main 반영
 

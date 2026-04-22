@@ -1,6 +1,6 @@
 # Runtime And Packaging
 
-Updated On: 2026-04-14  
+Updated On: 2026-04-21  
 Status: Active
 
 ## 실행 모드
@@ -33,7 +33,7 @@ Status: Active
 |---|---|
 | `run_app.py` | EXE 환경에서 대시보드/수집기 분기 |
 | `.streamlit/config.toml` | 개발 환경 Streamlit 업로드 한도를 1GB로 고정 |
-| `runtime_patches.py` | Streamlit/Tornado 런타임에서 브라우저 종료 시 발생하는 알려진 WebSocket disconnect noise 를 완화 |
+| `runtime_patches.py` | Streamlit/Tornado 런타임에서 브라우저 종료 시 발생하는 WebSocket disconnect, static asset flush `CancelledError`, gzip closed-file noise 를 완화 |
 | `collectors/cpu_temperature_worker.py` | 일반 PC CPU 코어 최고온도 워커 엔트리 |
 | `collectors/libre_hardware_monitor.py` | LibreHardwareMonitor 다운로드/캐시와 `pythonnet` DLL 로드 |
 | `scripts/prepare_lhm_bundle.py` | 빌드 전에 LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비 |
@@ -81,7 +81,7 @@ Status: Active
 - `tools/playwright-mcp/launch-playwright-mcp.ps1`는 stdin/stdout MCP 본 연결이 아니라 포트/SSE 기동 확인과 수동 스모크용 래퍼로 유지합니다.
 - 작업 완료 후 최종 WEB 대시보드 검증은 `verify-playwright-mcp.ps1`로 서버 준비를 확인한 뒤, `python -m streamlit run app.py --server.port 8502`와 `node.exe .\scripts\verify_playwright_dashboards.js http://127.0.0.1:8502` 조합으로 수행합니다.
 - 최종 검증 직전의 headless 회귀는 `.\venv\Scripts\python.exe scripts\run_prebuild_regression.py` 한 번으로 재실행할 수 있고, 각 step의 실패 조건과 STDOUT은 `.artifacts/prebuild-regression/` 및 `.artifacts/playwright-prebuild-regression/`에 남습니다.
-- 개발 환경 `streamlit run app.py`와 EXE 진입점 `run_app.py`는 모두 `runtime_patches.py`를 통해 브라우저 disconnect 시 `Task exception was never retrieved / WebSocketClosedError` 노이즈를 줄입니다.
+- 개발 환경 `streamlit run app.py`와 EXE 진입점 `run_app.py`는 모두 `runtime_patches.py`를 통해 브라우저 disconnect 시 `Task exception was never retrieved / WebSocketClosedError`뿐 아니라 static asset flush `CancelledError`, `gzip ... I/O operation on closed file` 종료 노이즈도 줄입니다.
 - 이 저장소의 코드 리뷰 기본 경로는 GitHub `git push + pull request` 이며, depot_tools 기반 `git cl`은 필수 전제가 아닙니다. `git cl` 오류가 보고되면 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_git_cl.ps1`로 먼저 원인이 “GitHub 원격이라 불필요”인지 “실제 git-cl 환경 누락”인지 구분합니다.
 
 ## 알려진 주의 사항

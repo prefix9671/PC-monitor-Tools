@@ -1,6 +1,6 @@
 # System Overview
 
-Updated On: 2026-04-14  
+Updated On: 2026-04-21  
 Status: Active
 
 ## 시스템 개요
@@ -44,6 +44,7 @@ Status: Active
 | 시각화 | `dashboards/*.py` | CPU, Memory, Storage, Custom 화면 렌더 |
 | 엑셀 내보내기 | `excel_exporter.py` | 선택 컬럼을 `.xlsx`로 생성 |
 | Streamlit 업로드 설정 | `.streamlit/config.toml` | 개발 환경 AOI / 인스펙터 업로드 한도를 1GB로 고정 |
+| 기본 경로 설정 | `config.py` | 시스템 로그 경로와 AOI / 인스펙터 기본 경로 `C:\Inspector\shared\operation.txt`를 보관 |
 
 ## 현재 아키텍처 계약
 
@@ -90,11 +91,14 @@ Inspector event DataFrame -> memory dashboard
 - `dashboards/inspection_export.py`는 메인 화면에서 AOI 검사 결과를 원본 `NO` 유지 기준으로 보여주고, 현재 시간 필터 범위 안에서 미리보기/XLSX를 계산합니다.
 - `load_inspector_log_data()`와 `load_inspector_log_data_from_uploads()`는 큰 단일 로그는 청크 단위, 여러 로그는 파일 단위 스레드 병렬화를 사용해 AOI 파싱 시간을 줄입니다.
 - Streamlit 대시보드 업로드 경로는 `.streamlit/config.toml`과 `run_app.py --server.maxUploadSize=1024`를 함께 사용해 개발/EXE 모두 1GB 업로드 한도를 유지합니다.
+- `app.py`는 사이드바 AOI 구역이 열릴 때 기본 경로 `C:\Inspector\shared\operation.txt`를 자동으로 확인해, 파일이 있으면 업로드 payload와 같은 경로로 자동 업로드 처리하고 없으면 조용히 대기합니다.
+- 수동 AOI 경로 입력 UI는 제거되었고, 대신 `인스팩터 로그 다른 이름으로 저장` 버튼이 현재 불러온 원본 TXT / LOG를 그대로 다시 저장하게 합니다.
 - `inspector_logs/core.py`는 AOI 이벤트와 시스템 메모리 로그를 `merge_asof` 하기 전에 양쪽 `Timestamp`를 모두 `datetime64[ns]`로 맞춰, Python 3.13 / 최신 pandas 조합에서도 `datetime64[us]` 대 `datetime64[ns]` 타입 충돌 없이 동작하도록 유지합니다.
 - 검사 결과 XLSX는 기본 `Inspection_Results` 시트 외에 `Inspection_12h_Samples` 시트를 추가로 만들고, 시간 필터 시작 시각 기준 `+0h, +12h, ... +144h`마다 첫 10개를 블록형으로 적습니다.
 - `Inspection_12h_Samples`는 각 기준점 이후 현재 시간 필터 종료 시각 이내에서 찾은 첫 10개를 사용하며, 데이터가 없으면 마지막 데이터 시각 기준 안내 문구 또는 `데이터가 존재하지 않습니다`를 남깁니다.
 - `verify_dashboards.py`는 브라우저 없이도 대시보드가 크래시하지 않는지 빠르게 확인하는 헤드리스 점검 스크립트입니다.
 - `tools/playwright-mcp/`는 Codex Desktop이 로컬 Playwright MCP 서버를 통해 WEB 기반 GUI 검증을 수행할 수 있게 하는 보조 경로입니다.
+- `runtime_patches.py`는 브라우저 종료나 headless 검증 종료 시 Tornado가 남길 수 있는 WebSocket disconnect, static asset flush `CancelledError`, gzip closed-file 종료 노이즈를 런타임에서 흡수합니다.
 
 ## 문서 업데이트 트리거
 

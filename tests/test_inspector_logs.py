@@ -2,6 +2,8 @@ import tempfile
 import unittest
 import os
 import sys
+import zipfile
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,12 +12,14 @@ import pandas as pd
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from inspector_logs.core import (
+    build_inspector_raw_download_artifact,
     build_inspection_sample_sections,
     build_inspection_records,
     filter_inspection_records_by_time_range,
     format_inspection_export_dataframe,
     format_inspection_preview_dataframe,
     load_inspector_log_data,
+    load_inspector_log_payloads,
     load_inspector_log_data_from_uploads,
     resolve_inspector_log_paths,
     summarize_inspector_log_data,
@@ -147,6 +151,47 @@ class TestInspectorLogs(unittest.TestCase):
 
         self.assertEqual(5, len(uploaded_df))
         self.assertIn("Inspector_WorkingSet_MB", uploaded_df.columns)
+
+    def test_load_inspector_log_payloads_reads_default_resolved_files(self):
+        payloads = load_inspector_log_payloads(str(self.base_path))
+
+        self.assertEqual([(self.log_path.name, self.log_path.read_bytes())], payloads)
+
+    def test_build_inspector_raw_download_artifact_returns_single_file_directly(self):
+        artifact = build_inspector_raw_download_artifact([(self.log_path.name, self.log_path.read_bytes())])
+
+        self.assertIsNotNone(artifact)
+        self.assertEqual(self.log_path.name, artifact["file_name"])
+        self.assertEqual("text/plain", artifact["mime"])
+        self.assertEqual(self.log_path.read_bytes(), artifact["data"])
+
+    def test_build_inspector_raw_download_artifact_archives_multiple_files(self):
+        artifact = build_inspector_raw_download_artifact(
+            [
+                ("operation.txt", b"first"),
+                ("operation.txt", b"second"),
+            ]
+        )
+
+        self.assertIsNotNone(artifact)
+        self.assertTrue(str(artifact["file_name"]).startswith("inspector_logs_"))
+        self.assertEqual("application/zip", artifact["mime"])
+        with zipfile.ZipFile(BytesIO(artifact["data"])) as archive:
+            self.assertEqual(["operation.txt", "operation_2.txt"], archive.namelist())
+            self.assertEqual(b"first", archive.read("operation.txt"))
+            self.assertEqual(b"second", archive.read("operation_2.txt"))
+
+    def test_build_inspector_raw_download_artifact_deduplicates_identical_payloads(self):
+        artifact = build_inspector_raw_download_artifact(
+            [
+                ("operation.txt", b"same"),
+                ("operation.txt", b"same"),
+            ]
+        )
+
+        self.assertIsNotNone(artifact)
+        self.assertEqual("operation.txt", artifact["file_name"])
+        self.assertEqual(b"same", artifact["data"])
 
     def test_large_single_file_uses_parallel_chunk_executor(self):
         parallel_log_path = Path(self.temp_dir.name) / "parallel_parse.log"

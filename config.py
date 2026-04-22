@@ -13,6 +13,7 @@ COLOR_INSPECTOR_TOTAL = '#FF9F1C'
 COLOR_INSPECTOR_MEM = '#2A9D8F'
 
 DEFAULT_LOG_DIR = r"C:\SystemLogs"
+DEFAULT_INSPECTOR_LOG_PATH = r"C:\Inspector\shared\operation.txt"
 
 LAST_BUILD = "~0,4datetime:~4,2datetime:~6,2datetime:~8,2datetime:~10,2" # Updated by build.bat
 
