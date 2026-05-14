@@ -17,6 +17,7 @@ from dashboards.custom import render_custom_dashboard
 from dashboards.inspection_export import render_inspection_export_panel
 from dashboards.memory import render_memory_dashboard
 from dashboards.storage import render_storage_dashboard
+from dashboards.system_summary import render_system_summary_cards
 from data_loader import (
     collect_available_timestamps,
     filter_dataframe_by_time_range,
@@ -379,48 +380,11 @@ if has_system_data or has_inspector_data:
         total_mem_gb = os_total_mem_gb
         st.markdown("---")
 
-        max_mem_gb = f"{df['Mem_Used(GB)'].max():.2f}" if "Mem_Used(GB)" in df.columns else "0.00"
-        max_mem_pct = f"{df['Mem_Usage_Avg(%)'].max():.2f}" if "Mem_Usage_Avg(%)" in df.columns else "0.00"
-
-        trend_str = "안정적 또는 변동형"
-        if "Mem_Used(GB)" in df.columns and df["Mem_Used(GB)"].notna().any():
-            try:
-                min_mem_idx = df["Mem_Used(GB)"].idxmin()
-                max_mem_idx = df["Mem_Used(GB)"].idxmax()
-                if pd.notna(min_mem_idx) and pd.notna(max_mem_idx):
-                    min_time = df.loc[min_mem_idx, "Timestamp"]
-                    max_time = df.loc[max_mem_idx, "Timestamp"]
-                    if max_time > min_time:
-                        duration = max_time - min_time
-                        trend_str = f"{str(duration).split('.')[0]} 동안 증가"
-            except Exception:
-                pass
-
-        top_offender = "N/A"
-        top_offender_val = 0.0
-        if "Top5_Memory_MB" in df.columns:
-            top_proc_df = parse_process_column(df["Top5_Memory_MB"])
-            if not top_proc_df.empty:
-                top_offender = top_proc_df.iloc[0]["Process"]
-                top_offender_val = top_proc_df.iloc[0]["Max_Value"] / 1024.0
-
-        kpi1, kpi2, kpi3 = st.columns(3)
-        kpi1.metric(
-            label="최대 메모리 사용량",
-            value=f"{max_mem_gb} GB",
-            delta=f"전체 {total_mem_gb}GB 중 {max_mem_pct}%",
-            delta_color="inverse",
-        )
-        kpi2.metric(
-            label="메모리 상승 구간",
-            value=trend_str,
-            help="선택한 구간에서 메모리 최소값부터 최대값까지 걸린 시간입니다.",
-        )
-        kpi3.metric(
-            label="최상위 메모리 프로세스",
-            value=top_offender,
-            delta=f"최대 {top_offender_val:.2f} GB",
-            delta_color="inverse",
+        render_system_summary_cards(
+            st,
+            df,
+            filter_start_time=inspection_filter_start,
+            filter_end_time=inspection_filter_end,
         )
         st.markdown("---")
     else:

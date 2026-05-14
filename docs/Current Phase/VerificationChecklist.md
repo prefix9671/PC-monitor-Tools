@@ -1,6 +1,6 @@
 # Verification Checklist
 
-Updated On: 2026-04-21  
+Updated On: 2026-05-14
 Status: Active
 
 구현을 마친 뒤에는 변경 종류에 따라 아래 검증을 수행합니다.
@@ -27,6 +27,7 @@ Status: Active
 - 일반 PC라면 `probe-temp` 또는 상태 JSON 에서 `Source: LibreHardwareMonitorCoreMax`와 `CPU Core #n` 형태의 `Sensor` 문자열을 우선 확인
 - 일반 PC라면 워커가 30초 간격으로 JSON 상태 파일을 갱신하고, 동봉 번들이 없거나 실패할 때만 OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone fallback 으로 계속 동작하는지 확인
 - 앱 맨 아래 `CPU 온도 테스트 실행 및 로그 저장` 버튼을 눌렀을 때 `C:\SystemLogs\cpu_temp_diagnostic_*.log`와 `cpu_temp_diagnostic_latest.log`가 생성되고, force refresh 결과와 provider별 raw preview가 포함되는지 확인
+- 일반 PC에서 온도값이 계속 비어 있으면 LibreHardwareMonitor 공식 릴리스의 `LibreHardwareMonitor.exe`를 직접 실행해 센서 노출 여부를 확인하고, 실행이 안 되거나 센서가 비어 있으면 Microsoft .NET / .NET Core Desktop Runtime 및 `LibreHardwareMonitorLib.dll`, `HidSharp.dll`, `System.*.dll` 등 동봉 의존성 파일 누락 여부를 사용자 조치 항목으로 안내
 - 어드벤텍 IPC 또는 동일한 `Win32_PerfRawData_Counters_ThermalZoneInformation` 노출 장비라면 raw 값 `353`이 약 `79.9°C`, `3530`이 약 `79.9°C`로 해석되는지 확인
 - 어드벤텍 IPC 또는 동일 클래스 장비라면 `_Total` 집계 레코드와 개별 Thermal Zone 이 함께 있을 때 `probe-temp`의 `Sensor` 출력으로 실제 선택된 zone 을 확인하고, 개별 zone 최대값이 `CPU_Temp(C)`에 반영되는지 확인
 - 메모리 압박 또는 비정상 콘솔 출력이 섞여도 PowerShell/설치기 stdout/stderr 디코딩에서 `UnicodeDecodeError`가 나지 않고 수집이 계속되는지 확인
@@ -73,6 +74,7 @@ Status: Active
 - headless Playwright 회귀의 대표 실패 조건:
   페이지 미기동, 시스템 CSV 업로드 후 차트 미렌더, AOI 업로드 후 NO input 미생성, 시간 필터 후 NO 범위 미축소
 - 최근 로그를 읽어 `CPU`, `Memory`, `Storage`, `Custom Graph`가 모두 뜨는지 확인
+- 상단 `시스템 성능 요약` 카드가 시스템 로그만 있어도 표시되고, `CPU 사용량 평균/최고`, `CPU 온도 평균/최고`, `RAM 사용량 평균/최대`가 현재 시간 필터 범위 기준으로 다시 계산되는지 확인
 - `CPU 대시보드`에서 `CPU 사용률과 온도`, `CPU 온도 추이`가 함께 보이고, 온도가 5초 구간 최고값 기준으로 표시되는지 확인
 - `메모리 + 인스펙터 대시보드`에서 페이지 파일 사용량, 스왑 사용률, 가상 메모리 상태가 함께 보이고 `0`이면 `현재 스왑된 메모리가 없습니다`로 안내되는지 확인
 - 스왑 사용률이 1%를 넘는 구간이 있는 로그에서도 메모리 대시보드가 크래시하지 않고, `스왑 시작` 점선/배경 강조가 타임스탬프 축에서 정상 표시되는지 확인

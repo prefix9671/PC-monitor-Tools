@@ -1,6 +1,6 @@
 # System Overview
 
-Updated On: 2026-04-21  
+Updated On: 2026-05-14
 Status: Active
 
 ## 시스템 개요
@@ -36,6 +36,7 @@ Status: Active
 | 집계 | `collectors/aggregator.py` | 윈도우 평균/피크 계산, 5초 구간 최고 CPU 온도, 스왑 최고값, Top N 포맷 생성 |
 | 기록 | `collectors/writers.py` | 날짜별 CSV와 요약 로그 기록, 새 로그 컬럼 등장 시 헤더 재작성 |
 | 데이터 로딩 | `data_loader.py` | `resource_*.csv`와 `process_*.csv` 병합 |
+| 상단 시스템 요약 | `dashboards/system_summary.py` | 시간 필터 적용 후 시스템 로그 기준 CPU 사용량/온도와 RAM 사용률 평균/최고 요약 카드 계산 및 렌더 |
 | AOI 로그 코어 | `inspector_logs/core.py` | AOI / Inspector 로그 경로 해석, `Model Open` 파싱, 검사 NO 재구성, 시스템 메모리 역매칭, `merge_asof` 전 타임스탬프 정밀도 `datetime64[ns]` 정규화, 시간 필터 기준 검사 결과 뷰와 12시간 샘플 블록 생성 |
 | AOI 로그 CLI | `aoi_cli.py` | AOI 로그 요약 확인과 검사 결과 XLSX export Smoke Test |
 | 검사 결과 Export UI | `dashboards/inspection_export.py` | 메인 화면에서 현재 시간 필터 기준 모델명, 검사 수, NO 범위, `NO/Frame/Total/메모리 (시스템)/메모리 (인스펙터)` 미리보기와 옵션형 XLSX 다운로드 제공 |

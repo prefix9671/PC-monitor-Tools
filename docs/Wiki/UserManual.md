@@ -1,6 +1,6 @@
 # User Manual
 
-Updated On: 2026-04-21  
+Updated On: 2026-05-14
 Status: Active
 
 이 문서는 현재 Streamlit 대시보드와 수집기 사용 방법을 설명합니다. 사용자 화면 기준 명칭은 한국어 UI에 맞춰 표기합니다.
@@ -57,6 +57,7 @@ EXE 동봉 번들이 없을 때만 LibreHardwareMonitor 최신 공식 릴리스�
 `probe-temp`는 가능할 때 `Source` 아래에 실제로 선택된 `Sensor` 문자열도 함께 출력하므로 `CPU Core #4` 같은 코어 센서인지, `_Total` 집계 Thermal Zone 인지 현장에서 바로 확인할 수 있습니다.
 앱 맨 아래의 `CPU 온도 테스트 실행 및 로그 저장` 버튼을 누르면 현재 워커 상태, 강제 새로고침 결과, provider별 raw record preview를 모아 상세 로그를 저장합니다.
 진단 로그는 기본적으로 `C:\SystemLogs\cpu_temp_diagnostic_YYYYMMDD_HHMMSS.log`와 `C:\SystemLogs\cpu_temp_diagnostic_latest.log`에 생성됩니다.
+일반 PC에서 온도값이 계속 잡히지 않으면 프로그램 오류로 단정하지 말고, 먼저 LibreHardwareMonitor 공식 릴리스의 `LibreHardwareMonitor.exe`를 직접 받아 해당 PC에서 실행해 센서가 보이는지 확인합니다. 이때 Microsoft .NET / .NET Core Desktop Runtime 설치 여부와 LibreHardwareMonitor 폴더 안의 `LibreHardwareMonitorLib.dll`, `HidSharp.dll`, `System.*.dll` 같은 동봉 의존성 파일이 함께 있는지도 확인해야 합니다.
 
 ## 화면 구성
 
@@ -105,7 +106,7 @@ EXE 동봉 번들이 없을 때만 LibreHardwareMonitor 최신 공식 릴리스�
 1. `시간 범위` 슬라이더는 큰 범위를 빠르게 줄일 때 먼저 사용합니다.
 2. `시작 시간`, `종료 시간`은 초 단위까지 직접 입력해 더 좁게 필터링할 때 사용합니다.
 3. 둘 다 비우면 다시 슬라이더 기준으로 돌아가고, 한쪽만 넣으면 반대쪽 끝은 자동으로 보완됩니다.
-4. 현재 시간 필터는 AOI 미리보기, 차트, XLSX 다운로드에도 같이 적용됩니다.
+4. 현재 시간 필터는 상단 시스템 성능 요약, AOI 미리보기, 차트, XLSX 다운로드에도 같이 적용됩니다.
 
 ### AOI / 인스펙터 로그
 
@@ -169,6 +170,8 @@ EXE 동봉 번들이 없을 때만 LibreHardwareMonitor 최신 공식 릴리스�
 - `스토리지 대시보드`
 - `사용자 정의 그래프`
 
+시스템 로그가 로드되면 대시보드 선택 전에 `시스템 성능 요약` 카드가 먼저 표시됩니다. 이 영역은 현재 표시 중인 시스템 로그 범위 기준으로 `CPU 사용량 평균/최고`, `CPU 온도 평균/최고`, `RAM 사용량 평균/최대`를 퍼센트 또는 섭씨 단위로 보여주며, 인스펙터 로그가 없어도 시스템 로그만 있으면 표시됩니다. 시간 필터를 바꾸면 이 카드도 필터된 구간만 기준으로 다시 계산됩니다.
+
 그래프 오른쪽 상단 도구 모음에서 확대, 이동, 리셋, 이미지 저장을 사용할 수 있습니다.
 
 ![그래프 도구 모음](../images/manual/chart-toolbar.png)
@@ -191,6 +194,7 @@ EXE 동봉 번들이 없을 때만 LibreHardwareMonitor 최신 공식 릴리스�
 - 포터블 EXE 배포본에서는 `lhm-bundle/LibreHardwareMonitorLib.dll`이 함께 포함되므로, 현장 PC에서 인터넷이나 GitHub 인증서 없이도 일반 PC CPU 코어 온도 경로를 바로 사용할 수 있습니다.
 - 일반 PC CPU 코어 최고온도 워커는 30초마다 새 값을 갱신하고, 차트에는 각 5초 구간에서 마지막으로 알려진 코어 최고온도가 반영됩니다.
 - 현장 디버깅이 필요하면 앱 하단 CPU 온도 테스트 버튼을 먼저 실행해 `cpu_temp_diagnostic_*.log`를 수집한 뒤, `Source`, `Sensor`, `worker_state_after`, `provider_diagnostics`를 확인합니다.
+- 온도값이 계속 비어 있으면 LibreHardwareMonitor 공식 릴리스의 `LibreHardwareMonitor.exe`를 해당 PC에서 직접 실행해 CPU Core 센서가 노출되는지 먼저 확인합니다. 실행 자체가 실패하면 Microsoft .NET / .NET Core Desktop Runtime과 LibreHardwareMonitor 동봉 DLL 의존성 파일이 빠졌을 가능성이 높습니다.
 - PerfRaw / Thermal Zone 에서 `_Total` 집계 레코드와 개별 zone 이 함께 보이면 개별 zone 을 우선하고, 그 안에서 가장 높은 유효 온도를 선택합니다.
 - 일부 Dell 장비에서는 DCM `UnitModifier`가 실제 온도 스케일과 다르게 보일 수 있어, 프로그램은 비현실적으로 낮은 온도를 피하도록 직접 읽기값을 우선 해석합니다.
 - Dell Command Monitor 또는 하드웨어 모니터 도구에서 `CPU Package` 센서가 보이면 해당 값을 메인 온도 지표로 우선 사용합니다.

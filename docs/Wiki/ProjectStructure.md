@@ -1,6 +1,6 @@
 # Project Structure
 
-Updated On: 2026-04-21  
+Updated On: 2026-05-14
 Status: Active
 
 ## 루트 구조
@@ -74,6 +74,7 @@ PC-monitor-Tools/
 | `scripts/verify_playwright_dashboards.js` | Playwright MCP로 실제 Streamlit 대시보드를 열고 스크린샷/콘솔 로그 아티팩트를 생성 |
 | `scripts/verify_playwright_prebuild_regression.js` | repo-local bug 입력 파일을 업로드해 AOI 패널/시간 필터까지 포함한 headless Playwright 회귀를 수행 |
 | `requirements.txt` | 런타임/빌드 의존성 목록. 일반 PC CPU 코어 온도 경로를 위해 `pythonnet` 포함 |
+| `dashboards/system_summary.py` | 시간 필터 적용 후의 시스템 로그 기준 `CPU 사용량 평균/최고`, `CPU 온도 평균/최고`, `RAM 사용량 평균/최대` 상단 요약 카드 |
 | `dashboards/inspection_export.py` | 메인 화면 AOI 검사 결과 미리보기와 인스펙터 메모리 옵션형 XLSX 다운로드. 현재 시간 필터 범위를 그대로 반영 |
 | `inspector_logs/` | AOI / Inspector 로그 경로 해석, 이벤트 파싱, 원본 로그 재저장 payload / ZIP 생성, 원본 NO 유지형 시간 필터링, `merge_asof`용 `datetime64[ns]` 정밀도 정규화, 12시간 샘플 블록 생성 코어 |
 | `tools/playwright-mcp/` | Codex용 Playwright MCP 로컬 패키지와 실행/검증 스크립트 |
