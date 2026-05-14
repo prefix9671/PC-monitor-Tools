@@ -11,6 +11,9 @@ from openpyxl import load_workbook
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 ARTIFACT_DIR = REPO_ROOT / ".artifacts" / "prebuild-regression"
 SUMMARY_PATH = ARTIFACT_DIR / "prebuild-regression-summary.json"
 PLAYWRIGHT_URL = "http://127.0.0.1:8506"
@@ -18,6 +21,7 @@ PLAYWRIGHT_PORT = 8506
 PYTHON_EXE = Path(sys.executable)
 
 BUG_OPERATION_LOG = REPO_ROOT / "bug" / "operation_0319_north side grab.log"
+INSPECTOR_TIME_FILTER_FIXTURE_LOG = REPO_ROOT / "tests" / "fixtures" / "inspector_time_filter_range_regression.log"
 BUG_RESOURCE_CSV = REPO_ROOT / "bug" / "20260410-메모리 대시보드 버그" / "resource_20260410.csv"
 BUG_PROCESS_CSV = REPO_ROOT / "bug" / "20260410-메모리 대시보드 버그" / "process_20260410.csv"
 AOI_EXPORT_PATH = ARTIFACT_DIR / "inspection_export_prebuild.xlsx"
@@ -266,11 +270,58 @@ def _run_playwright_step(summary_steps: list[dict[str, object]]) -> None:
 
 
 def _verify_inputs_exist() -> list[str]:
-    required_paths = [BUG_OPERATION_LOG, BUG_RESOURCE_CSV, BUG_PROCESS_CSV]
+    required_paths = [BUG_OPERATION_LOG, INSPECTOR_TIME_FILTER_FIXTURE_LOG, BUG_RESOURCE_CSV, BUG_PROCESS_CSV]
     missing = [str(path) for path in required_paths if not path.exists()]
     if missing:
         raise FileNotFoundError(f"Missing regression input files: {missing}")
     return [f"inputs_ready={len(required_paths)}", *(str(path) for path in required_paths)]
+
+
+def _verify_inspector_time_filter_fixture() -> list[str]:
+    from inspector_logs.core import (
+        build_inspection_records,
+        filter_inspection_records_by_time_range,
+        load_inspector_log_data,
+        select_inspection_records,
+        summarize_inspection_records,
+    )
+
+    start_time = "2026-05-13 15:00:00"
+    end_time = "2026-05-13 16:44:59"
+    expected_rows = 3
+    expected_no_range = (2, 4)
+
+    inspector_df = load_inspector_log_data(str(INSPECTOR_TIME_FILTER_FIXTURE_LOG))
+    inspection_records = build_inspection_records(inspector_df)
+    filtered_records = filter_inspection_records_by_time_range(
+        inspection_records,
+        start_time=start_time,
+        end_time=end_time,
+    )
+    summary = summarize_inspection_records(filtered_records)
+
+    if summary["rows"] != expected_rows:
+        raise AssertionError(f"Expected {expected_rows} filtered rows, got {summary['rows']}.")
+    if summary["no_range"] != expected_no_range:
+        raise AssertionError(f"Expected NO range {expected_no_range}, got {summary['no_range']}.")
+
+    selected_records = select_inspection_records(
+        filtered_records,
+        start_no=expected_no_range[0],
+        end_no=expected_no_range[1],
+    )
+    if len(selected_records) != expected_rows:
+        raise AssertionError(f"Expected selected rows {expected_rows}, got {len(selected_records)}.")
+
+    return [
+        f"log={INSPECTOR_TIME_FILTER_FIXTURE_LOG}",
+        f"time_filter={start_time} -> {end_time}",
+        f"parsed_events={len(inspector_df)}",
+        f"inspection_records={len(inspection_records)}",
+        f"filtered_rows={summary['rows']}",
+        f"filtered_no_range={summary['no_range']}",
+        f"selected_rows={len(selected_records)}",
+    ]
 
 
 def _verify_aoi_export_workbook() -> list[str]:
@@ -334,6 +385,14 @@ def main() -> int:
                 "--path",
                 str(BUG_OPERATION_LOG),
             ],
+        )
+
+        _run_python_check_step(
+            summary_steps,
+            name="aoi-inspector-time-filter-fixture-regression",
+            description="Minimal inspector fixture time filter keeps all matching inspection rows and the full NO range.",
+            failure_condition="Filtered row count is not 3, NO range is not 2 -> 4, or selected rows collapse to 1.",
+            checker=_verify_inspector_time_filter_fixture,
         )
 
         _run_command_step(

@@ -65,6 +65,10 @@ DEFAULT_METRIC_COLOR_LABELS = {
 
 DEFAULT_TABLE_COLOR_LABEL = "스틸 블루"
 
+INSPECTION_EXPORT_RANGE_SCOPE_KEY = "inspection_export_range_scope"
+INSPECTION_EXPORT_START_NO_KEY = "inspection_export_selected_start_no"
+INSPECTION_EXPORT_END_NO_KEY = "inspection_export_selected_end_no"
+
 
 def _sanitize_file_token(value: str | None) -> str:
     token = (value or "").strip()
@@ -84,6 +88,76 @@ def _hex_to_rgba(hex_color: str, opacity: float) -> str:
     green = int(normalized[2:4], 16)
     blue = int(normalized[4:6], 16)
     return f"rgba({red}, {green}, {blue}, {opacity:.2f})"
+
+
+def _time_scope_token(value) -> str:
+    if value is None:
+        return "none"
+    try:
+        return pd.Timestamp(value).isoformat()
+    except Exception:
+        return str(value)
+
+
+def _make_inspection_export_scope(
+    min_no: int,
+    max_no: int,
+    row_count: int,
+    filter_start_time=None,
+    filter_end_time=None,
+) -> str:
+    return "|".join(
+        [
+            str(int(min_no)),
+            str(int(max_no)),
+            str(int(row_count)),
+            _time_scope_token(filter_start_time),
+            _time_scope_token(filter_end_time),
+        ]
+    )
+
+
+def _coerce_int(value, fallback: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(fallback)
+
+
+def _clamp_no_range(start_no: int, end_no: int, min_no: int, max_no: int) -> tuple[int, int]:
+    start_no = min(max(int(start_no), int(min_no)), int(max_no))
+    end_no = min(max(int(end_no), start_no), int(max_no))
+    return start_no, end_no
+
+
+def _resolve_inspection_no_range_state(
+    session_state,
+    min_no: int,
+    max_no: int,
+    row_count: int,
+    filter_start_time=None,
+    filter_end_time=None,
+) -> tuple[int, int]:
+    scope = _make_inspection_export_scope(
+        min_no=min_no,
+        max_no=max_no,
+        row_count=row_count,
+        filter_start_time=filter_start_time,
+        filter_end_time=filter_end_time,
+    )
+
+    if session_state.get(INSPECTION_EXPORT_RANGE_SCOPE_KEY) != scope:
+        session_state[INSPECTION_EXPORT_RANGE_SCOPE_KEY] = scope
+        session_state[INSPECTION_EXPORT_START_NO_KEY] = int(min_no)
+        session_state[INSPECTION_EXPORT_END_NO_KEY] = int(max_no)
+        return int(min_no), int(max_no)
+
+    start_no = _coerce_int(session_state.get(INSPECTION_EXPORT_START_NO_KEY), min_no)
+    end_no = _coerce_int(session_state.get(INSPECTION_EXPORT_END_NO_KEY), max_no)
+    start_no, end_no = _clamp_no_range(start_no, end_no, min_no, max_no)
+    session_state[INSPECTION_EXPORT_START_NO_KEY] = start_no
+    session_state[INSPECTION_EXPORT_END_NO_KEY] = end_no
+    return start_no, end_no
 
 
 def _format_time_filter_caption(filter_start_time, filter_end_time) -> str:
@@ -242,8 +316,14 @@ def render_inspection_export_panel(
         return
 
     min_no, max_no = summary["no_range"]
-    start_default = min(max(int(st.session_state.get("inspection_export_start_no", min_no)), min_no), max_no)
-    end_default = min(max(int(st.session_state.get("inspection_export_end_no", max_no)), start_default), max_no)
+    start_default, end_default = _resolve_inspection_no_range_state(
+        st.session_state,
+        min_no=min_no,
+        max_no=max_no,
+        row_count=summary["rows"],
+        filter_start_time=filter_start_time,
+        filter_end_time=filter_end_time,
+    )
 
     selected_model = summary["primary_model_name"] or "미확인"
     system_match_count = summary["system_memory_matches"]
@@ -270,19 +350,22 @@ def render_inspection_export_panel(
                 step=1,
             )
         )
+    if int(st.session_state.get(INSPECTION_EXPORT_END_NO_KEY, max_no)) < start_no:
+        st.session_state[INSPECTION_EXPORT_END_NO_KEY] = start_no
+    end_default = min(max(int(st.session_state.get(INSPECTION_EXPORT_END_NO_KEY, end_default)), start_no), max_no)
     with range_col2:
         end_no = int(
             range_col2.number_input(
                 "종료 NO",
                 min_value=start_no,
                 max_value=max_no,
-                value=max(end_default, start_no),
+                value=end_default,
                 step=1,
             )
         )
 
-    st.session_state["inspection_export_start_no"] = start_no
-    st.session_state["inspection_export_end_no"] = end_no
+    st.session_state[INSPECTION_EXPORT_START_NO_KEY] = start_no
+    st.session_state[INSPECTION_EXPORT_END_NO_KEY] = end_no
 
     selected_records = select_inspection_records(filtered_records, start_no=start_no, end_no=end_no)
     preview_df = format_inspection_preview_dataframe(selected_records)

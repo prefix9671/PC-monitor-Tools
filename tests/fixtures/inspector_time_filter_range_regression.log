@@ -1,0 +1,11 @@
+20260513_145900 | coreInfo | (13200) |Memory|Model Open : REGRESSION_MODEL
+20260513_145930 | debug    | (13200) |Memory|Working Set Memory Size | 53500000 KB
+20260513_145931 | debug    | (18564) |InspTime|Frame : 0.70 sec|Total : 109.01 sec / 160 frame
+20260513_150209 | debug    | (13200) |Memory|Working Set Memory Size | 53510000 KB
+20260513_150210 | debug    | (18564) |InspTime|Frame : 0.69 sec|Total : 110.43 sec / 160 frame
+20260513_150418 | debug    | (13200) |Memory|Working Set Memory Size | 53520000 KB
+20260513_150419 | debug    | (12224) |InspTime|Frame : 0.69 sec|Total : 110.39 sec / 160 frame
+20260513_164403 | debug    | (13200) |Memory|Working Set Memory Size | 53560560 KB
+20260513_164404 | debug    | (13308) |InspTime|Frame : 0.69 sec|Total : 110.28 sec / 160 frame
+20260513_164950 | debug    | (13200) |Memory|Working Set Memory Size | 53225568 KB
+20260513_164951 | debug    | (13308) |InspTime|Frame : 0.70 sec|Total : 110.31 sec / 160 frame

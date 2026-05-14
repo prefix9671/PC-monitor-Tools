@@ -47,6 +47,7 @@ Status: Active
 - Playwright MCP 브라우저 검증은 stdio 직결 구성으로 유지해 GUI 자동화에서 연결 실패 가능성을 낮출 수 있음
 - 작업 완료 후 `scripts/verify_playwright_dashboards.js`로 실제 Streamlit 대시보드 4종을 다시 열어 보고, 스크린샷과 콘솔 메시지를 아티팩트로 남길 수 있음
 - `scripts/run_prebuild_regression.py`는 bug 폴더의 고정 입력 로그와 headless Playwright를 묶어, 빌드 전에 같은 회귀 시나리오를 반복 실행할 수 있음
+- 같은 prebuild 회귀 안에서 최소 fixture `tests\fixtures\inspector_time_filter_range_regression.log`의 `2026-05-13 15:00:00 -> 16:44:59` 필터 결과가 `NO 2 -> 4`, 3건으로 유지되는지 별도 확인해, 시간 필터 후 인스펙터 결과가 1건으로 접히는 UI 상태 회귀를 조기에 탐지할 수 있음
 - `scripts/verify_docs_sync.py`는 Playwright 회귀를 직접 실행하지는 않지만, Playwright 회귀 스크립트와 MCP 런처가 바뀌었을 때 관련 활성 문서가 함께 갱신됐는지 자동으로 확인할 수 있음
 - `scripts/verify_docs_sync.py`는 Git이 한글 경로를 quoted path 또는 UTF-8로 출력하는 환경에서도 `bug/` 입력과 로컬 GUI 산출물을 비기준 변경으로 오인하지 않도록 유지해야 함
 - prebuild regression step마다 실패 조건과 STDOUT을 별도 로그/JSON으로 남겨 현장 재현이나 원격 디버깅에 유리함

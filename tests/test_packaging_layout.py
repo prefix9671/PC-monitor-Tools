@@ -81,6 +81,8 @@ class TestPackagingLayout(unittest.TestCase):
         publish_runner = (REPO_ROOT / "scripts" / "publish_release_to_share.ps1").read_text(encoding="utf-8")
 
         self.assertIn("headless-playwright-regression", python_runner)
+        self.assertIn("aoi-inspector-time-filter-fixture-regression", python_runner)
+        self.assertIn("inspector_time_filter_range_regression.log", python_runner)
         self.assertIn("inspection-time-filter", playwright_runner)
         self.assertIn("FAILS IF:", playwright_runner)
         self.assertIn("Get-Credential", publish_runner)

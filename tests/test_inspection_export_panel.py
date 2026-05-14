@@ -8,9 +8,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from dashboards.inspection_export import (
     COLOR_PRESET_MAP,
+    INSPECTION_EXPORT_END_NO_KEY,
+    INSPECTION_EXPORT_RANGE_SCOPE_KEY,
+    INSPECTION_EXPORT_START_NO_KEY,
     _build_preview_chart,
     _format_time_filter_caption,
     _hex_to_rgba,
+    _make_inspection_export_scope,
+    _resolve_inspection_no_range_state,
 )
 
 
@@ -77,6 +82,52 @@ class TestInspectionExportPanel(unittest.TestCase):
         self.assertIn("현재 시간 필터 기준", caption)
         self.assertIn("2026-03-18 00:00:00", caption)
         self.assertIn("2026-03-18 12:00:00", caption)
+
+    def test_no_range_state_resets_to_filtered_full_range_when_filter_scope_changes(self):
+        state = {
+            INSPECTION_EXPORT_RANGE_SCOPE_KEY: "old-filter",
+            INSPECTION_EXPORT_START_NO_KEY: 2,
+            INSPECTION_EXPORT_END_NO_KEY: 2,
+        }
+
+        start_no, end_no = _resolve_inspection_no_range_state(
+            state,
+            min_no=2,
+            max_no=4,
+            row_count=3,
+            filter_start_time=pd.Timestamp("2026-05-13 15:00:00"),
+            filter_end_time=pd.Timestamp("2026-05-13 16:44:59"),
+        )
+
+        self.assertEqual(2, start_no)
+        self.assertEqual(4, end_no)
+        self.assertEqual(4, state[INSPECTION_EXPORT_END_NO_KEY])
+
+    def test_no_range_state_preserves_manual_selection_inside_same_filter_scope(self):
+        scope = _make_inspection_export_scope(
+            min_no=2,
+            max_no=4,
+            row_count=3,
+            filter_start_time=pd.Timestamp("2026-05-13 15:00:00"),
+            filter_end_time=pd.Timestamp("2026-05-13 16:44:59"),
+        )
+        state = {
+            INSPECTION_EXPORT_RANGE_SCOPE_KEY: scope,
+            INSPECTION_EXPORT_START_NO_KEY: 3,
+            INSPECTION_EXPORT_END_NO_KEY: 4,
+        }
+
+        start_no, end_no = _resolve_inspection_no_range_state(
+            state,
+            min_no=2,
+            max_no=4,
+            row_count=3,
+            filter_start_time=pd.Timestamp("2026-05-13 15:00:00"),
+            filter_end_time=pd.Timestamp("2026-05-13 16:44:59"),
+        )
+
+        self.assertEqual(3, start_no)
+        self.assertEqual(4, end_no)
 
 
 if __name__ == "__main__":

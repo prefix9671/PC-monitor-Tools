@@ -306,6 +306,20 @@ class TestInspectorLogs(unittest.TestCase):
 
         self.assertEqual([205, 309], filtered["Inspection_No"].tolist())
 
+    def test_minimal_time_filter_fixture_keeps_full_filtered_no_range(self):
+        fixture_path = Path(__file__).parent / "fixtures" / "inspector_time_filter_range_regression.log"
+        df = load_inspector_log_data(str(fixture_path))
+        records = build_inspection_records(df)
+
+        filtered = filter_inspection_records_by_time_range(
+            records,
+            start_time="2026-05-13 15:00:00",
+            end_time="2026-05-13 16:44:59",
+        )
+
+        self.assertEqual(5, len(records))
+        self.assertEqual([2, 3, 4], filtered["Inspection_No"].tolist())
+
     def test_build_inspection_sample_sections_uses_anchor_and_first_10_after_it(self):
         inspection_records = pd.DataFrame(
             {

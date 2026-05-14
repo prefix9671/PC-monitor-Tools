@@ -39,7 +39,7 @@ Status: Active
 | `scripts/prepare_lhm_bundle.py` | 빌드 전에 LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비 |
 | `scripts/check_git_cl.ps1` | 현재 저장소에서 `git cl`이 필요한 환경인지, 단순히 GitHub PR 흐름이라 불필요한지 진단 |
 | `scripts/publish_release_to_share.ps1` | 로컬 release bundle 을 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴`에도 복사하고, 필요하면 Windows Credential Manager 자격증명을 저장하며, 서버 루트에는 최신 릴리스만 남기고 이전 버전 폴더는 `old/`로 이동 |
-| `scripts/run_prebuild_regression.py` | 빌드 전 회귀 러너. 단위 테스트, AOI CLI, 대시보드 스모크, 문서 동기화, MkDocs, headless Playwright 순으로 실행 |
+| `scripts/run_prebuild_regression.py` | 빌드 전 회귀 러너. 단위 테스트, AOI CLI, 최소 인스펙터 시간 필터 fixture 검증, 대시보드 스모크, 문서 동기화, MkDocs, headless Playwright 순으로 실행 |
 | `aoi_cli.py` | AOI 로그 파서 Smoke Test 및 요약 확인용 CLI |
 | `build.bat` | MkDocs 빌드, PyInstaller 실행, 산출물 복사/압축 |
 | `monitor.spec` | PyInstaller 입력 정의 |
@@ -81,6 +81,7 @@ Status: Active
 - `tools/playwright-mcp/launch-playwright-mcp.ps1`는 stdin/stdout MCP 본 연결이 아니라 포트/SSE 기동 확인과 수동 스모크용 래퍼로 유지합니다.
 - 작업 완료 후 최종 WEB 대시보드 검증은 `verify-playwright-mcp.ps1`로 서버 준비를 확인한 뒤, `python -m streamlit run app.py --server.port 8502`와 `node.exe .\scripts\verify_playwright_dashboards.js http://127.0.0.1:8502` 조합으로 수행합니다.
 - 최종 검증 직전의 headless 회귀는 `.\venv\Scripts\python.exe scripts\run_prebuild_regression.py` 한 번으로 재실행할 수 있고, 각 step의 실패 조건과 STDOUT은 `.artifacts/prebuild-regression/` 및 `.artifacts/playwright-prebuild-regression/`에 남습니다.
+- `aoi-inspector-time-filter-fixture-regression` 단계는 `tests\fixtures\inspector_time_filter_range_regression.log`에서 `2026-05-13 15:00:00 -> 16:44:59` 범위가 `NO 2 -> 4`, 3건으로 유지되는지 확인해 시간 필터 후 인스펙터 결과가 1건으로 접히는 회귀를 막습니다.
 - 개발 환경 `streamlit run app.py`와 EXE 진입점 `run_app.py`는 모두 `runtime_patches.py`를 통해 브라우저 disconnect 시 `Task exception was never retrieved / WebSocketClosedError`뿐 아니라 static asset flush `CancelledError`, `gzip ... I/O operation on closed file` 종료 노이즈도 줄입니다.
 - 이 저장소의 코드 리뷰 기본 경로는 GitHub `git push + pull request` 이며, depot_tools 기반 `git cl`은 필수 전제가 아닙니다. `git cl` 오류가 보고되면 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_git_cl.ps1`로 먼저 원인이 “GitHub 원격이라 불필요”인지 “실제 git-cl 환경 누락”인지 구분합니다.
 
