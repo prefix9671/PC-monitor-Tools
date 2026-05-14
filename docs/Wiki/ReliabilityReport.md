@@ -40,6 +40,8 @@ Status: Active
 - 특정 프로세스가 자원 피크를 유발하는 시점 식별
 - 로그를 보존해 장애 재분석 가능
 - CI에서 단위 테스트, 대시보드 스모크, 문서 동기화 검사를 함께 돌려 회귀를 더 일찍 발견 가능
+- CI의 Python 의존성은 `runtime_patches.py` 테스트가 직접 사용하는 `tornado`를 명시 설치해, GitHub Actions의 깨끗한 runner 에서도 로컬 Streamlit 환경과 같은 import 조건으로 검증 가능
+- GitHub Actions 공식 JavaScript action 은 Node.js 24 기반 major 버전을 사용해 Node.js 20 deprecation 경고가 CI 실패 원인과 섞이지 않도록 유지
 - PyInstaller가 실제 미사용 optional 모듈에 끌려가지 않도록 패키징 대상을 좁혀 빌드 경고 노이즈를 줄일 수 있음
 - 일반 PC CPU 온도 경로는 동봉된 LibreHardwareMonitor 번들을 우선 사용하고, 추가로 캐시/다운로드와 OpenHardwareMonitor / Thermal Zone fallback 을 유지해 현장 대응 폭을 넓힐 수 있음
 - Playwright MCP 브라우저 검증은 stdio 직결 구성으로 유지해 GUI 자동화에서 연결 실패 가능성을 낮출 수 있음

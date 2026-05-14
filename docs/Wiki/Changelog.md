@@ -3,6 +3,13 @@
 Updated On: 2026-05-14
 Status: Active
 
+## [2026-05-14] - GitHub Actions CI 의존성 보강
+
+### 변경 사항
+
+- `runtime_patches.py` 테스트가 직접 import 하는 `tornado`를 `requirements.txt`에 명시해, GitHub Actions의 깨끗한 Python 3.13 runner 에서도 unit test discovery 가 실패하지 않도록 보강했습니다.
+- `actions/checkout`과 `actions/setup-python`을 Node.js 24 런타임 기반 major 버전으로 올려 Node.js 20 deprecation 경고를 제거할 수 있게 정리했습니다.
+
 ## [2026-05-14] - 상단 시스템 성능 요약 카드 개선
 
 ### 변경 사항

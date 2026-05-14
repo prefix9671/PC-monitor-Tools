@@ -92,6 +92,8 @@ Status: Active
 
 - `.\venv\Scripts\python scripts\run_ci_dashboard_smoke.py`
 - `.\venv\Scripts\python scripts\verify_docs_sync.py`
+- `runtime_patches.py` 또는 Streamlit/Tornado 종료 노이즈 방어 로직을 테스트하면 `requirements.txt`에 `tornado`가 명시되어 GitHub Actions unit test discovery 에서도 같은 import 경로가 열리는지 확인
+- GitHub Actions 공식 JavaScript action 은 Node.js 24 런타임을 쓰는 major 버전(`actions/checkout@v6`, `actions/setup-python@v6`)을 우선 사용해 Node.js 20 deprecation 경고가 다시 생기지 않는지 확인
 - GitHub Actions `windows-ci.yml`이 새 검증을 포함하는지 확인
 - CI 변경이라면 `docs/Wiki/ReliabilityReport.md`도 같은 변경 안에서 갱신했는지 확인
 

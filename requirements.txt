@@ -1,4 +1,5 @@
 streamlit
+tornado
 pandas
 plotly
 pyinstaller
