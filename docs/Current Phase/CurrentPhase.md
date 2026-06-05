@@ -1,6 +1,6 @@
 # Current Phase
 
-Updated On: 2026-04-14  
+Updated On: 2026-06-05
 Status: Active
 
 ## 현재 단계
@@ -14,6 +14,7 @@ Status: Active
 - UI: Streamlit + Plotly
 - 데이터 결합: `resource/process` exact merge
 - 배포: `run_app.py` + `monitor.spec` + `build.bat`
+- 대시보드 `모니터링 시작`: PowerShell 호출 없이 Windows `ShellExecuteW("runas")`로 관리자 권한 수집기 실행 요청
 - 빌드 게이트: `scripts/run_prebuild_regression.py` 선행 통과 후 패키징
 - AOI / 인스펙터 업로드 한도: 1GB
 - 빌드 산출물: 로컬 `.artifacts/releases/<빌드명>/`과 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\` 동시 배포, 서버 루트는 최신 빌드 1개만 유지하고 이전 버전은 `old/`로 아카이브
@@ -25,6 +26,7 @@ Status: Active
 - 날짜 기반 로그 선택 UI 정리
 - 헤드리스 대시보드 자가 검증 스크립트 추가
 - 포터블 EXE 진입점 정리
+- PowerShell이 손상된 현장 PC에서도 대시보드 `모니터링 시작` 버튼이 수집기 실행 요청을 보낼 수 있도록 PowerShell `Start-Process` 의존성 제거
 
 ## 지금 중요하게 봐야 할 것
 
@@ -40,7 +42,7 @@ Status: Active
 
 ## 활성 리스크
 
-- `Monitor.ps1`가 현재 코드베이스와 완전히 정렬되지 않았을 가능성이 있으므로, 실행 기준은 `start_monitor.bat`와 EXE 경로를 우선합니다.
+- `Monitor.ps1`가 현재 코드베이스와 완전히 정렬되지 않았을 가능성이 있으므로, 실행 기준은 `start_monitor.bat`, EXE 경로, 대시보드 `모니터링 시작` 버튼의 ShellExecute 경로를 우선합니다.
 - `Monitor.ps1`는 공식 정리 대상이며, 호환성 안내 스텁으로만 유지됩니다.
 - 생성 산출물은 `.artifacts/` 아래로 분리하되, 레거시 `build/`, `dist/`, `site/`가 Git에 다시 추적되지 않도록 유지해야 합니다.
 - QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴` 접근이 안 되거나 Windows Credential Manager 자격증명이 없고 사용자 입력도 취소되면 packaging 마지막 단계에서 실패할 수 있습니다.

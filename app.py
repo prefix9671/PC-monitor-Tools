@@ -1,7 +1,6 @@
 # app.py
 import json
 import os
-import subprocess
 import sys
 import webbrowser
 from datetime import datetime, timedelta
@@ -10,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from collector_launcher import launch_collector_from_current_process
 from collectors.cpu_temperature_diagnostics import write_cpu_temperature_diagnostic_log
 from config import DEFAULT_INSPECTOR_LOG_PATH, DEFAULT_LOG_DIR, MANUAL_SITE_DIR
 from dashboards.cpu import render_cpu_dashboard
@@ -59,23 +59,14 @@ with st.sidebar:
     st.info("Python Collector는 1초 샘플링 / 5초 집계 기준으로 동작합니다.")
 
     if st.button("모니터링 시작"):
-        if getattr(sys, "frozen", False):
-            exe_path = sys.executable
-            cmd = f"Start-Process -FilePath '{exe_path}' -ArgumentList 'start' -Verb RunAs"
-        else:
-            exe_path = sys.executable
-            cli_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cli.py")
-            cmd = f"Start-Process -FilePath '{exe_path}' -ArgumentList '{cli_path}', 'start' -Verb RunAs"
-
-        try:
-            subprocess.Popen(
-                ["powershell", "-Command", cmd],
-                shell=True,
-            )
+        launch_result = launch_collector_from_current_process()
+        if launch_result.ok:
             st.success("Python 모니터를 시작했습니다.")
-            st.info("명령 프롬프트 창이 열리며, 창을 닫으면 모니터링이 종료됩니다.")
-        except Exception as exc:
-            st.error(f"실행 실패: {exc}")
+            st.info(launch_result.detail)
+        else:
+            st.error(f"실행 실패: {launch_result.message}")
+            if launch_result.detail:
+                st.warning(launch_result.detail)
 
     st.divider()
     if st.button("로그 새로고침", use_container_width=True):

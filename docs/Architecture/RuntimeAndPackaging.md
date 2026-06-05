@@ -1,6 +1,6 @@
 # Runtime And Packaging
 
-Updated On: 2026-04-21  
+Updated On: 2026-06-05
 Status: Active
 
 ## 실행 모드
@@ -32,6 +32,7 @@ Status: Active
 | 파일 | 역할 |
 |---|---|
 | `run_app.py` | EXE 환경에서 대시보드/수집기 분기 |
+| `collector_launcher.py` | Streamlit `모니터링 시작` 버튼에서 PowerShell 없이 Windows ShellExecute `runas` 또는 직접 Popen 으로 수집기 시작 |
 | `.streamlit/config.toml` | 개발 환경 Streamlit 업로드 한도를 1GB로 고정 |
 | `runtime_patches.py` | Streamlit/Tornado 런타임에서 브라우저 종료 시 발생하는 WebSocket disconnect, static asset flush `CancelledError`, gzip closed-file noise 를 완화 |
 | `collectors/cpu_temperature_worker.py` | 일반 PC CPU 코어 최고온도 워커 엔트리 |
@@ -68,6 +69,8 @@ Status: Active
 - 문서 사이트는 `mkdocs build` 결과로 `.artifacts/manual-site/`에 생성됩니다.
 - `.artifacts/`, `build/`, `dist/`, `site/`는 생성 산출물이므로 소스 코드의 출처로 사용하지 않습니다.
 - 수집기 실행의 현재 기준 래퍼는 `start_monitor.bat` 입니다.
+- 대시보드 `모니터링 시작` 버튼은 PowerShell `Start-Process`를 호출하지 않고 `collector_launcher.py`의 Windows ShellExecute `runas` 경로를 사용합니다. 이미 관리자 권한으로 실행 중이면 새 콘솔에서 수집기를 직접 시작하고, 일반 권한이면 UAC 관리자 권한 요청을 보냅니다.
+- 따라서 현장 PC의 Windows PowerShell 5.1 또는 PowerShell 7 설치가 손상되어도 UI 버튼 경로는 셸 런타임에 의존하지 않습니다. 이 경로에서 `액세스가 거부되었습니다`가 계속 나오면 UAC 거부, 파일 차단, AppLocker/WDAC/Defender 정책, 로컬 관리자 권한 문제로 분리해 봅니다.
 - 개발 환경은 `.streamlit/config.toml`, EXE 환경은 `run_app.py --server.maxUploadSize=1024`로 AOI / 인스펙터 로그 업로드 한도 1GB를 동일하게 유지합니다.
 - `build.bat`는 로컬 `.artifacts/releases/<빌드명>/` 생성 후 `scripts/publish_release_to_share.ps1`를 호출해 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\`에도 같은 bundle 을 복사합니다.
 - QA 공유 폴더 복사는 먼저 Windows Credential Manager 또는 현재 Windows 세션 자격증명으로 직접 시도합니다.
@@ -93,7 +96,7 @@ Status: Active
 - `monitor.spec`는 일반 PC CPU 코어 온도 워커를 위해 `pythonnet`, `clr_loader`, `Python.Runtime.dll` 계열 런타임 파일과 `lhm-bundle/` 디렉터리도 함께 포함해야 합니다.
 - `monitor.spec`는 일반 PC CPU 코어 온도 워커를 위해 `pythonnet`, `clr_loader`, `Python.Runtime.dll` 계열 런타임 파일도 함께 포함해야 합니다.
 - `build.bat`는 packaging 전에 `scripts/run_prebuild_regression.py`가 성공해야만 계속 진행하고, packaging 뒤에는 QA 공유 폴더 복사와 이전 버전 `old/` 아카이브까지 통과해야 완료됩니다. 로컬 bug 입력 로그, headless Playwright 검증 환경, 또는 QA 공유 폴더 접근/자격증명 준비가 안 되면 빌드가 중단됩니다.
-- 포터블 배포 흐름을 바꿀 때는 `build.bat`, `monitor.spec`, `run_app.py`, `start_monitor.bat`, 관련 문서를 함께 확인합니다.
+- 포터블 배포 흐름을 바꿀 때는 `build.bat`, `monitor.spec`, `run_app.py`, `collector_launcher.py`, `start_monitor.bat`, 관련 문서를 함께 확인합니다.
 - Playwright MCP는 Node.js LTS와 로컬 `tools/playwright-mcp/` 패키지 설치를 전제로 하며, 기본 브라우저 채널은 `msedge`, 기본 실행 모드는 `headless + isolated` 입니다. Codex stdio 연결에서는 PowerShell 래퍼보다 Node CLI 직결 구성이 필요합니다.
 
 ## 문서 업데이트 트리거

@@ -1,6 +1,6 @@
 # Project Structure
 
-Updated On: 2026-05-14
+Updated On: 2026-06-05
 Status: Active
 
 ## 루트 구조
@@ -11,6 +11,7 @@ PC-monitor-Tools/
 ├─ aoi_cli.py
 ├─ app.py
 ├─ cli.py
+├─ collector_launcher.py
 ├─ config.py
 ├─ data_loader.py
 ├─ excel_exporter.py
@@ -49,6 +50,7 @@ PC-monitor-Tools/
 |---|---|
 | `.streamlit/config.toml` | 개발 환경 Streamlit 업로드 한도 설정. AOI / 인스펙터 로그 1GB 제한 유지 |
 | `app.py` | Streamlit 메인 앱 |
+| `collector_launcher.py` | `모니터링 시작` 버튼의 수집기 실행 요청. PowerShell 없이 Windows ShellExecute `runas` 또는 직접 Popen 경로 사용 |
 | `config.py` | 시스템 로그 경로, AOI 자동 로드 기본 경로 `C:\Inspector\shared\operation.txt`, 공용 색상/런타임 상수 |
 | `aoi_cli.py` | AOI / Inspector 로그 요약 및 XLSX export CLI. 기본 결과 시트와 12시간 샘플 시트를 함께 생성 |
 | `cli.py` | 수집기 시작과 CPU 온도 센서 진단 CLI |

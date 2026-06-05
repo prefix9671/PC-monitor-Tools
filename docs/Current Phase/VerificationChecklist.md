@@ -1,6 +1,6 @@
 # Verification Checklist
 
-Updated On: 2026-05-14
+Updated On: 2026-06-05
 Status: Active
 
 구현을 마친 뒤에는 변경 종류에 따라 아래 검증을 수행합니다.
@@ -102,6 +102,8 @@ Status: Active
 
 - `.\venv\Scripts\python -m mkdocs build`
 - `.\venv\Scripts\python scripts\run_prebuild_regression.py`
+- 대시보드 `모니터링 시작` 버튼이 PowerShell `Start-Process` 없이 `collector_launcher.py`의 ShellExecute `runas` 경로를 쓰고, 이미 관리자 권한이면 직접 Popen 경로를 쓰는지 단위 테스트로 확인
+- PowerShell이 손상된 현장 PC에서 버튼 실행이 실패하면 PowerShell 7 번들링보다 UAC 거부, 파일 차단, AppLocker/WDAC/Defender 정책, 로컬 관리자 권한 문제를 먼저 분리
 - `git cl` 오류를 확인해야 하면 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_git_cl.ps1`를 실행해, GitHub 원격에서의 비필수 경고인지 depot_tools 환경 누락인지 먼저 구분
 - `build.bat`를 실행해 로컬 release bundle 과 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\` 복사가 모두 완료되는지 확인
 - QA 공유 폴더 direct copy 가 실패하면 Windows Credential Manager 자격증명 입력 프롬프트가 뜨고, 이를 저장한 뒤 재시도되는지 확인

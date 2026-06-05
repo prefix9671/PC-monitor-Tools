@@ -14,6 +14,7 @@ datas = [
     ('inspector_logs', 'inspector_logs'),
     ('start_monitor.bat', '.'),
     ('config.py', '.'),
+    ('collector_launcher.py', '.'),
     ('data_loader.py', '.'),
     ('parsers.py', '.'),
     ('excel_exporter.py', '.'),

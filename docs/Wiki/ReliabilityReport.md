@@ -1,6 +1,6 @@
 # Reliability Report
 
-Updated On: 2026-04-21  
+Updated On: 2026-06-05
 Status: Active
 
 ## 개요
@@ -22,6 +22,7 @@ Status: Active
 - 수집 결과는 파일로 남기므로 나중에 다시 로드해 비교할 수 있습니다.
 - LibreHardwareMonitor 번들을 EXE에 함께 동봉해, 현장 PC의 SSL 인증서나 외부망 차단 때문에 GitHub 다운로드가 막혀도 기본 온도 경로를 유지할 수 있습니다.
 - 일반 PC CPU 코어 온도는 별도 워커와 파일 기반 handoff 를 써서, 1초 샘플링 루프가 하드웨어 센서 초기화나 DLL 로드 비용에 직접 묶이지 않습니다.
+- 대시보드의 `모니터링 시작` 버튼은 PowerShell 대신 Windows ShellExecute `runas`를 직접 사용해, 현장 PC의 PowerShell 5.1/7 런타임 손상과 수집기 시작 경로를 분리합니다.
 
 ### 시간축 일관성
 
@@ -56,6 +57,7 @@ Status: Active
 - AOI / 인스펙터 로그 업로드는 개발/패키징 모두 1GB로 고정되어, 장시간 운전 로그를 UI 업로드 경로로 재현하기 쉬움
 - AOI 파서는 큰 단일 로그는 청크 단위, 여러 로그는 파일 단위 스레드 병렬화를 사용해 장시간 로그 재검증의 체감 대기 시간을 줄임
 - 브라우저 탭 종료나 headless 캡처 종료 시 Streamlit/Tornado가 남기던 반복 `WebSocketClosedError`, static asset flush `CancelledError`, gzip closed-file 종료 노이즈를 런타임 패치로 줄여, 실제 오류와 종료 노이즈를 구분하기 쉬움
+- UI 버튼 시작 실패가 계속 `액세스가 거부되었습니다`로 보이면 PowerShell 자체보다 Windows UAC, 파일 차단, AppLocker/WDAC/Defender 정책, 로컬 관리자 권한 문제를 우선 조사할 수 있음
 
 ## 현재 한계와 주의점
 

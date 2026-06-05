@@ -58,6 +58,7 @@ class TestPackagingLayout(unittest.TestCase):
 
         self.assertIn("manual_site_dir = Path('.artifacts/manual-site')", contents)
         self.assertIn("lhm_bundle_dir = Path('.artifacts/vendor/lhm-bundle')", contents)
+        self.assertIn("('collector_launcher.py', '.')", contents)
         self.assertIn("datas.append((str(lhm_bundle_dir), 'lhm-bundle'))", contents)
         self.assertIn("collect_data_files('pythonnet')", contents)
         self.assertIn("'clr'", contents)
