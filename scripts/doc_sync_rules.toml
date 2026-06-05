@@ -11,8 +11,10 @@ generated_prefixes = [
 ignored_globs = [
   "bug/**",
   "tests/*.log",
+  "tools/playwright-mcp/.playwright-mcp/**",
   "tools/playwright-mcp/*.png",
   "tools/playwright-mcp/*-snapshot.md",
+  "tools/playwright-mcp/console-errors.md",
   "tools/playwright-mcp/*.txt",
 ]
 code_change_exempt_prefixes = [
