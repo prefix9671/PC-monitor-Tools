@@ -37,6 +37,7 @@ Status: Active
 | `runtime_patches.py` | Streamlit/Tornado 런타임에서 브라우저 종료 시 발생하는 WebSocket disconnect, static asset flush `CancelledError`, gzip closed-file noise 를 완화 |
 | `collectors/cpu_temperature_worker.py` | 일반 PC CPU 코어 최고온도 워커 엔트리 |
 | `collectors/libre_hardware_monitor.py` | LibreHardwareMonitor 다운로드/캐시와 `pythonnet` DLL 로드 |
+| `collectors/wmi_query.py` | PowerShell 없이 `pythonnet + System.Management`로 WMI/CIM provider 를 직접 조회하는 공통 헬퍼 |
 | `scripts/prepare_lhm_bundle.py` | 빌드 전에 LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비 |
 | `scripts/check_git_cl.ps1` | 현재 저장소에서 `git cl`이 필요한 환경인지, 단순히 GitHub PR 흐름이라 불필요한지 진단 |
 | `scripts/publish_release_to_share.ps1` | 로컬 release bundle 을 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴`에도 복사하고, 필요하면 Windows Credential Manager 자격증명을 저장하며, 서버 루트에는 최신 릴리스만 남기고 이전 버전 폴더는 `old/`로 이동 |
@@ -70,7 +71,7 @@ Status: Active
 - `.artifacts/`, `build/`, `dist/`, `site/`는 생성 산출물이므로 소스 코드의 출처로 사용하지 않습니다.
 - 수집기 실행의 현재 기준 래퍼는 `start_monitor.bat` 입니다.
 - 대시보드 `모니터링 시작` 버튼은 PowerShell `Start-Process`를 호출하지 않고 `collector_launcher.py`의 Windows ShellExecute `runas` 경로를 사용합니다. 이미 관리자 권한으로 실행 중이면 새 콘솔에서 수집기를 직접 시작하고, 일반 권한이면 UAC 관리자 권한 요청을 보냅니다.
-- 따라서 현장 PC의 Windows PowerShell 5.1 또는 PowerShell 7 설치가 손상되어도 UI 버튼 경로는 셸 런타임에 의존하지 않습니다. 이 경로에서 `액세스가 거부되었습니다`가 계속 나오면 UAC 거부, 파일 차단, AppLocker/WDAC/Defender 정책, 로컬 관리자 권한 문제로 분리해 봅니다.
+- 따라서 현장 PC의 Windows PowerShell 5.1 또는 PowerShell 7 설치가 손상되어도 UI 버튼 경로와 수집기 내부 WMI fallback 조회는 셸 런타임에 의존하지 않습니다. 이 경로에서 `액세스가 거부되었습니다`가 계속 나오면 UAC 거부, 파일 차단, AppLocker/WDAC/Defender 정책, 로컬 관리자 권한 문제로 분리해 봅니다.
 - 개발 환경은 `.streamlit/config.toml`, EXE 환경은 `run_app.py --server.maxUploadSize=1024`로 AOI / 인스펙터 로그 업로드 한도 1GB를 동일하게 유지합니다.
 - `build.bat`는 로컬 `.artifacts/releases/<빌드명>/` 생성 후 `scripts/publish_release_to_share.ps1`를 호출해 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\`에도 같은 bundle 을 복사합니다.
 - QA 공유 폴더 복사는 먼저 Windows Credential Manager 또는 현재 Windows 세션 자격증명으로 직접 시도합니다.
@@ -93,8 +94,7 @@ Status: Active
 - `Monitor.ps1`는 공식 정리 대상이며 배포 산출물에 포함하지 않습니다. 필요할 때만 레거시 안내용 스텁으로 취급합니다.
 - Streamlit 앱이 런타임에 불러오는 로컬 파이썬 모듈은 `monitor.spec`의 `datas`에 포함되어야 합니다. 예를 들어 `inspector_logs/` 같은 폴더가 빠지면 EXE에서 `ModuleNotFoundError`가 발생할 수 있습니다.
 - `monitor.spec`는 Streamlit 전체 서브모듈을 수집하되 `streamlit.external.langchain` 같은 optional 모듈은 제외해, 실제로 사용하지 않는 LangChain 의존성 경고가 빌드를 오염시키지 않도록 유지합니다.
-- `monitor.spec`는 일반 PC CPU 코어 온도 워커를 위해 `pythonnet`, `clr_loader`, `Python.Runtime.dll` 계열 런타임 파일과 `lhm-bundle/` 디렉터리도 함께 포함해야 합니다.
-- `monitor.spec`는 일반 PC CPU 코어 온도 워커를 위해 `pythonnet`, `clr_loader`, `Python.Runtime.dll` 계열 런타임 파일도 함께 포함해야 합니다.
+- `monitor.spec`는 일반 PC CPU 코어 온도 워커와 WMI 직접 조회를 위해 `pythonnet`, `clr_loader`, `Python.Runtime.dll` 계열 런타임 파일과 `lhm-bundle/` 디렉터리도 함께 포함해야 합니다.
 - `build.bat`는 packaging 전에 `scripts/run_prebuild_regression.py`가 성공해야만 계속 진행하고, packaging 뒤에는 QA 공유 폴더 복사와 이전 버전 `old/` 아카이브까지 통과해야 완료됩니다. 로컬 bug 입력 로그, headless Playwright 검증 환경, 또는 QA 공유 폴더 접근/자격증명 준비가 안 되면 빌드가 중단됩니다.
 - 포터블 배포 흐름을 바꿀 때는 `build.bat`, `monitor.spec`, `run_app.py`, `collector_launcher.py`, `start_monitor.bat`, 관련 문서를 함께 확인합니다.
 - Playwright MCP는 Node.js LTS와 로컬 `tools/playwright-mcp/` 패키지 설치를 전제로 하며, 기본 브라우저 채널은 `msedge`, 기본 실행 모드는 `headless + isolated` 입니다. Codex stdio 연결에서는 PowerShell 래퍼보다 Node CLI 직결 구성이 필요합니다.

@@ -19,10 +19,14 @@ from collectors.aggregator import Aggregator
 from collectors.dell_command_monitor import (
     LEGACY_PRECISION_PACKAGE,
     MODERN_PRECISION_PACKAGE,
+    get_system_identity,
+    is_dcm_namespace_available,
     resolve_dcm_package,
 )
 from collectors.cpu_temperature import (
     CpuTemperatureProbe,
+    DELL_COMMAND_MONITOR_QUERY,
+    PERF_RAW_THERMAL_ZONE_QUERY,
     _convert_numeric_sensor_to_celsius,
     _convert_perf_raw_thermal_zone_to_celsius,
     _select_dell_command_monitor_temperature,
@@ -101,6 +105,21 @@ class FakeStreamlit:
 
 
 class TestCpuTemperatureCore(unittest.TestCase):
+    @patch(
+        "collectors.dell_command_monitor.query_wmi_records",
+        return_value=[{"Manufacturer": "Dell Inc.", "Model": "Precision 5860 Tower"}],
+    )
+    def test_get_system_identity_uses_wmi_query_helper(self, query_mock):
+        self.assertEqual(("Dell Inc.", "Precision 5860 Tower"), get_system_identity())
+        spec = query_mock.call_args.args[0]
+        self.assertEqual("root\\cimv2", spec.namespace)
+        self.assertEqual("Win32_ComputerSystem", spec.class_name)
+
+    @patch("collectors.dell_command_monitor.wmi_class_available", return_value=True)
+    def test_is_dcm_namespace_available_uses_wmi_class_helper(self, class_available_mock):
+        self.assertTrue(is_dcm_namespace_available(timeout_sec=1.25))
+        class_available_mock.assert_called_once_with("root\\dcim\\sysman", "DCIM_NumericSensor", timeout_sec=1.25)
+
     def test_resolve_dcm_package_distinguishes_legacy_and_modern_precision_towers(self):
         legacy = resolve_dcm_package("Dell Inc.", "Precision 5820 Tower")
         modern = resolve_dcm_package("Dell Inc.", "Precision 5860 Tower")
@@ -218,6 +237,16 @@ class TestCpuTemperatureCore(unittest.TestCase):
             ],
             [provider_name for provider_name, *_ in probe._providers],
         )
+
+    def test_probe_provider_queries_use_wmi_specs_instead_of_powershell_scripts(self):
+        probe = CpuTemperatureProbe(
+            enable_dell_command_monitor=True,
+            system_identity=("Dell Inc.", "Precision 5820 Tower"),
+        )
+
+        self.assertIs(DELL_COMMAND_MONITOR_QUERY, probe._providers[0][1])
+        self.assertIs(PERF_RAW_THERMAL_ZONE_QUERY, probe._providers[-2][1])
+        self.assertEqual("root\\dcim\\sysman", probe._providers[0][1].namespace)
 
     def test_probe_provider_order_for_dell_keeps_legacy_fallbacks(self):
         probe = CpuTemperatureProbe(

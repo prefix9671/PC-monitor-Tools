@@ -1,15 +1,15 @@
-# collectors/sampler.py
-import subprocess
+import re
 import time
 
 import psutil
 
 from collectors.cpu_temperature import CpuTemperatureProbe
 from collectors.models import MetricSample
-from collectors.subprocess_utils import check_output_text
+from collectors.wmi_query import WmiQuerySpec, query_wmi_records, sum_numeric_property
 
 
-CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+DISK_NUMBER_PATTERN = re.compile(r"Disk #(\d+)", re.IGNORECASE)
+DRIVE_LETTER_PATTERN = re.compile(r'DeviceID="([A-Z]:)"', re.IGNORECASE)
 
 
 class Sampler:
@@ -25,13 +25,19 @@ class Sampler:
         self.os_mem_gb = mem.total / (1024**3)
         self.phys_mem_gb = self.os_mem_gb  # Default to same if hardware info fails
         
-        try:
-            cmd = 'powershell -Command "(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum"'
-            out = check_output_text(cmd, shell=True, creationflags=CREATE_NO_WINDOW).strip()
-            if out:
-                self.phys_mem_gb = int(out) / (1024**3)
-        except Exception:
-            pass
+        physical_memory_bytes = self._read_physical_memory_capacity_bytes()
+        if physical_memory_bytes:
+            self.phys_mem_gb = physical_memory_bytes / (1024**3)
+
+    def _read_physical_memory_capacity_bytes(self):
+        records = query_wmi_records(
+            WmiQuerySpec(
+                namespace="root\\cimv2",
+                class_name="Win32_PhysicalMemory",
+                properties=("Capacity",),
+            )
+        )
+        return sum_numeric_property(records, "Capacity")
 
     def _read_swap_memory(self):
         try:
@@ -53,45 +59,31 @@ class Sampler:
 
     def _get_drive_mapping(self):
         mapping = {}
-        try:
-            cmd = 'powershell -Command "Get-Partition | Select-Object DiskNumber, DriveLetter | Format-List"'
-            out = check_output_text(cmd, shell=True, creationflags=CREATE_NO_WINDOW)
-            
-            current_disk = None
-            for line in out.splitlines():
-                line = line.strip()
-                if line.startswith("DiskNumber"):
-                    parts = line.split(":", 1)
-                    if len(parts) > 1:
-                        # Extract only digits
-                        disk_num = ''.join(c for c in parts[1] if c.isdigit())
-                        if disk_num:
-                            current_disk = disk_num
-                elif line.startswith("DriveLetter") and current_disk is not None:
-                    parts = line.split(":", 1)
-                    if len(parts) > 1:
-                        letter = parts[1].strip()
-                        # Ensure letter is a single valid alphabet character A-Z
-                        valid_letters = [c.upper() for c in letter if c.isalpha()]
-                        if len(valid_letters) == 1:
-                            valid_letter = valid_letters[0]
-                            phys = f"PhysicalDrive{current_disk}"
-                            if phys in mapping:
-                                if f"{valid_letter}:" not in mapping[phys]:
-                                    mapping[phys] += f",{valid_letter}:"
-                            else:
-                                mapping[phys] = f"{valid_letter}:"
-        except Exception:
-            pass
+        records = query_wmi_records(
+            WmiQuerySpec(
+                namespace="root\\cimv2",
+                class_name="Win32_LogicalDiskToPartition",
+                properties=("Antecedent", "Dependent"),
+            )
+        )
+
+        for record in records:
+            antecedent = str(record.get("Antecedent") or "")
+            dependent = str(record.get("Dependent") or "")
+            disk_match = DISK_NUMBER_PATTERN.search(antecedent)
+            drive_match = DRIVE_LETTER_PATTERN.search(dependent)
+            if not disk_match or not drive_match:
+                continue
+
+            phys = f"PhysicalDrive{disk_match.group(1)}"
+            drive = drive_match.group(1).upper()
+            if phys in mapping:
+                existing = set(mapping[phys].split(","))
+                if drive not in existing:
+                    mapping[phys] += f",{drive}"
+            else:
+                mapping[phys] = drive
         return mapping
-        
-        # Warmup CPU
-        psutil.cpu_percent(interval=None)
-        
-        # Warmup Disk IO
-        self._get_disk_io_rates()
-        time.sleep(0.1)
-        self._get_disk_io_rates()
 
     def _get_disk_io_rates(self):
         try:

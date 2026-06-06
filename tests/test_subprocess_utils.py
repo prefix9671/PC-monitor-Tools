@@ -24,14 +24,14 @@ class TestSubprocessUtils(unittest.TestCase):
     @patch("collectors.subprocess_utils.subprocess.run")
     def test_run_text_capture_decodes_invalid_bytes_without_raising(self, run_mock):
         run_mock.return_value = subprocess.CompletedProcess(
-            args=["powershell.exe"],
+            args=["installer.exe"],
             returncode=0,
             stdout=b"stdout\x80",
             stderr=b"stderr\x80",
         )
 
         completed = run_text_capture(
-            ["powershell.exe", "-Command", "Write-Output test"],
+            ["installer.exe", "/s"],
             timeout=1.0,
             creationflags=0,
         )
@@ -49,7 +49,7 @@ class TestSubprocessUtils(unittest.TestCase):
         check_output_mock.return_value = b"partition\x80"
 
         output = check_output_text(
-            'powershell -Command "Get-Partition"',
+            "installer.exe /status",
             shell=True,
             creationflags=0,
         )

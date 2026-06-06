@@ -56,6 +56,7 @@ Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 
 일반 PC이거나 Dell 대상 모델이 아니면 EXE에 함께 들어 있는 `lhm-bundle`을 먼저 사용하고, 그 안의 `LibreHardwareMonitorLib.dll`을 `pythonnet`으로 읽어 30초마다 `CPU Core #n` 최고온도를 갱신합니다.
 EXE 동봉 번들이 없을 때만 LibreHardwareMonitor 최신 공식 릴리스를 로컬 캐시에 내려받고, 그래도 워커가 값을 만들지 못하면 OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone 경로로 fallback 합니다.
 어드벤텍 IPC 같은 산업용 PC에서 `Win32_PerfRawData_Counters_ThermalZoneInformation`이 `353`, `3530`처럼 Kelvin 또는 1/10 Kelvin 값을 노출하면 이를 자동으로 섭씨로 환산합니다.
+이 fallback 들은 PowerShell 창을 띄우지 않고 내부 WMI 직접 조회로 동작하므로, PowerShell이 손상된 PC에서도 WMI provider가 정상이라면 계속 시도됩니다.
 `probe-temp`는 가능할 때 `Source` 아래에 실제로 선택된 `Sensor` 문자열도 함께 출력하므로 `CPU Core #4` 같은 코어 센서인지, `_Total` 집계 Thermal Zone 인지 현장에서 바로 확인할 수 있습니다.
 앱 맨 아래의 `CPU 온도 테스트 실행 및 로그 저장` 버튼을 누르면 현재 워커 상태, 강제 새로고침 결과, provider별 raw record preview를 모아 상세 로그를 저장합니다.
 진단 로그는 기본적으로 `C:\SystemLogs\cpu_temp_diagnostic_YYYYMMDD_HHMMSS.log`와 `C:\SystemLogs\cpu_temp_diagnostic_latest.log`에 생성됩니다.

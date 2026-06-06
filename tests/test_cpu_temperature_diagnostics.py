@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 import tempfile
@@ -12,6 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from collectors.dell_command_monitor import DcmBootstrapResult
 from collectors.libre_hardware_monitor import LhmCpuCoreTemperatureSample
+from collectors.wmi_query import WmiQuerySpec
 from collectors.cpu_temperature_diagnostics import (
     collect_cpu_temperature_diagnostics,
     write_cpu_temperature_diagnostic_log,
@@ -25,15 +25,19 @@ class FakeProbe:
         self._providers = [
             (
                 "OpenHardwareMonitor",
-                "fake-script",
+                WmiQuerySpec(
+                    namespace="root\\OpenHardwareMonitor",
+                    class_name="Sensor",
+                    properties=("Name", "SensorType", "Value", "Identifier", "Parent"),
+                ),
                 lambda records: SimpleNamespace(value_c=50.0, detail="CPU Package | fake"),
             )
         ]
         self.source_name = None
         self.source_detail = None
 
-    def _run_powershell(self, script: str) -> str:
-        return json.dumps([{"Name": "CPU Package", "Value": 50.0, "Identifier": "/intelcpu/0/temperature/1"}])
+    def _query_wmi_provider_records(self, query_spec):
+        return [{"Name": "CPU Package", "Value": 50.0, "Identifier": "/intelcpu/0/temperature/1"}]
 
     def read_celsius(self, force_refresh: bool = False):
         self.source_name = "LibreHardwareMonitorCoreMax"

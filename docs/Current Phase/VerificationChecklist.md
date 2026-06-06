@@ -24,6 +24,7 @@ Status: Active
 - Dell Precision T5/T7 Tower 제어 PC라면 `start` 또는 `probe-temp` 실행 시 DCM 자동 설치/준비 메시지가 보이는지 확인
 - Dell 제어 PC라면 `probe-temp`가 가능할 때 `Source: DellCommandMonitor`를 우선 보고하는지 확인
 - Dell 제어 PC라면 CPU 온도가 `5.x°C`처럼 비현실적으로 낮게 표시되지 않고, 실제 장비 상태에 맞는 값으로 보이는지 확인
+- PowerShell이 실행되지 않는 현장 PC라도 WMI provider 자체가 정상이면 Dell DCM, OpenHardwareMonitor, PerfRaw Thermal Zone, MSAcpi Thermal Zone fallback 이 `collectors/wmi_query.py` 경로로 계속 시도되는지 확인
 - 일반 PC라면 DCM 설치 시도를 건너뛰고 EXE에 동봉된 `lhm-bundle`을 우선 사용해 `pythonnet` 워커를 기동하는지 확인
 - 일반 PC라면 `probe-temp` 또는 상태 JSON 에서 `Source: LibreHardwareMonitorCoreMax`와 `CPU Core #n` 형태의 `Sensor` 문자열을 우선 확인
 - 일반 PC라면 워커가 30초 간격으로 JSON 상태 파일을 갱신하고, 동봉 번들이 없거나 실패할 때만 OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone fallback 으로 계속 동작하는지 확인
@@ -31,7 +32,7 @@ Status: Active
 - 일반 PC에서 온도값이 계속 비어 있으면 LibreHardwareMonitor 공식 릴리스의 `LibreHardwareMonitor.exe`를 직접 실행해 센서 노출 여부를 확인하고, 실행이 안 되거나 센서가 비어 있으면 Microsoft .NET / .NET Core Desktop Runtime 및 `LibreHardwareMonitorLib.dll`, `HidSharp.dll`, `System.*.dll` 등 동봉 의존성 파일 누락 여부를 사용자 조치 항목으로 안내
 - 어드벤텍 IPC 또는 동일한 `Win32_PerfRawData_Counters_ThermalZoneInformation` 노출 장비라면 raw 값 `353`이 약 `79.9°C`, `3530`이 약 `79.9°C`로 해석되는지 확인
 - 어드벤텍 IPC 또는 동일 클래스 장비라면 `_Total` 집계 레코드와 개별 Thermal Zone 이 함께 있을 때 `probe-temp`의 `Sensor` 출력으로 실제 선택된 zone 을 확인하고, 개별 zone 최대값이 `CPU_Temp(C)`에 반영되는지 확인
-- 메모리 압박 또는 비정상 콘솔 출력이 섞여도 PowerShell/설치기 stdout/stderr 디코딩에서 `UnicodeDecodeError`가 나지 않고 수집이 계속되는지 확인
+- 메모리 압박 또는 비정상 콘솔 출력이 섞여도 Dell 설치기 등 외부 프로세스 stdout/stderr 디코딩에서 `UnicodeDecodeError`가 나지 않고 수집이 계속되는지 확인
 - 새 `resource_*.csv`에 `Swap_Used(GB)`, `Swap_Total(GB)`, `Swap_Usage(%)`가 기록되고, 기존 로그는 이 컬럼 없이도 계속 로드되는지 확인
 - CLI 경로로 기능을 확인할 수 있다면 목적에 맞는 Smoke Test 수행
 - 실제 CSV 컬럼명이 대시보드 기대값과 맞는지 확인
@@ -105,6 +106,7 @@ Status: Active
 - `.\venv\Scripts\python scripts\run_prebuild_regression.py`
 - 대시보드 `모니터링 시작` 버튼이 PowerShell `Start-Process` 없이 `collector_launcher.py`의 ShellExecute `runas` 경로를 쓰고, 이미 관리자 권한이면 직접 Popen 경로를 쓰는지 단위 테스트로 확인
 - PowerShell이 손상된 현장 PC에서 버튼 실행이 실패하면 PowerShell 7 번들링보다 UAC 거부, 파일 차단, AppLocker/WDAC/Defender 정책, 로컬 관리자 권한 문제를 먼저 분리
+- 수집기 내부 WMI 조회는 PowerShell `Get-CimInstance` / `Get-Partition` 없이 `pythonnet + System.Management` 경로를 쓰는지 `tests.test_wmi_query`, `tests.test_sampler`, `tests.test_cpu_temperature`로 확인
 - `git cl` 오류를 확인해야 하면 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_git_cl.ps1`를 실행해, GitHub 원격에서의 비필수 경고인지 depot_tools 환경 누락인지 먼저 구분
 - `build.bat`를 실행해 로컬 release bundle 과 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\` 복사가 모두 완료되는지 확인
 - QA 공유 폴더 direct copy 가 실패하면 Windows Credential Manager 자격증명 입력 프롬프트가 뜨고, 이를 저장한 뒤 재시도되는지 확인

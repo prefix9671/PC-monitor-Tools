@@ -1,6 +1,6 @@
 # System Overview
 
-Updated On: 2026-05-14
+Updated On: 2026-06-05
 Status: Active
 
 ## 시스템 개요
@@ -32,7 +32,8 @@ Status: Active
 | CPU 온도 워커 | `collectors/cpu_temperature_worker.py` | 일반 PC용 백그라운드 워커로 30초마다 CPU 코어 최고온도를 측정해 로컬 JSON 상태 파일에 기록 |
 | CPU 온도 진단 | `collectors/cpu_temperature_diagnostics.py` | 앱 하단 테스트 버튼과 연동되어 현재 워커 상태, provider별 raw 조회 결과, 선택된 센서를 상세 로그로 남김 |
 | 샘플링 | `collectors/sampler.py` | CPU, CPU 온도, 실물 메모리, 페이지 파일 기반 가상 메모리, 디스크, 프로세스 정보 수집 |
-| subprocess 디코딩 보호 | `collectors/subprocess_utils.py` | PowerShell/설치기 stdout/stderr를 바이트 기준으로 안전 디코딩해 메모리 압박이나 비정상 출력에서도 `UnicodeDecodeError` 없이 수집 경로를 유지 |
+| WMI 직접 조회 | `collectors/wmi_query.py` | PowerShell 없이 `pythonnet + System.Management`로 WMI provider를 조회해 Dell DCM, Thermal Zone, 물리 메모리, 드라이브 매핑을 유지 |
+| subprocess 디코딩 보호 | `collectors/subprocess_utils.py` | Dell 설치기 같은 외부 프로세스 stdout/stderr를 바이트 기준으로 안전 디코딩해 메모리 압박이나 비정상 출력에서도 `UnicodeDecodeError` 없이 수집 경로를 유지 |
 | 집계 | `collectors/aggregator.py` | 윈도우 평균/피크 계산, 5초 구간 최고 CPU 온도, 스왑 최고값, Top N 포맷 생성 |
 | 기록 | `collectors/writers.py` | 날짜별 CSV와 요약 로그 기록, 새 로그 컬럼 등장 시 헤더 재작성 |
 | 데이터 로딩 | `data_loader.py` | `resource_*.csv`와 `process_*.csv` 병합 |
@@ -70,15 +71,17 @@ Inspector event DataFrame -> memory dashboard
 ## 주의해야 할 구조 포인트
 
 - `data_loader.py`는 `pyarrow` 우선 읽기와 Parquet 캐시를 사용합니다.
-- `collectors/sampler.py`는 PowerShell `Get-Partition` 결과를 파싱해 `PhysicalDriveX`를 실제 드라이브 문자로 정규화합니다.
+- `collectors/wmi_query.py`는 `pythonnet`의 `System.Management`를 통해 WMI를 직접 조회하므로, 현장 PC에서 Windows PowerShell 5.1/7이 실행되지 않아도 수집기의 WMI fallback 경로를 유지합니다.
+- `collectors/sampler.py`는 `Win32_LogicalDiskToPartition` WMI 관계를 직접 읽어 `PhysicalDriveX`를 실제 드라이브 문자로 정규화합니다.
 - `collectors/sampler.py`는 Windows 10/11에서 `psutil.swap_memory()`를 사용해 페이지 파일 기반 가상 메모리 상태를 읽고, `Swap_Used(GB)`, `Swap_Total(GB)`, `Swap_Usage(%)`로 기록합니다.
-- `collectors/subprocess_utils.py`는 PowerShell/설치기 표준출력을 `text=True` 대신 바이트로 받은 뒤 다중 인코딩 후보와 `errors="replace"` fallback으로 디코딩해 `_readerthread`의 `UnicodeDecodeError`를 방지합니다.
+- `collectors/subprocess_utils.py`는 Dell 설치기 같은 외부 프로세스 표준출력을 `text=True` 대신 바이트로 받은 뒤 다중 인코딩 후보와 `errors="replace"` fallback으로 디코딩해 `_readerthread`의 `UnicodeDecodeError`를 방지합니다.
 - `cli.py start`와 `cli.py probe-temp`는 Dell Precision T5/T7 Tower 계열 장비를 감지하면 `collectors/dell_command_monitor.py`를 통해 DCM 설치/준비를 먼저 시도합니다.
-- `collectors/cpu_temperature.py`는 Dell 대상 장비에서 `root\dcim\sysman/DCIM_NumericSensor`가 준비된 경우에만 이를 사용하고, 일반 PC에서는 `collectors/cpu_temperature_worker.py`가 갱신한 JSON 상태를 우선 읽습니다.
+- `collectors/dell_command_monitor.py`는 `Win32_ComputerSystem`과 `root\dcim\sysman` namespace 확인도 PowerShell 없이 WMI 직접 조회로 수행합니다.
+- `collectors/cpu_temperature.py`는 Dell 대상 장비에서 `root\dcim\sysman/DCIM_NumericSensor`가 준비된 경우에만 이를 WMI 직접 조회로 사용하고, 일반 PC에서는 `collectors/cpu_temperature_worker.py`가 갱신한 JSON 상태를 우선 읽습니다.
 - 일반 PC용 워커는 먼저 EXE 내부 `_MEIPASS\lhm-bundle` 또는 EXE 옆 `lhm-bundle\`을 확인하고, 그 안에 동봉된 LibreHardwareMonitor 번들을 우선 사용합니다.
 - 동봉된 번들이 없을 때만 `collectors/libre_hardware_monitor.py`가 LibreHardwareMonitor 최신 공식 릴리스를 `LOCALAPPDATA\PC-monitor-Tools\lhm-cache\`에 캐시하고, `pythonnet`으로 `LibreHardwareMonitorLib.dll`을 로드합니다.
 - 일반 PC CPU 온도는 LibreHardwareMonitor `Temperature` 센서 중 `CPU Core #n` 형태의 물리 코어 센서만 대상으로 삼고, `Core Max`, `Core Average`, `Distance to TjMax`, `CPU Package`는 메인 지표에서 제외한 뒤 최고값 하나만 사용합니다.
-- 일반 PC 워커 상태가 비어 있거나 실패하면 `OpenHardwareMonitor`, `Win32_PerfRawData_Counters_ThermalZoneInformation`, `MSAcpi_ThermalZoneTemperature`를 순차 fallback 합니다.
+- 일반 PC 워커 상태가 비어 있거나 실패하면 PowerShell 없이 WMI 직접 조회로 `OpenHardwareMonitor`, `Win32_PerfRawData_Counters_ThermalZoneInformation`, `MSAcpi_ThermalZoneTemperature`를 순차 fallback 합니다.
 - `app.py` 하단의 `CPU 온도 테스트 실행 및 로그 저장` 버튼은 현재 worker 상태, local bundle 발견 여부, force refresh 결과, provider별 raw record preview를 `C:\SystemLogs\cpu_temp_diagnostic_*.log`와 `cpu_temp_diagnostic_latest.log`로 저장합니다.
 - `app.py` 하단의 `CPU 온도 테스트 실행 및 로그 저장` 버튼은 `collectors/cpu_temperature_diagnostics.py`를 호출해 현재 worker 상태, force refresh 결과, provider별 raw record preview를 `C:\SystemLogs\cpu_temp_diagnostic_*.log`와 `cpu_temp_diagnostic_latest.log`로 저장합니다.
 - `Win32_PerfRawData_Counters_ThermalZoneInformation` 경로는 어드벤텍 IPC 같은 산업용 PC에서 노출되는 Kelvin 기반 온도 값을 읽고, `353 -> 79.85°C`, `3530 -> 79.85°C` 규칙으로 섭씨로 환산합니다.

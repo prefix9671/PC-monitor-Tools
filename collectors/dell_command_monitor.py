@@ -1,6 +1,5 @@
 import ctypes
 import hashlib
-import json
 import os
 import subprocess
 import tempfile
@@ -12,6 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from collectors.subprocess_utils import run_text_capture
+from collectors.wmi_query import WmiQuerySpec, query_wmi_records, wmi_class_available
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CACHE_DIR = Path(os.environ.get("LOCALAPPDATA") or tempfile.gettempdir()) / "PC-monitor-Tools" / "dcm-cache"
@@ -70,47 +70,15 @@ DCM_PACKAGES = (
 )
 
 
-def _run_powershell(script: str, timeout_sec: float = 5.0) -> str:
-    try:
-        completed = run_text_capture(
-            [
-                "powershell.exe",
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                script,
-            ],
-            timeout=timeout_sec,
-            creationflags=CREATE_NO_WINDOW,
-        )
-    except (FileNotFoundError, OSError, subprocess.SubprocessError):
-        return ""
-
-    if completed.returncode != 0:
-        return ""
-    return completed.stdout.strip()
-
-
-def _normalize_json_record(payload: str) -> dict[str, str]:
-    payload = (payload or "").strip()
-    if not payload:
-        return {}
-    try:
-        data = json.loads(payload)
-    except json.JSONDecodeError:
-        return {}
-    if isinstance(data, dict):
-        return {str(key): str(value) for key, value in data.items()}
-    return {}
-
-
 def get_system_identity() -> tuple[str, str]:
-    script = """
-    Get-CimInstance Win32_ComputerSystem -ErrorAction Stop |
-        Select-Object Manufacturer, Model |
-        ConvertTo-Json -Compress
-    """
-    record = _normalize_json_record(_run_powershell(script))
+    records = query_wmi_records(
+        WmiQuerySpec(
+            namespace="root\\cimv2",
+            class_name="Win32_ComputerSystem",
+            properties=("Manufacturer", "Model"),
+        )
+    )
+    record = records[0] if records else {}
     return record.get("Manufacturer", ""), record.get("Model", "")
 
 
@@ -163,12 +131,7 @@ def get_installed_dcm_version() -> Optional[str]:
 
 
 def is_dcm_namespace_available(timeout_sec: float = 2.0) -> bool:
-    script = f"""
-    if (Get-CimClass -Namespace {DCM_NAMESPACE} -ClassName DCIM_NumericSensor -ErrorAction SilentlyContinue) {{
-        'present'
-    }}
-    """
-    return _run_powershell(script, timeout_sec=timeout_sec).strip().lower() == "present"
+    return wmi_class_available(DCM_NAMESPACE, "DCIM_NumericSensor", timeout_sec=timeout_sec)
 
 
 def should_use_dell_command_monitor_provider(timeout_sec: float = 2.0) -> bool:

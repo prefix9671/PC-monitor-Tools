@@ -64,7 +64,8 @@ PC-monitor-Tools/
 | `collectors/cpu_temperature_diagnostics.py` | 앱 하단 CPU 온도 테스트 버튼용 상세 진단 로그 생성기 |
 | `collectors/sampler.py` | `psutil` 기반 1초 실물 메모리/페이지 파일 상태, CPU, 디스크, 프로세스 샘플 수집과 CPU 온도 워커 종료 정리 |
 | `collectors/aggregator.py` | 5초 윈도우 기준 CPU/메모리/스왑/디스크 요약 행 생성 |
-| `collectors/subprocess_utils.py` | PowerShell/설치기 표준출력의 안전 디코딩과 깨진 바이트 방어 |
+| `collectors/wmi_query.py` | PowerShell 없이 `pythonnet + System.Management`로 WMI를 직접 조회하는 공용 helper |
+| `collectors/subprocess_utils.py` | Dell 설치기 등 외부 프로세스 표준출력의 안전 디코딩과 깨진 바이트 방어 |
 | `scripts/doc_sync_rules.toml` | 에이전트와 CI가 공유하는 문서 동기화 규칙 표 |
 | `scripts/verify_docs_sync.py` | 코드 변경과 활성 문서 변경의 동기화 검사. Playwright 회귀 자체를 실행하지는 않지만, 관련 자동화 스크립트 변경 시 필요한 문서 갱신을 강제 |
 | `scripts/prepare_lhm_bundle.py` | LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비 |

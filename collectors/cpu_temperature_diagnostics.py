@@ -11,7 +11,6 @@ from typing import Any, Optional
 
 from collectors.cpu_temperature import (
     CpuTemperatureProbe,
-    _normalize_json_records,
 )
 from collectors.cpu_temperature_worker import capture_and_write_state, load_state_payload
 from collectors.dell_command_monitor import ensure_dcm_ready, get_system_identity, resolve_dcm_package
@@ -71,13 +70,14 @@ def _summarize_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return summarized
 
 
-def _inspect_provider(probe: CpuTemperatureProbe, provider_name: str, script: str, selector) -> dict[str, Any]:
+def _inspect_provider(probe: CpuTemperatureProbe, provider_name: str, query_spec, selector) -> dict[str, Any]:
     try:
-        payload = probe._run_powershell(script)
-        records = _normalize_json_records(payload)
+        records = probe._query_wmi_provider_records(query_spec)
         selected = selector(records) if records else None
         return {
             "provider_name": provider_name,
+            "wmi_namespace": getattr(query_spec, "namespace", None),
+            "wmi_class": getattr(query_spec, "class_name", None),
             "record_count": len(records),
             "selected_value_c": round(selected.value_c, 1) if selected is not None else None,
             "selected_detail": selected.detail if selected is not None else None,
@@ -172,8 +172,8 @@ def collect_cpu_temperature_diagnostics() -> dict[str, Any]:
         }
 
     diagnostics["provider_diagnostics"] = [
-        _inspect_provider(probe, provider_name, script, selector)
-        for provider_name, script, selector in probe._providers
+        _inspect_provider(probe, provider_name, query_spec, selector)
+        for provider_name, query_spec, selector in probe._providers
     ]
 
     probe.close()

@@ -10,6 +10,7 @@ Status: Active
 - Streamlit `모니터링 시작` 버튼이 PowerShell `Start-Process -Verb RunAs`를 호출하지 않고, `collector_launcher.py`의 Windows ShellExecute `runas` 경로로 관리자 권한 수집기 실행을 요청하도록 바꿨습니다.
 - 이미 관리자 권한으로 앱이 실행 중이면 새 콘솔에서 수집기를 직접 시작하고, 일반 권한이면 UAC 권한 상승 요청을 보내도록 분기했습니다.
 - PowerShell이 손상된 현장 PC에서도 버튼 경로가 셸 런타임에 묶이지 않도록 했고, 실패 시 `액세스 거부`, 파일 차단, 보안 정책, 권한 문제를 UI에 더 명확히 표시하도록 정리했습니다.
+- `collectors/wmi_query.py`를 추가해 Dell DCM, OpenHardwareMonitor, PerfRaw Thermal Zone, MSAcpi Thermal Zone, 물리 메모리, 드라이브 문자 매핑을 PowerShell `Get-CimInstance` / `Get-Partition` 없이 WMI 직접 조회로 수행하도록 바꿨습니다.
 - 빌드 전 문서 동기화 검사가 로컬 Playwright MCP 실행 산출물(`.playwright-mcp/**`, `console-errors.md`)을 코드 변경으로 오인하지 않도록 ignore 규칙을 보강했습니다.
 
 ## [2026-05-14] - AOI 시간 필터 NO 범위 재설정 보강

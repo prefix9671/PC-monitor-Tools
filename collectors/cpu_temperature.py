@@ -1,4 +1,3 @@
-import json
 import subprocess
 import sys
 import time
@@ -17,7 +16,7 @@ from collectors.dell_command_monitor import (
     should_use_dell_command_monitor_provider,
 )
 from collectors.libre_hardware_monitor import LIBRE_HARDWARE_MONITOR_CORE_MAX_PROVIDER
-from collectors.subprocess_utils import run_text_capture
+from collectors.wmi_query import WmiQuerySpec, query_wmi_records
 
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -59,70 +58,43 @@ SENSOR_DETAIL_FIELDS = (
     "DeviceID",
 )
 
-DELL_COMMAND_MONITOR_SCRIPT = """
-$records = Get-CimInstance -Namespace root\\dcim\\sysman -ClassName DCIM_NumericSensor -ErrorAction Stop |
-    Where-Object {
-        ($_.SensorType -eq 2 -or "$($_.SensorType)" -eq '2' -or "$($_.SensorType)" -match 'Temperature') -and
-        ($_.ElementName -like '*Temperature*' -or $_.BaseUnits -eq 2 -or "$($_.BaseUnits)" -match 'Celsius')
-    } |
-    Select-Object ElementName, DeviceID, CurrentReading, UnitModifier, BaseUnits, SensorType
-if ($null -ne $records) {
-    $records | ConvertTo-Json -Compress
-}
-"""
+DELL_COMMAND_MONITOR_QUERY = WmiQuerySpec(
+    namespace="root\\dcim\\sysman",
+    class_name="DCIM_NumericSensor",
+    properties=("ElementName", "DeviceID", "CurrentReading", "UnitModifier", "BaseUnits", "SensorType"),
+)
 
-LIBRE_HARDWARE_MONITOR_SCRIPT = """
-$records = Get-CimInstance -Namespace root\\LibreHardwareMonitor -ClassName Sensor -ErrorAction Stop |
-    Where-Object { $_.SensorType -eq 'Temperature' } |
-    Select-Object Name, SensorType, Value, Identifier, Parent
-if ($null -ne $records) {
-    $records | ConvertTo-Json -Compress
-}
-"""
+LIBRE_HARDWARE_MONITOR_QUERY = WmiQuerySpec(
+    namespace="root\\LibreHardwareMonitor",
+    class_name="Sensor",
+    properties=("Name", "SensorType", "Value", "Identifier", "Parent"),
+    where="SensorType = 'Temperature'",
+)
 
-OPEN_HARDWARE_MONITOR_SCRIPT = """
-$records = Get-CimInstance -Namespace root\\OpenHardwareMonitor -ClassName Sensor -ErrorAction Stop |
-    Where-Object { $_.SensorType -eq 'Temperature' } |
-    Select-Object Name, SensorType, Value, Identifier, Parent
-if ($null -ne $records) {
-    $records | ConvertTo-Json -Compress
-}
-"""
+OPEN_HARDWARE_MONITOR_QUERY = WmiQuerySpec(
+    namespace="root\\OpenHardwareMonitor",
+    class_name="Sensor",
+    properties=("Name", "SensorType", "Value", "Identifier", "Parent"),
+    where="SensorType = 'Temperature'",
+)
 
-PERF_RAW_THERMAL_ZONE_SCRIPT = """
-$records = Get-CimInstance -Namespace root\\cimv2 -ClassName Win32_PerfRawData_Counters_ThermalZoneInformation -ErrorAction Stop |
-    Select-Object Name, InstanceName, Temperature
-if ($null -ne $records) {
-    $records | ConvertTo-Json -Compress
-}
-"""
+PERF_RAW_THERMAL_ZONE_QUERY = WmiQuerySpec(
+    namespace="root\\cimv2",
+    class_name="Win32_PerfRawData_Counters_ThermalZoneInformation",
+    properties=("Name", "InstanceName", "Temperature"),
+)
 
-MS_ACPI_THERMAL_ZONE_SCRIPT = """
-$records = Get-CimInstance -Namespace root\\wmi -ClassName MSAcpi_ThermalZoneTemperature -ErrorAction Stop |
-    Select-Object CurrentTemperature, InstanceName
-if ($null -ne $records) {
-    $records | ConvertTo-Json -Compress
-}
-"""
+MS_ACPI_THERMAL_ZONE_QUERY = WmiQuerySpec(
+    namespace="root\\wmi",
+    class_name="MSAcpi_ThermalZoneTemperature",
+    properties=("CurrentTemperature", "InstanceName"),
+)
 
 
 @dataclass(frozen=True)
 class TemperatureSelection:
     value_c: float
     detail: Optional[str] = None
-
-
-def _normalize_json_records(payload: str) -> list[dict[str, Any]]:
-    payload = (payload or "").strip()
-    if not payload:
-        return []
-
-    data = json.loads(payload)
-    if isinstance(data, dict):
-        return [data]
-    if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
-    return []
 
 
 def _record_text(record: dict[str, Any]) -> str:
@@ -350,17 +322,17 @@ def _select_perf_raw_thermal_zone_temperature(records: Iterable[dict[str, Any]])
 
 
 class CpuTemperatureProbe:
-    _DCM_PROVIDER = ("DellCommandMonitor", DELL_COMMAND_MONITOR_SCRIPT, _select_dell_command_monitor_selection)
+    _DCM_PROVIDER = ("DellCommandMonitor", DELL_COMMAND_MONITOR_QUERY, _select_dell_command_monitor_selection)
     _DELL_FALLBACK_PROVIDERS = (
-        ("LibreHardwareMonitor", LIBRE_HARDWARE_MONITOR_SCRIPT, _select_max_sensor_selection),
-        ("OpenHardwareMonitor", OPEN_HARDWARE_MONITOR_SCRIPT, _select_max_sensor_selection),
-        ("PerfRawThermalZone", PERF_RAW_THERMAL_ZONE_SCRIPT, _select_perf_raw_thermal_zone_selection),
-        ("MSAcpiThermalZone", MS_ACPI_THERMAL_ZONE_SCRIPT, _select_max_thermal_zone_selection),
+        ("LibreHardwareMonitor", LIBRE_HARDWARE_MONITOR_QUERY, _select_max_sensor_selection),
+        ("OpenHardwareMonitor", OPEN_HARDWARE_MONITOR_QUERY, _select_max_sensor_selection),
+        ("PerfRawThermalZone", PERF_RAW_THERMAL_ZONE_QUERY, _select_perf_raw_thermal_zone_selection),
+        ("MSAcpiThermalZone", MS_ACPI_THERMAL_ZONE_QUERY, _select_max_thermal_zone_selection),
     )
     _NON_DELL_FALLBACK_PROVIDERS = (
-        ("OpenHardwareMonitor", OPEN_HARDWARE_MONITOR_SCRIPT, _select_max_sensor_selection),
-        ("PerfRawThermalZone", PERF_RAW_THERMAL_ZONE_SCRIPT, _select_perf_raw_thermal_zone_selection),
-        ("MSAcpiThermalZone", MS_ACPI_THERMAL_ZONE_SCRIPT, _select_max_thermal_zone_selection),
+        ("OpenHardwareMonitor", OPEN_HARDWARE_MONITOR_QUERY, _select_max_sensor_selection),
+        ("PerfRawThermalZone", PERF_RAW_THERMAL_ZONE_QUERY, _select_perf_raw_thermal_zone_selection),
+        ("MSAcpiThermalZone", MS_ACPI_THERMAL_ZONE_QUERY, _select_max_thermal_zone_selection),
     )
 
     def __init__(
@@ -484,36 +456,18 @@ class CpuTemperatureProbe:
         self.source_name = None
         self.source_detail = None
 
-        for provider_name, script, selector in self._providers:
-            value = self._query_provider(provider_name, script, selector)
+        for provider_name, query_spec, selector in self._providers:
+            value = self._query_provider(provider_name, query_spec, selector)
             if value is not None:
                 return value
 
         return None
 
-    def _run_powershell(self, script: str) -> str:
-        try:
-            completed = run_text_capture(
-                [
-                    "powershell.exe",
-                    "-NoProfile",
-                    "-NonInteractive",
-                    "-Command",
-                    script,
-                ],
-                timeout=self.command_timeout_sec,
-                creationflags=CREATE_NO_WINDOW,
-            )
-        except (FileNotFoundError, subprocess.SubprocessError, OSError):
-            return ""
+    def _query_wmi_provider_records(self, query_spec: WmiQuerySpec) -> list[dict[str, Any]]:
+        return query_wmi_records(query_spec, timeout_sec=self.command_timeout_sec)
 
-        if completed.returncode != 0:
-            return ""
-        return completed.stdout.strip()
-
-    def _query_provider(self, provider_name: str, script: str, selector) -> Optional[float]:
-        payload = self._run_powershell(script)
-        records = _normalize_json_records(payload)
+    def _query_provider(self, provider_name: str, query_spec: WmiQuerySpec, selector) -> Optional[float]:
+        records = self._query_wmi_provider_records(query_spec)
         if not records:
             return None
 
@@ -536,18 +490,18 @@ class CpuTemperatureProbe:
         self._last_probe_time = now
 
         if self.source_name is not None:
-            for provider_name, script, selector in self._providers:
+            for provider_name, query_spec, selector in self._providers:
                 if provider_name != self.source_name:
                     continue
-                value = self._query_provider(provider_name, script, selector)
+                value = self._query_provider(provider_name, query_spec, selector)
                 if value is not None:
                     return value
                 self.source_name = None
                 self.source_detail = None
                 break
 
-        for provider_name, script, selector in self._providers:
-            value = self._query_provider(provider_name, script, selector)
+        for provider_name, query_spec, selector in self._providers:
+            value = self._query_provider(provider_name, query_spec, selector)
             if value is not None:
                 return value
 

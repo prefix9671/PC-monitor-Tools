@@ -23,6 +23,7 @@ Status: Active
 - LibreHardwareMonitor 번들을 EXE에 함께 동봉해, 현장 PC의 SSL 인증서나 외부망 차단 때문에 GitHub 다운로드가 막혀도 기본 온도 경로를 유지할 수 있습니다.
 - 일반 PC CPU 코어 온도는 별도 워커와 파일 기반 handoff 를 써서, 1초 샘플링 루프가 하드웨어 센서 초기화나 DLL 로드 비용에 직접 묶이지 않습니다.
 - 대시보드의 `모니터링 시작` 버튼은 PowerShell 대신 Windows ShellExecute `runas`를 직접 사용해, 현장 PC의 PowerShell 5.1/7 런타임 손상과 수집기 시작 경로를 분리합니다.
+- Dell DCM, OpenHardwareMonitor, PerfRaw Thermal Zone, MSAcpi Thermal Zone, 물리 메모리, 드라이브 매핑은 `pythonnet + System.Management` WMI 직접 조회를 사용하므로 현장 PC의 PowerShell 런타임 손상과 수집 fallback 경로를 분리합니다.
 
 ### 시간축 일관성
 
@@ -45,6 +46,7 @@ Status: Active
 - GitHub Actions 공식 JavaScript action 은 Node.js 24 기반 major 버전을 사용해 Node.js 20 deprecation 경고가 CI 실패 원인과 섞이지 않도록 유지
 - PyInstaller가 실제 미사용 optional 모듈에 끌려가지 않도록 패키징 대상을 좁혀 빌드 경고 노이즈를 줄일 수 있음
 - 일반 PC CPU 온도 경로는 동봉된 LibreHardwareMonitor 번들을 우선 사용하고, 추가로 캐시/다운로드와 OpenHardwareMonitor / Thermal Zone fallback 을 유지해 현장 대응 폭을 넓힐 수 있음
+- PowerShell이 실행되지 않는 PC에서도 WMI provider 자체가 정상이라면 Dell/Advantech 온도 fallback과 디스크 문자 매핑을 계속 시도할 수 있음
 - Playwright MCP 브라우저 검증은 stdio 직결 구성으로 유지해 GUI 자동화에서 연결 실패 가능성을 낮출 수 있음
 - 작업 완료 후 `scripts/verify_playwright_dashboards.js`로 실제 Streamlit 대시보드 4종을 다시 열어 보고, 스크린샷과 콘솔 메시지를 아티팩트로 남길 수 있음
 - `scripts/run_prebuild_regression.py`는 bug 폴더의 고정 입력 로그와 headless Playwright를 묶어, 빌드 전에 같은 회귀 시나리오를 반복 실행할 수 있음
