@@ -1,6 +1,6 @@
 # Verification Checklist
 
-Updated On: 2026-06-05
+Updated On: 2026-07-03
 Status: Active
 
 구현을 마친 뒤에는 변경 종류에 따라 아래 검증을 수행합니다.
@@ -26,10 +26,11 @@ Status: Active
 - Dell 제어 PC라면 CPU 온도가 `5.x°C`처럼 비현실적으로 낮게 표시되지 않고, 실제 장비 상태에 맞는 값으로 보이는지 확인
 - PowerShell이 실행되지 않는 현장 PC라도 WMI provider 자체가 정상이면 Dell DCM, OpenHardwareMonitor, PerfRaw Thermal Zone, MSAcpi Thermal Zone fallback 이 `collectors/wmi_query.py` 경로로 계속 시도되는지 확인
 - 일반 PC라면 DCM 설치 시도를 건너뛰고 EXE에 동봉된 `lhm-bundle`을 우선 사용해 `pythonnet` 워커를 기동하는지 확인
+- 일반 PC라면 `.\venv\Scripts\python cli.py install-pawnio --check-only` 또는 패키징 EXE의 `install-pawnio --check-only`로 PawnIO 설치 상태를 확인하고, 미설치 상태에서는 `install_pawnio.bat` 또는 `SystemResourceMonitor*.exe install-pawnio`로 동봉 설치기가 실행되는지 확인
 - 일반 PC라면 `probe-temp` 또는 상태 JSON 에서 `Source: LibreHardwareMonitorCoreMax`와 `CPU Core #n` 형태의 `Sensor` 문자열을 우선 확인
 - 일반 PC라면 워커가 30초 간격으로 JSON 상태 파일을 갱신하고, 동봉 번들이 없거나 실패할 때만 OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone fallback 으로 계속 동작하는지 확인
 - 앱 맨 아래 `CPU 온도 테스트 실행 및 로그 저장` 버튼을 눌렀을 때 `C:\SystemLogs\cpu_temp_diagnostic_*.log`와 `cpu_temp_diagnostic_latest.log`가 생성되고, force refresh 결과와 provider별 raw preview가 포함되는지 확인
-- 일반 PC에서 온도값이 계속 비어 있으면 LibreHardwareMonitor 공식 릴리스의 `LibreHardwareMonitor.exe`를 직접 실행해 센서 노출 여부를 확인하고, 실행이 안 되거나 센서가 비어 있으면 Microsoft .NET / .NET Core Desktop Runtime 및 `LibreHardwareMonitorLib.dll`, `HidSharp.dll`, `System.*.dll` 등 동봉 의존성 파일 누락 여부를 사용자 조치 항목으로 안내
+- 일반 PC에서 온도값이 계속 비어 있으면 먼저 PawnIO 설치 여부와 `pawnio-bundle/PawnIO_setup.exe` 동봉 여부를 확인하고, 이후 LibreHardwareMonitor 공식 릴리스의 `LibreHardwareMonitor.exe`를 직접 실행해 센서 노출 여부를 확인합니다. 실행이 안 되거나 센서가 비어 있으면 Microsoft .NET / .NET Core Desktop Runtime 및 `LibreHardwareMonitorLib.dll`, `HidSharp.dll`, `System.*.dll` 등 동봉 의존성 파일 누락 여부를 사용자 조치 항목으로 안내
 - 어드벤텍 IPC 또는 동일한 `Win32_PerfRawData_Counters_ThermalZoneInformation` 노출 장비라면 raw 값 `353`이 약 `79.9°C`, `3530`이 약 `79.9°C`로 해석되는지 확인
 - 어드벤텍 IPC 또는 동일 클래스 장비라면 `_Total` 집계 레코드와 개별 Thermal Zone 이 함께 있을 때 `probe-temp`의 `Sensor` 출력으로 실제 선택된 zone 을 확인하고, 개별 zone 최대값이 `CPU_Temp(C)`에 반영되는지 확인
 - 메모리 압박 또는 비정상 콘솔 출력이 섞여도 Dell 설치기 등 외부 프로세스 stdout/stderr 디코딩에서 `UnicodeDecodeError`가 나지 않고 수집이 계속되는지 확인
@@ -112,7 +113,7 @@ Status: Active
 - QA 공유 폴더 direct copy 가 실패하면 Windows Credential Manager 자격증명 입력 프롬프트가 뜨고, 이를 저장한 뒤 재시도되는지 확인
 - QA 공유 폴더 루트에는 현재 빌드 폴더만 남고, 이전 버전 폴더가 `\\192.168.1.13\sqa\113_테스트 툴\old\` 아래로 이동하는지 확인
 - 관련 기능이 CLI 진입점과 연결된다면 최소 Smoke Test를 추가 수행
-- 일반 PC CPU 온도 워커를 변경했다면 개발 환경 또는 빌드 산출물에서 `cpu-temp-worker --once` 경로가 예외 없이 실행되고, 릴리스 폴더 또는 EXE 내부에 `lhm-bundle`이 포함되는지 확인
+- 일반 PC CPU 온도 워커 또는 PawnIO 패키징 경로를 변경했다면 개발 환경 또는 빌드 산출물에서 `cpu-temp-worker --once` 경로가 예외 없이 실행되고, 릴리스 폴더 또는 EXE 내부에 `lhm-bundle`과 `pawnio-bundle/PawnIO_setup.exe`가 포함되는지 확인
 - 필요 시 `build.bat` 실행 후 산출물 확인
 - `Architecture/RuntimeAndPackaging.md`와 `Wiki/Changelog.md` 업데이트
 

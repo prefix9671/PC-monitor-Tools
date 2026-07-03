@@ -1,7 +1,17 @@
 # Changelog
 
-Updated On: 2026-06-05
+Updated On: 2026-07-03
 Status: Active
+
+## [2026-07-03] - PawnIO 설치기 동봉과 설치 경로 추가
+
+### 변경 사항
+
+- LibreHardwareMonitor 0.9.6 계열에서 CPU 코어 온도 수집에 필요한 PawnIO 설치기를 `pawnio-bundle/PawnIO_setup.exe`로 배포본에 함께 포함하도록 했습니다.
+- `collectors/pawnio_package.py`와 `scripts/prepare_pawnio_bundle.py`를 추가해 공식 PawnIO 릴리스 설치기를 다운로드/해시 검증하고 `.artifacts/vendor/pawnio-bundle/`로 준비합니다.
+- `SystemResourceMonitor*.exe install-pawnio` CLI와 `install_pawnio.bat`를 추가해 릴리스 폴더에서 관리자 권한 설치를 실행할 수 있게 했습니다.
+- `start_monitor.bat`는 수집기 실행 전 PawnIO 설치 여부를 확인하고, 미설치 상태면 사용자에게 동봉 설치기를 실행할지 묻습니다.
+- CPU 온도 진단 로그에 PawnIO 설치 상태, 동봉 설치기 경로, manifest 정보를 남기도록 보강했습니다.
 
 ## [2026-06-05] - 모니터링 시작 버튼 PowerShell 의존성 제거
 

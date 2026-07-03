@@ -1,6 +1,6 @@
 # Project Structure
 
-Updated On: 2026-06-05
+Updated On: 2026-07-03
 Status: Active
 
 ## 루트 구조
@@ -27,6 +27,7 @@ PC-monitor-Tools/
 ├─ docs/
 ├─ build.bat
 ├─ start_monitor.bat
+├─ install_pawnio.bat
 ├─ Monitor.ps1
 ├─ monitor.spec
 ├─ mkdocs.yml
@@ -60,6 +61,7 @@ PC-monitor-Tools/
 | `collectors/dell_command_monitor.py` | Dell Precision T5/T7 Tower 계열의 DCM 감지, 다운로드, 무인 설치, namespace 준비 확인 |
 | `collectors/cpu_temperature.py` | Dell DCM 경로와 일반 PC `LibreHardwareMonitorCoreMax` 워커 상태 파일을 오케스트레이션하고, 실패 시 OpenHardwareMonitor/PerfRaw/Thermal Zone fallback 으로 연결 |
 | `collectors/libre_hardware_monitor.py` | EXE 동봉 `lhm-bundle/` 우선 탐색, 필요 시 공식 릴리스 다운로드/캐시, `pythonnet` 기반 DLL 로드, `CPU Core #n` 최고온도 추출 |
+| `collectors/pawnio_package.py` | EXE 동봉 `pawnio-bundle/` 우선 탐색, 필요 시 공식 PawnIO 설치기 다운로드/캐시, 설치 상태 확인과 `PawnIO_setup.exe -install` 실행 |
 | `collectors/cpu_temperature_worker.py` | 일반 PC CPU 코어 최고온도를 30초마다 측정해 JSON 상태 파일로 남기는 백그라운드 워커 |
 | `collectors/cpu_temperature_diagnostics.py` | 앱 하단 CPU 온도 테스트 버튼용 상세 진단 로그 생성기 |
 | `collectors/sampler.py` | `psutil` 기반 1초 실물 메모리/페이지 파일 상태, CPU, 디스크, 프로세스 샘플 수집과 CPU 온도 워커 종료 정리 |
@@ -69,6 +71,7 @@ PC-monitor-Tools/
 | `scripts/doc_sync_rules.toml` | 에이전트와 CI가 공유하는 문서 동기화 규칙 표 |
 | `scripts/verify_docs_sync.py` | 코드 변경과 활성 문서 변경의 동기화 검사. Playwright 회귀 자체를 실행하지는 않지만, 관련 자동화 스크립트 변경 시 필요한 문서 갱신을 강제 |
 | `scripts/prepare_lhm_bundle.py` | LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비 |
+| `scripts/prepare_pawnio_bundle.py` | PawnIO 설치기를 `.artifacts/vendor/pawnio-bundle/`로 준비 |
 | `scripts/check_git_cl.ps1` | 현재 저장소의 `git cl` 오류가 GitHub 원격 기준 비필수 상황인지, 실제 `git-cl` 실행 파일 누락인지 진단 |
 | `scripts/publish_release_to_share.ps1` | 로컬 release bundle 을 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴`에 복사하고, 현재 빌드를 제외한 이전 버전 폴더는 `old/`로 이동 |
 | `scripts/capture_user_manual_assets.js` | headless Playwright로 유저 매뉴얼용 진입점/모니터링, 대시보드, AOI 업로드, XLSX 내보내기 스크린샷을 raw/approved 단계로 캡처 |
@@ -85,6 +88,7 @@ PC-monitor-Tools/
 | `excel_exporter.py` | 엑셀 내보내기 |
 | `verify_dashboards.py` | 헤드리스 대시보드 자가 점검 |
 | `build.bat` | 문서 사이트와 EXE 빌드, QA 공유 폴더 최신본 동기화 |
+| `install_pawnio.bat` | 릴리스 폴더의 `SystemResourceMonitor*.exe install-pawnio` 또는 `pawnio-bundle/PawnIO_setup.exe`를 관리자 권한으로 실행하는 보조 설치 래퍼 |
 
 ## `docs` 구조
 

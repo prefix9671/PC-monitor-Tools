@@ -1,6 +1,6 @@
 # Documentation Workflow
 
-Updated On: 2026-06-05
+Updated On: 2026-07-03
 Status: Active
 
 ## 목적
@@ -24,6 +24,7 @@ Status: Active
 - `scripts/verify_docs_sync.py`
   문서 매핑과 활성 문서 동기화만 검사합니다. 단위 테스트나 headless Playwright 회귀 실행기는 아니며, 실제 회귀 실행은 `scripts/run_prebuild_regression.py`가 담당합니다.
   `git`가 한글 경로를 quoted path 형태로 돌려주는 경우도 포함해, 로컬 `bug/` 입력과 Playwright 산출물 같은 비기준 파일은 ignore 규칙으로 계속 제외해야 합니다. 특히 `tools/playwright-mcp/.playwright-mcp/**`의 로그/YAML과 `tools/playwright-mcp/console-errors.md`는 브라우저 검증 산출물이므로 문서 동기화 대상으로 보지 않습니다.
+  런타임/패키징 규칙은 `build.bat`, `monitor.spec`, `run_app.py`, `start_monitor.bat`, `install_pawnio.bat`, `scripts/prepare_lhm_bundle.py`, `scripts/prepare_pawnio_bundle.py` 같은 배포 진입점과 번들 준비 스크립트를 함께 추적합니다.
 - `AGENTS.md`
   저장소 진입 규칙과 문서 트리만 요약하고, 세부 매핑은 이 문서를 참조합니다.
 

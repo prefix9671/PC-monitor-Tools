@@ -60,10 +60,12 @@ trigger_prefixes = [
   "monitor.spec",
   "run_app.py",
   "start_monitor.bat",
+  "install_pawnio.bat",
   "Monitor.ps1",
   "mkdocs.yml",
   "test_portable.bat",
   "scripts/prepare_lhm_bundle.py",
+  "scripts/prepare_pawnio_bundle.py",
   "scripts/publish_release_to_share.ps1",
 ]
 required_docs = [

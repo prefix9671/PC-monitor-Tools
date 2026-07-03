@@ -1,6 +1,6 @@
 # Runtime And Packaging
 
-Updated On: 2026-06-05
+Updated On: 2026-07-03
 Status: Active
 
 ## 실행 모드
@@ -10,7 +10,7 @@ Status: Active
 1. 대시보드 모드
 2. 수집기 모드
 
-패키징된 EXE에서는 `run_app.py`가 단일 진입점 역할을 하며, `start` 인자가 있으면 수집기로, `cpu-temp-worker` 인자가 있으면 일반 PC CPU 코어 온도 워커로, 없으면 Streamlit 대시보드로 동작합니다.
+패키징된 EXE에서는 `run_app.py`가 단일 진입점 역할을 하며, `start`, `probe-temp`, `install-pawnio` 인자가 있으면 CLI로, `cpu-temp-worker` 인자가 있으면 일반 PC CPU 코어 온도 워커로, 없으면 Streamlit 대시보드로 동작합니다.
 
 ## 런타임 흐름
 
@@ -37,8 +37,11 @@ Status: Active
 | `runtime_patches.py` | Streamlit/Tornado 런타임에서 브라우저 종료 시 발생하는 WebSocket disconnect, static asset flush `CancelledError`, gzip closed-file noise 를 완화 |
 | `collectors/cpu_temperature_worker.py` | 일반 PC CPU 코어 최고온도 워커 엔트리 |
 | `collectors/libre_hardware_monitor.py` | LibreHardwareMonitor 다운로드/캐시와 `pythonnet` DLL 로드 |
+| `collectors/pawnio_package.py` | PawnIO 설치기 탐색, 다운로드/검증, 설치 상태 확인, `PawnIO_setup.exe -install` 실행 |
 | `collectors/wmi_query.py` | PowerShell 없이 `pythonnet + System.Management`로 WMI/CIM provider 를 직접 조회하는 공통 헬퍼 |
 | `scripts/prepare_lhm_bundle.py` | 빌드 전에 LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비 |
+| `scripts/prepare_pawnio_bundle.py` | 빌드 전에 PawnIO 설치기를 `.artifacts/vendor/pawnio-bundle/`로 준비 |
+| `install_pawnio.bat` | 릴리스 폴더에서 PawnIO 드라이버 설치를 관리자 권한으로 실행하는 보조 래퍼 |
 | `scripts/check_git_cl.ps1` | 현재 저장소에서 `git cl`이 필요한 환경인지, 단순히 GitHub PR 흐름이라 불필요한지 진단 |
 | `scripts/publish_release_to_share.ps1` | 로컬 release bundle 을 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴`에도 복사하고, 필요하면 Windows Credential Manager 자격증명을 저장하며, 서버 루트에는 최신 릴리스만 남기고 이전 버전 폴더는 `old/`로 이동 |
 | `scripts/run_prebuild_regression.py` | 빌드 전 회귀 러너. 단위 테스트, AOI CLI, 최소 인스펙터 시간 필터 fixture 검증, 대시보드 스모크, 문서 동기화, MkDocs, headless Playwright 순으로 실행 |
@@ -60,6 +63,8 @@ Status: Active
 
 - `.artifacts/releases/<빌드명>/SystemResourceMonitor*.exe`
 - `.artifacts/releases/<빌드명>/start_monitor.bat`
+- `.artifacts/releases/<빌드명>/install_pawnio.bat`
+- `.artifacts/releases/<빌드명>/pawnio-bundle/PawnIO_setup.exe`
 - `.artifacts/releases/<빌드명>/Manual.zip`
 - `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\`
 - `.artifacts/manual-site/`
@@ -78,7 +83,9 @@ Status: Active
 - direct copy 가 실패하면 `scripts/publish_release_to_share.ps1`가 사용자에게 한 번만 자격증명을 묻고, 이를 Windows Credential Manager에 저장한 뒤 다시 복사합니다. 기본 사용자 제안값은 `qa`입니다.
 - 새 빌드 복사가 성공하면 QA 공유 폴더 루트에서는 현재 빌드와 `old/`를 제외한 이전 버전 폴더를 모두 `\\192.168.1.13\sqa\113_테스트 툴\old\` 아래로 이동해 최신본만 남깁니다.
 - 일반 PC CPU 온도 워커는 개발 환경에서는 `python -m collectors.cpu_temperature_worker`, 패키징 환경에서는 `SystemResourceMonitor*.exe cpu-temp-worker` 분기를 사용합니다.
-- 빌드 시 `scripts/prepare_lhm_bundle.py`가 LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비하고, `monitor.spec`가 이를 EXE 내부 `lhm-bundle/` 데이터로 포함합니다.
+- LibreHardwareMonitor 0.9.6 계열에서 CPU 코어 센서가 PawnIO 드라이버에 의존할 수 있으므로, `SystemResourceMonitor*.exe install-pawnio`와 릴리스 폴더의 `install_pawnio.bat`로 동봉 설치기를 실행할 수 있습니다.
+- `start_monitor.bat`는 수집기 실행 전에 `install-pawnio --check-only`로 PawnIO 설치 여부를 확인하고, 미설치 상태면 사용자에게 동봉 설치기를 실행할지 묻습니다. 사용자가 취소하면 수집은 계속 진행하고 OpenHardwareMonitor / Thermal Zone fallback 을 사용합니다.
+- 빌드 시 `scripts/prepare_lhm_bundle.py`가 LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비하고, `scripts/prepare_pawnio_bundle.py`가 PawnIO 설치기를 `.artifacts/vendor/pawnio-bundle/`로 준비합니다. `monitor.spec`는 두 폴더를 각각 EXE 내부 `lhm-bundle/`, `pawnio-bundle/` 데이터로 포함합니다.
 - 빌드 전에는 `scripts/run_prebuild_regression.py`가 먼저 실행되어 단위 테스트, AOI CLI, 대시보드 스모크, 문서 동기화, MkDocs, headless Playwright 회귀를 모두 통과해야 합니다.
 - `scripts/verify_docs_sync.py`는 위 회귀들을 실행하는 스크립트가 아니라, Playwright 회귀 스크립트나 MCP 런처가 바뀌었을 때 관련 활성 문서가 같이 갱신됐는지만 판정합니다.
 - WEB GUI 자동화에서 Codex Desktop stdio MCP 연결은 사용자 로컬 `C:\Users\Win11_SPC_General\.codex\config.toml`의 `[mcp_servers.playwright]` 항목이 `node.exe + tools/playwright-mcp/node_modules/@playwright/mcp/cli.js`를 직접 가리키는 구성을 사용합니다.
@@ -94,7 +101,7 @@ Status: Active
 - `Monitor.ps1`는 공식 정리 대상이며 배포 산출물에 포함하지 않습니다. 필요할 때만 레거시 안내용 스텁으로 취급합니다.
 - Streamlit 앱이 런타임에 불러오는 로컬 파이썬 모듈은 `monitor.spec`의 `datas`에 포함되어야 합니다. 예를 들어 `inspector_logs/` 같은 폴더가 빠지면 EXE에서 `ModuleNotFoundError`가 발생할 수 있습니다.
 - `monitor.spec`는 Streamlit 전체 서브모듈을 수집하되 `streamlit.external.langchain` 같은 optional 모듈은 제외해, 실제로 사용하지 않는 LangChain 의존성 경고가 빌드를 오염시키지 않도록 유지합니다.
-- `monitor.spec`는 일반 PC CPU 코어 온도 워커와 WMI 직접 조회를 위해 `pythonnet`, `clr_loader`, `Python.Runtime.dll` 계열 런타임 파일과 `lhm-bundle/` 디렉터리도 함께 포함해야 합니다.
+- `monitor.spec`는 일반 PC CPU 코어 온도 워커와 WMI 직접 조회를 위해 `pythonnet`, `clr_loader`, `Python.Runtime.dll` 계열 런타임 파일, `lhm-bundle/`, `pawnio-bundle/` 디렉터리를 함께 포함해야 합니다.
 - `build.bat`는 packaging 전에 `scripts/run_prebuild_regression.py`가 성공해야만 계속 진행하고, packaging 뒤에는 QA 공유 폴더 복사와 이전 버전 `old/` 아카이브까지 통과해야 완료됩니다. 로컬 bug 입력 로그, headless Playwright 검증 환경, 또는 QA 공유 폴더 접근/자격증명 준비가 안 되면 빌드가 중단됩니다.
 - 포터블 배포 흐름을 바꿀 때는 `build.bat`, `monitor.spec`, `run_app.py`, `collector_launcher.py`, `start_monitor.bat`, 관련 문서를 함께 확인합니다.
 - Playwright MCP는 Node.js LTS와 로컬 `tools/playwright-mcp/` 패키지 설치를 전제로 하며, 기본 브라우저 채널은 `msedge`, 기본 실행 모드는 `headless + isolated` 입니다. Codex stdio 연결에서는 PowerShell 래퍼보다 Node CLI 직결 구성이 필요합니다.

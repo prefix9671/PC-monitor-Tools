@@ -1,6 +1,6 @@
 # Reliability Report
 
-Updated On: 2026-06-05
+Updated On: 2026-07-03
 Status: Active
 
 ## 개요
@@ -21,6 +21,7 @@ Status: Active
 - 수집기와 대시보드는 분리되어 있어 분석 UI가 수집 파이프라인을 직접 막지 않습니다.
 - 수집 결과는 파일로 남기므로 나중에 다시 로드해 비교할 수 있습니다.
 - LibreHardwareMonitor 번들을 EXE에 함께 동봉해, 현장 PC의 SSL 인증서나 외부망 차단 때문에 GitHub 다운로드가 막혀도 기본 온도 경로를 유지할 수 있습니다.
+- LibreHardwareMonitor 0.9.6 계열에서 필요한 PawnIO 설치기도 `pawnio-bundle/PawnIO_setup.exe`로 함께 동봉해, 외부망이 막힌 현장에서도 `install_pawnio.bat` 또는 `SystemResourceMonitor*.exe install-pawnio`로 드라이버 설치를 시도할 수 있습니다.
 - 일반 PC CPU 코어 온도는 별도 워커와 파일 기반 handoff 를 써서, 1초 샘플링 루프가 하드웨어 센서 초기화나 DLL 로드 비용에 직접 묶이지 않습니다.
 - 대시보드의 `모니터링 시작` 버튼은 PowerShell 대신 Windows ShellExecute `runas`를 직접 사용해, 현장 PC의 PowerShell 5.1/7 런타임 손상과 수집기 시작 경로를 분리합니다.
 - Dell DCM, OpenHardwareMonitor, PerfRaw Thermal Zone, MSAcpi Thermal Zone, 물리 메모리, 드라이브 매핑은 `pythonnet + System.Management` WMI 직접 조회를 사용하므로 현장 PC의 PowerShell 런타임 손상과 수집 fallback 경로를 분리합니다.
@@ -46,6 +47,7 @@ Status: Active
 - GitHub Actions 공식 JavaScript action 은 Node.js 24 기반 major 버전을 사용해 Node.js 20 deprecation 경고가 CI 실패 원인과 섞이지 않도록 유지
 - PyInstaller가 실제 미사용 optional 모듈에 끌려가지 않도록 패키징 대상을 좁혀 빌드 경고 노이즈를 줄일 수 있음
 - 일반 PC CPU 온도 경로는 동봉된 LibreHardwareMonitor 번들을 우선 사용하고, 추가로 캐시/다운로드와 OpenHardwareMonitor / Thermal Zone fallback 을 유지해 현장 대응 폭을 넓힐 수 있음
+- PawnIO 미설치 상태는 `start_monitor.bat`의 사전 확인과 CPU 온도 진단 로그의 `lhm_worker.pawnio` 섹션에서 확인할 수 있음
 - PowerShell이 실행되지 않는 PC에서도 WMI provider 자체가 정상이라면 Dell/Advantech 온도 fallback과 디스크 문자 매핑을 계속 시도할 수 있음
 - Playwright MCP 브라우저 검증은 stdio 직결 구성으로 유지해 GUI 자동화에서 연결 실패 가능성을 낮출 수 있음
 - 작업 완료 후 `scripts/verify_playwright_dashboards.js`로 실제 Streamlit 대시보드 4종을 다시 열어 보고, 스크린샷과 콘솔 메시지를 아티팩트로 남길 수 있음
@@ -64,6 +66,7 @@ Status: Active
 ## 현재 한계와 주의점
 
 - 관리자 권한이 없으면 일부 프로세스 정보 수집이 제한될 수 있습니다.
+- PawnIO는 커널 드라이버이므로 파일 동봉만으로 활성화되지 않고, 관리자 권한 설치와 환경에 따라 재부팅이 필요할 수 있습니다.
 - 로그 스키마가 변하면 대시보드와 파서가 함께 영향을 받습니다.
 - `Monitor.ps1`는 현재 운영 기준 실행 경로가 아니므로, 신뢰성 기준은 `start_monitor.bat`와 `run_app.py` 조합을 우선합니다.
 - 문서 동기화가 느슨해지면 운영 기준과 검증 절차가 실제 코드보다 뒤처질 수 있으므로 `scripts/verify_docs_sync.py`를 유지해야 합니다.

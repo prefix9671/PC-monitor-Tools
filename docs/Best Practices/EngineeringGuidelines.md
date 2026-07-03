@@ -1,6 +1,6 @@
 # Engineering Guidelines
 
-Updated On: 2026-04-02  
+Updated On: 2026-07-03
 Status: Active
 
 ## 현재 프로젝트에서 중요한 개발 규칙
@@ -29,7 +29,7 @@ Status: Active
 
 ### 패키징 변경
 
-- `run_app.py`, `monitor.spec`, `build.bat`, `start_monitor.bat`는 하나의 배포 흐름으로 봅니다.
+- `run_app.py`, `monitor.spec`, `build.bat`, `start_monitor.bat`, `install_pawnio.bat`는 하나의 배포 흐름으로 봅니다.
 - `Monitor.ps1`는 신규 기준 파일이 아니라 정리 대상 호환 스텁으로 취급합니다.
 - 개발 환경 실행과 패키징 환경 실행을 분리해서 생각합니다.
 
