@@ -6,6 +6,7 @@ manual_site_dir = Path('.artifacts/manual-site')
 if not manual_site_dir.exists():
     manual_site_dir = Path('site')
 lhm_bundle_dir = Path('.artifacts/vendor/lhm-bundle')
+pawnio_bundle_dir = Path('.artifacts/vendor/pawnio-bundle')
 
 datas = [
     ('app.py', '.'),
@@ -23,6 +24,8 @@ datas = [
 ]
 if lhm_bundle_dir.exists():
     datas.append((str(lhm_bundle_dir), 'lhm-bundle'))
+if pawnio_bundle_dir.exists():
+    datas.append((str(pawnio_bundle_dir), 'pawnio-bundle'))
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit')
 datas += collect_data_files('pythonnet')

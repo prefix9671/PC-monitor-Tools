@@ -65,6 +65,17 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo ========================================
+echo   Preparing PawnIO Driver Package
+echo ========================================
+call .\venv\Scripts\python.exe scripts\prepare_pawnio_bundle.py
+
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] PawnIO driver package preparation failed!
+    pause
+    exit /b %ERRORLEVEL%
+)
+
+echo ========================================
 echo   Building and Renaming to: %BASENAME%.exe
 echo ========================================
 
@@ -90,6 +101,12 @@ if exist "%PYI_DIST_DIR%\SystemResourceMonitor.exe" (
 :: 5. Copy supported launchers to release bundle
 echo Copying release scripts...
 copy "start_monitor.bat" "%RELEASE_DIR%\" >nul
+copy "install_pawnio.bat" "%RELEASE_DIR%\" >nul
+
+echo Copying PawnIO bundle...
+if exist "%ARTIFACT_ROOT%\vendor\pawnio-bundle" (
+    xcopy "%ARTIFACT_ROOT%\vendor\pawnio-bundle" "%RELEASE_DIR%\pawnio-bundle\" /E /I /Y >nul
+)
 
 :: 6. Zip Manual (.artifacts/manual-site) to release bundle
 echo Zipping Manual...
@@ -112,6 +129,8 @@ echo ========================================
 echo   Build Completed: 
 echo   - %RELEASE_DIR%\%BASENAME%.exe
 echo   - %RELEASE_DIR%\start_monitor.bat
+echo   - %RELEASE_DIR%\install_pawnio.bat
+echo   - %RELEASE_DIR%\pawnio-bundle\PawnIO_setup.exe
 echo   - %RELEASE_DIR%\Manual.zip
 echo   - QA share release bundle published to \\%NETWORK_RELEASE_HOST%\%NETWORK_RELEASE_SHARE%\...
 echo ========================================

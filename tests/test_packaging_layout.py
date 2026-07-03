@@ -47,7 +47,10 @@ class TestPackagingLayout(unittest.TestCase):
         self.assertIn("RELEASE_ROOT", contents)
         self.assertIn("scripts\\run_prebuild_regression.py", contents)
         self.assertIn("scripts\\prepare_lhm_bundle.py", contents)
+        self.assertIn("scripts\\prepare_pawnio_bundle.py", contents)
         self.assertIn("scripts\\publish_release_to_share.ps1", contents)
+        self.assertIn("install_pawnio.bat", contents)
+        self.assertIn("pawnio-bundle", contents)
         self.assertIn("NETWORK_RELEASE_HOST", contents)
         self.assertIn("NETWORK_RELEASE_SHARE", contents)
         self.assertNotIn('copy "Monitor.ps1"', contents)
@@ -58,11 +61,26 @@ class TestPackagingLayout(unittest.TestCase):
 
         self.assertIn("manual_site_dir = Path('.artifacts/manual-site')", contents)
         self.assertIn("lhm_bundle_dir = Path('.artifacts/vendor/lhm-bundle')", contents)
+        self.assertIn("pawnio_bundle_dir = Path('.artifacts/vendor/pawnio-bundle')", contents)
         self.assertIn("('collector_launcher.py', '.')", contents)
         self.assertIn("datas.append((str(lhm_bundle_dir), 'lhm-bundle'))", contents)
+        self.assertIn("datas.append((str(pawnio_bundle_dir), 'pawnio-bundle'))", contents)
         self.assertIn("collect_data_files('pythonnet')", contents)
         self.assertIn("'clr'", contents)
         self.assertNotIn("('Monitor.ps1', '.')", contents)
+
+    def test_install_pawnio_script_routes_through_packaged_cli(self):
+        contents = (REPO_ROOT / "install_pawnio.bat").read_text(encoding="utf-8")
+
+        self.assertIn("install-pawnio", contents)
+        self.assertIn("PawnIO_setup.exe", contents)
+        self.assertIn("Start-Process", contents)
+
+    def test_start_monitor_checks_pawnio_before_collector_launch(self):
+        contents = (REPO_ROOT / "start_monitor.bat").read_text(encoding="utf-8")
+
+        self.assertIn("install-pawnio --check-only", contents)
+        self.assertIn("Install bundled PawnIO now", contents)
 
     def test_streamlit_upload_limit_is_pinned_to_one_gigabyte(self):
         config_contents = (REPO_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
@@ -70,6 +88,7 @@ class TestPackagingLayout(unittest.TestCase):
 
         self.assertIn("maxUploadSize = 1024", config_contents)
         self.assertIn("--server.maxUploadSize=1024", run_app_contents)
+        self.assertIn('"install-pawnio"', run_app_contents)
 
     def test_requirements_include_pythonnet(self):
         contents = (REPO_ROOT / "requirements.txt").read_text(encoding="utf-8")

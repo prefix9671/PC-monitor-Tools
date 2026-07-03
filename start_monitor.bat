@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 cd /d "%~dp0"
 :: ============================================================================
 :: Name: start_monitor.bat
@@ -30,6 +31,24 @@ if "%TARGET_EXE%"=="" (
     echo [ERROR] Could not find SystemResourceMonitor*.exe in %~dp0
     pause
     exit /b 1
+)
+
+echo Checking PawnIO driver package...
+"%~dp0%TARGET_EXE%" install-pawnio --check-only >nul 2>&1
+set "PAWNIO_STATUS=!ERRORLEVEL!"
+if "!PAWNIO_STATUS!"=="2" (
+    echo [WARN] PawnIO is not installed. CPU core temperature may be unavailable.
+    choice /M "Install bundled PawnIO now"
+    if !ERRORLEVEL! EQU 1 (
+        "%~dp0%TARGET_EXE%" install-pawnio
+        if !ERRORLEVEL! NEQ 0 (
+            echo [WARN] PawnIO installation did not complete successfully. Continuing with fallback providers.
+        )
+    ) else (
+        echo [INFO] Skipping PawnIO installation. Continuing with fallback providers.
+    )
+) else if not "!PAWNIO_STATUS!"=="0" (
+    echo [WARN] PawnIO status check failed. Continuing with fallback providers.
 )
 
 :: Run the Portable Collector
