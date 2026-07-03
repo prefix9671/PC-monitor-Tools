@@ -21,6 +21,12 @@ from collectors.libre_hardware_monitor import (
     read_cpu_core_max_temperature_sample,
     read_lhm_bundle_manifest,
 )
+from collectors.pawnio_package import (
+    ensure_pawnio_setup_path,
+    find_local_pawnio_setup_path,
+    read_pawnio_bundle_manifest,
+    read_pawnio_installed_version,
+)
 
 
 RECORD_SUMMARY_FIELDS = (
@@ -129,7 +135,18 @@ def collect_cpu_temperature_diagnostics() -> dict[str, Any]:
             "provider_name": LIBRE_HARDWARE_MONITOR_CORE_MAX_PROVIDER,
             "local_bundle_dir": _sanitize_for_json(find_local_lhm_bundle_dir()),
             "manifest": _sanitize_for_json(read_lhm_bundle_manifest()),
+            "pawnio": {
+                "installed_version": read_pawnio_installed_version(),
+                "local_setup_path": _sanitize_for_json(find_local_pawnio_setup_path()),
+                "manifest": _sanitize_for_json(read_pawnio_bundle_manifest()),
+            },
         }
+        try:
+            lhm_section["pawnio"]["setup_path"] = str(ensure_pawnio_setup_path())
+        except Exception as exc:
+            lhm_section["pawnio"]["setup_path_error"] = str(exc)
+            lhm_section["pawnio"]["setup_path_traceback"] = traceback.format_exc()
+
         try:
             bundle_dir = ensure_lhm_bundle_dir()
             lhm_section["bundle_dir"] = str(bundle_dir)

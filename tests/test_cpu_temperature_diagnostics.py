@@ -88,6 +88,10 @@ class TestCpuTemperatureDiagnostics(unittest.TestCase):
         return_value={"status": "ok", "provider_name": "LibreHardwareMonitorCoreMax", "value_c": 77.4},
     )
     @patch("collectors.cpu_temperature_diagnostics.capture_and_write_state", return_value=True)
+    @patch("collectors.cpu_temperature_diagnostics.read_pawnio_installed_version", return_value=None)
+    @patch("collectors.cpu_temperature_diagnostics.find_local_pawnio_setup_path", return_value=Path("C:/temp/pawnio-bundle/PawnIO_setup.exe"))
+    @patch("collectors.cpu_temperature_diagnostics.read_pawnio_bundle_manifest", return_value={"version": "2.2.0"})
+    @patch("collectors.cpu_temperature_diagnostics.ensure_pawnio_setup_path", return_value=Path("C:/temp/pawnio-bundle/PawnIO_setup.exe"))
     @patch("collectors.cpu_temperature_diagnostics.read_lhm_bundle_manifest", return_value={"version": "v0.9.6"})
     @patch("collectors.cpu_temperature_diagnostics.ensure_lhm_bundle_dir", return_value=Path("C:/temp/lhm-cache/v0.9.6"))
     @patch(
@@ -106,6 +110,7 @@ class TestCpuTemperatureDiagnostics(unittest.TestCase):
         self.assertEqual(77.4, diagnostics["force_refresh_probe"]["value_c"])
         self.assertEqual("LibreHardwareMonitorCoreMax", diagnostics["force_refresh_probe"]["source_name"])
         self.assertEqual("v0.9.6", diagnostics["lhm_worker"]["manifest"]["version"])
+        self.assertEqual("2.2.0", diagnostics["lhm_worker"]["pawnio"]["manifest"]["version"])
         self.assertEqual("OpenHardwareMonitor", diagnostics["provider_diagnostics"][0]["provider_name"])
         self.assertEqual(50.0, diagnostics["provider_diagnostics"][0]["selected_value_c"])
 
