@@ -37,6 +37,15 @@ class TestVerifyDocsSync(unittest.TestCase):
             missing,
         )
 
+    def test_claude_wrapper_is_baseline_exempt(self):
+        missing = evaluate_changed_files(
+            [
+                "CLAUDE.md",
+            ]
+        )
+
+        self.assertEqual([], missing)
+
     def test_ci_change_requires_reliability_report_and_verification_checklist(self):
         missing = evaluate_changed_files(
             [

@@ -19,6 +19,7 @@ ignored_globs = [
 ]
 code_change_exempt_prefixes = [
   "AGENTS.md",
+  "CLAUDE.md",
   "README.md",
   ".gitignore",
 ]

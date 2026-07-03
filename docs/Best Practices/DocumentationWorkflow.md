@@ -27,6 +27,8 @@ Status: Active
   런타임/패키징 규칙은 `build.bat`, `monitor.spec`, `run_app.py`, `start_monitor.bat`, `install_pawnio.bat`, `scripts/prepare_lhm_bundle.py`, `scripts/prepare_pawnio_bundle.py` 같은 배포 진입점과 번들 준비 스크립트를 함께 추적합니다.
 - `AGENTS.md`
   저장소 진입 규칙과 문서 트리만 요약하고, 세부 매핑은 이 문서를 참조합니다.
+- `CLAUDE.md`
+  Claude 호환용 래퍼이며 `AGENTS.md`를 단일 기준으로 가리킵니다. 이 파일 자체는 baseline 문서 동기화 대상 코드 변경으로 취급하지 않습니다.
 
 ## 문서 업데이트 절차
 
@@ -50,7 +52,7 @@ Status: Active
 ## PowerShell 인코딩 규칙
 
 - 한글 문서를 PowerShell로 읽을 때는 `Get-Content -Encoding UTF8`를 사용합니다.
-- `docs/` 트리의 문서, `README.md`, `AGENTS.md` 같은 한국어 기준 문서도 같은 규칙을 적용합니다.
+- `docs/` 트리의 문서, `README.md`, `AGENTS.md`, `CLAUDE.md` 같은 한국어 기준 문서도 같은 규칙을 적용합니다.
 - Windows 콘솔에서 기본 인코딩에 의존한 문서 읽기는 기준 작업 방식으로 인정하지 않습니다.
 
 ## 어떤 변경이 어떤 문서를 건드리는가
