@@ -77,11 +77,11 @@ Inspector event DataFrame -> memory dashboard
 - `collectors/sampler.py`는 Windows 10/11에서 `psutil.swap_memory()`를 사용해 페이지 파일 기반 가상 메모리 상태를 읽고, `Swap_Used(GB)`, `Swap_Total(GB)`, `Swap_Usage(%)`로 기록합니다.
 - `collectors/subprocess_utils.py`는 Dell 설치기 같은 외부 프로세스 표준출력을 `text=True` 대신 바이트로 받은 뒤 다중 인코딩 후보와 `errors="replace"` fallback으로 디코딩해 `_readerthread`의 `UnicodeDecodeError`를 방지합니다.
 - `cli.py start`와 `cli.py probe-temp`는 Dell Precision T5/T7 Tower 계열 장비를 감지하면 `collectors/dell_command_monitor.py`를 통해 DCM 설치/준비를 먼저 시도합니다.
-- `cli.py install-pawnio`는 일반 PC CPU 코어 온도 경로에서 필요한 PawnIO 드라이버 설치기를 동봉 번들 또는 캐시에서 찾아 `-install`로 실행합니다.
+- `cli.py install-pawnio`는 일반 PC CPU 코어 온도 경로에서 필요한 PawnIO 드라이버 설치기를 동봉 번들 또는 캐시에서 찾아 `-install`로 실행하며, `--check-only` 미설치 결과에서는 `install_pawnio.bat`, EXE CLI, 동봉 setup 파일 경로를 함께 안내합니다.
 - `collectors/dell_command_monitor.py`는 `Win32_ComputerSystem`과 `root\dcim\sysman` namespace 확인도 PowerShell 없이 WMI 직접 조회로 수행합니다.
 - `collectors/cpu_temperature.py`는 Dell 대상 장비에서 `root\dcim\sysman/DCIM_NumericSensor`가 준비된 경우에만 이를 WMI 직접 조회로 사용하고, 일반 PC에서는 `collectors/cpu_temperature_worker.py`가 갱신한 JSON 상태를 우선 읽습니다.
 - 일반 PC용 워커는 먼저 EXE 내부 `_MEIPASS\lhm-bundle` 또는 EXE 옆 `lhm-bundle\`을 확인하고, 그 안에 동봉된 LibreHardwareMonitor 번들을 우선 사용합니다.
-- PawnIO 설치기는 EXE 내부 `_MEIPASS\pawnio-bundle`, EXE 옆 `pawnio-bundle\`, 로컬 vendor bundle, 캐시 순으로 찾습니다. `start_monitor.bat`는 수집기 시작 전에 설치 상태를 확인하고 미설치 상태면 사용자 확인 후 동봉 설치기를 실행합니다.
+- PawnIO 설치기는 EXE 내부 `_MEIPASS\pawnio-bundle`, EXE 옆 `pawnio-bundle\`, 로컬 vendor bundle, 캐시 순으로 찾습니다. `start_monitor.bat`는 수집기 시작 전에 설치 상태를 확인하고 미설치 상태면 수동 설치 파일 경로를 안내한 뒤 사용자 확인 후 동봉 설치기를 실행합니다.
 - 동봉된 번들이 없을 때만 `collectors/libre_hardware_monitor.py`가 LibreHardwareMonitor 최신 공식 릴리스를 `LOCALAPPDATA\PC-monitor-Tools\lhm-cache\`에 캐시하고, `pythonnet`으로 `LibreHardwareMonitorLib.dll`을 로드합니다.
 - 일반 PC CPU 온도는 LibreHardwareMonitor `Temperature` 센서 중 `CPU Core #n` 형태의 물리 코어 센서만 대상으로 삼고, `Core Max`, `Core Average`, `Distance to TjMax`, `CPU Package`는 메인 지표에서 제외한 뒤 최고값 하나만 사용합니다.
 - 일반 PC 워커 상태가 비어 있거나 실패하면 PowerShell 없이 WMI 직접 조회로 `OpenHardwareMonitor`, `Win32_PerfRawData_Counters_ThermalZoneInformation`, `MSAcpi_ThermalZoneTemperature`를 순차 fallback 합니다.

@@ -7,6 +7,7 @@ from collectors.cpu_temperature import CpuTemperatureProbe
 from collectors.dell_command_monitor import ensure_dcm_ready
 from collectors.pawnio_package import (
     ensure_pawnio_setup_path,
+    find_local_pawnio_setup_path,
     install_pawnio,
     is_current_process_elevated,
     read_pawnio_installed_version,
@@ -20,6 +21,21 @@ def _prepare_temperature_provider():
     return result
 
 
+def _print_pawnio_install_guidance(stream=None):
+    if stream is None:
+        stream = sys.stdout
+    local_setup_path = find_local_pawnio_setup_path()
+    print("PawnIO is required for some LibreHardwareMonitor CPU core temperature sensors.", file=stream)
+    print("Install it from this release bundle before relying on CPU core temperature:", file=stream)
+    print("  1. Right-click install_pawnio.bat and select Run as administrator.", file=stream)
+    print("  2. Or run: SystemResourceMonitor*.exe install-pawnio", file=stream)
+    if local_setup_path:
+        print(f"Bundled setup file: {local_setup_path}", file=stream)
+    else:
+        print(r"Bundled setup file not found. Expected: pawnio-bundle\PawnIO_setup.exe", file=stream)
+        print("Copy the full release folder or rebuild the bundle before installing.", file=stream)
+
+
 def _handle_install_pawnio(args):
     installed_version = read_pawnio_installed_version()
     if args.check_only:
@@ -27,6 +43,7 @@ def _handle_install_pawnio(args):
             print(f"PawnIO installed: {installed_version}")
             sys.exit(0)
         print("PawnIO is not installed.")
+        _print_pawnio_install_guidance()
         sys.exit(2)
 
     if installed_version and not args.force:
@@ -37,12 +54,14 @@ def _handle_install_pawnio(args):
         setup_path = ensure_pawnio_setup_path()
     except Exception as exc:
         print(f"PawnIO setup package is not available: {exc}", file=sys.stderr)
+        _print_pawnio_install_guidance(stream=sys.stderr)
         sys.exit(1)
 
     print(f"PawnIO setup package: {setup_path}")
     elevated = is_current_process_elevated()
     if elevated is False:
         print("Administrator privileges are required to install the PawnIO driver.", file=sys.stderr)
+        print("Tip: run install_pawnio.bat as Administrator from the release folder.", file=sys.stderr)
 
     result = install_pawnio(setup_path=setup_path)
     if result.ok:

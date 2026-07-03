@@ -34,21 +34,26 @@ if "%TARGET_EXE%"=="" (
 )
 
 echo Checking PawnIO driver package...
-"%~dp0%TARGET_EXE%" install-pawnio --check-only >nul 2>&1
+"%~dp0%TARGET_EXE%" install-pawnio --check-only
 set "PAWNIO_STATUS=!ERRORLEVEL!"
 if "!PAWNIO_STATUS!"=="2" (
     echo [WARN] PawnIO is not installed. CPU core temperature may be unavailable.
+    echo [INFO] Manual installer helper: %~dp0install_pawnio.bat
+    echo [INFO] Bundled setup file: %~dp0pawnio-bundle\PawnIO_setup.exe
     choice /M "Install bundled PawnIO now"
     if !ERRORLEVEL! EQU 1 (
         "%~dp0%TARGET_EXE%" install-pawnio
         if !ERRORLEVEL! NEQ 0 (
             echo [WARN] PawnIO installation did not complete successfully. Continuing with fallback providers.
+            echo [INFO] You can retry later by running install_pawnio.bat as Administrator.
         )
     ) else (
         echo [INFO] Skipping PawnIO installation. Continuing with fallback providers.
+        echo [INFO] You can install later by running install_pawnio.bat as Administrator.
     )
 ) else if not "!PAWNIO_STATUS!"=="0" (
     echo [WARN] PawnIO status check failed. Continuing with fallback providers.
+    echo [INFO] If CPU temperature is unavailable, run install_pawnio.bat as Administrator.
 )
 
 :: Run the Portable Collector

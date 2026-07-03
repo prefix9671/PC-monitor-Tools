@@ -54,7 +54,7 @@ PC-monitor-Tools/
 | `collector_launcher.py` | `모니터링 시작` 버튼의 수집기 실행 요청. PowerShell 없이 Windows ShellExecute `runas` 또는 직접 Popen 경로 사용 |
 | `config.py` | 시스템 로그 경로, AOI 자동 로드 기본 경로 `C:\Inspector\shared\operation.txt`, 공용 색상/런타임 상수 |
 | `aoi_cli.py` | AOI / Inspector 로그 요약 및 XLSX export CLI. 기본 결과 시트와 12시간 샘플 시트를 함께 생성 |
-| `cli.py` | 수집기 시작과 CPU 온도 센서 진단 CLI |
+| `cli.py` | 수집기 시작, CPU 온도 센서 진단, PawnIO 미설치 시 동봉 설치 파일 안내 CLI |
 | `run_app.py` | 패키징된 EXE의 단일 진입점. Streamlit 업로드 한도 1GB를 함께 고정 |
 | `runtime_patches.py` | Streamlit/Tornado의 WebSocket disconnect, static asset flush `CancelledError`, gzip closed-file 종료 노이즈를 완화하는 런타임 패치 |
 | `data_loader.py` | CSV 로딩, 캐시, exact merge |
@@ -89,6 +89,7 @@ PC-monitor-Tools/
 | `verify_dashboards.py` | 헤드리스 대시보드 자가 점검 |
 | `build.bat` | 문서 사이트와 EXE 빌드, QA 공유 폴더 최신본 동기화 |
 | `install_pawnio.bat` | 릴리스 폴더의 `SystemResourceMonitor*.exe install-pawnio` 또는 `pawnio-bundle/PawnIO_setup.exe`를 관리자 권한으로 실행하는 보조 설치 래퍼 |
+| `start_monitor.bat` | 수집기 시작 전 PawnIO 설치 상태를 확인하고, 미설치 시 동봉 설치 경로를 안내한 뒤 수집기를 실행하는 관리자 권한 래퍼 |
 
 ## `docs` 구조
 

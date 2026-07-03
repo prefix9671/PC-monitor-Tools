@@ -54,8 +54,8 @@ UI 대신 직접 시작해야 할 때만 관리자 권한으로 `start_monitor.b
 CPU 온도 센서가 현재 시스템에서 잡히는지 빠르게 확인하려면 `.\venv\Scripts\python cli.py probe-temp`를 실행할 수 있습니다.
 Dell Precision T5/T7 Tower 계열 제어 PC에서는 `probe-temp`와 `start`가 먼저 Dell Command | Monitor 설치 상태를 확인하고, 필요하면 공식 Dell 패키지를 자동으로 내려받아 무인 설치합니다.
 일반 PC이거나 Dell 대상 모델이 아니면 EXE에 함께 들어 있는 `lhm-bundle`을 먼저 사용하고, 그 안의 `LibreHardwareMonitorLib.dll`을 `pythonnet`으로 읽어 30초마다 `CPU Core #n` 최고온도를 갱신합니다.
-LibreHardwareMonitor 0.9.6 계열에서는 CPU 코어 센서가 PawnIO 드라이버에 의존할 수 있습니다. 배포본에는 `pawnio-bundle/PawnIO_setup.exe`와 `install_pawnio.bat`가 포함되며, `start_monitor.bat`는 PawnIO가 없으면 설치할지 먼저 묻습니다.
-수동으로 설치해야 하면 배포 폴더에서 `install_pawnio.bat`를 관리자 권한으로 실행하거나, `SystemResourceMonitor*.exe install-pawnio`를 실행합니다. 설치기가 재부팅을 요구하면 재부팅 뒤 `probe-temp`를 다시 확인합니다.
+LibreHardwareMonitor 0.9.6 계열에서는 CPU 코어 센서가 PawnIO 드라이버에 의존할 수 있습니다. 배포본에는 `pawnio-bundle/PawnIO_setup.exe`와 `install_pawnio.bat`가 포함되며, `start_monitor.bat`는 PawnIO가 없으면 콘솔에 설치 파일 위치를 안내하고 설치할지 먼저 묻습니다.
+수동으로 설치해야 하면 배포 폴더에서 `install_pawnio.bat`를 관리자 권한으로 실행하거나, `SystemResourceMonitor*.exe install-pawnio`를 실행합니다. 더 직접 확인해야 하면 같은 폴더의 `pawnio-bundle/PawnIO_setup.exe`가 실제 동봉 setup 파일입니다. 설치기가 재부팅을 요구하면 재부팅 뒤 `probe-temp`를 다시 확인합니다.
 EXE 동봉 번들이 없을 때만 LibreHardwareMonitor 최신 공식 릴리스를 로컬 캐시에 내려받고, 그래도 워커가 값을 만들지 못하면 OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone 경로로 fallback 합니다.
 어드벤텍 IPC 같은 산업용 PC에서 `Win32_PerfRawData_Counters_ThermalZoneInformation`이 `353`, `3530`처럼 Kelvin 또는 1/10 Kelvin 값을 노출하면 이를 자동으로 섭씨로 환산합니다.
 이 fallback 들은 PowerShell 창을 띄우지 않고 내부 WMI 직접 조회로 동작하므로, PowerShell이 손상된 PC에서도 WMI provider가 정상이라면 계속 시도됩니다.
@@ -201,7 +201,7 @@ EXE 동봉 번들이 없을 때만 LibreHardwareMonitor 최신 공식 릴리스�
 - 포터블 EXE 배포본에서는 `lhm-bundle/LibreHardwareMonitorLib.dll`과 `pawnio-bundle/PawnIO_setup.exe`가 함께 포함되므로, 현장 PC에서 인터넷이나 GitHub 인증서 없이도 일반 PC CPU 코어 온도 경로와 PawnIO 설치 경로를 바로 사용할 수 있습니다.
 - 일반 PC CPU 코어 최고온도 워커는 30초마다 새 값을 갱신하고, 차트에는 각 5초 구간에서 마지막으로 알려진 코어 최고온도가 반영됩니다.
 - 현장 디버깅이 필요하면 앱 하단 CPU 온도 테스트 버튼을 먼저 실행해 `cpu_temp_diagnostic_*.log`를 수집한 뒤, `Source`, `Sensor`, `worker_state_after`, `provider_diagnostics`를 확인합니다.
-- 온도값이 계속 비어 있으면 `install_pawnio.bat` 또는 `SystemResourceMonitor*.exe install-pawnio`로 PawnIO 설치를 먼저 확인하고, 이후 LibreHardwareMonitor 공식 릴리스의 `LibreHardwareMonitor.exe`를 해당 PC에서 직접 실행해 CPU Core 센서가 노출되는지 확인합니다. 실행 자체가 실패하면 Microsoft .NET / .NET Core Desktop Runtime과 LibreHardwareMonitor 동봉 DLL 의존성 파일이 빠졌을 가능성이 높습니다.
+- 온도값이 계속 비어 있으면 `install_pawnio.bat` 또는 `SystemResourceMonitor*.exe install-pawnio`로 PawnIO 설치를 먼저 확인합니다. `install-pawnio --check-only`는 미설치 상태에서 `pawnio-bundle/PawnIO_setup.exe` 위치도 함께 안내합니다. 이후 LibreHardwareMonitor 공식 릴리스의 `LibreHardwareMonitor.exe`를 해당 PC에서 직접 실행해 CPU Core 센서가 노출되는지 확인합니다. 실행 자체가 실패하면 Microsoft .NET / .NET Core Desktop Runtime과 LibreHardwareMonitor 동봉 DLL 의존성 파일이 빠졌을 가능성이 높습니다.
 - PerfRaw / Thermal Zone 에서 `_Total` 집계 레코드와 개별 zone 이 함께 보이면 개별 zone 을 우선하고, 그 안에서 가장 높은 유효 온도를 선택합니다.
 - 일부 Dell 장비에서는 DCM `UnitModifier`가 실제 온도 스케일과 다르게 보일 수 있어, 프로그램은 비현실적으로 낮은 온도를 피하도록 직접 읽기값을 우선 해석합니다.
 - Dell Command Monitor 또는 하드웨어 모니터 도구에서 `CPU Package` 센서가 보이면 해당 값을 메인 온도 지표로 우선 사용합니다.

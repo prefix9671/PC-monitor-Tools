@@ -84,7 +84,7 @@ Status: Active
 - 새 빌드 복사가 성공하면 QA 공유 폴더 루트에서는 현재 빌드와 `old/`를 제외한 이전 버전 폴더를 모두 `\\192.168.1.13\sqa\113_테스트 툴\old\` 아래로 이동해 최신본만 남깁니다.
 - 일반 PC CPU 온도 워커는 개발 환경에서는 `python -m collectors.cpu_temperature_worker`, 패키징 환경에서는 `SystemResourceMonitor*.exe cpu-temp-worker` 분기를 사용합니다.
 - LibreHardwareMonitor 0.9.6 계열에서 CPU 코어 센서가 PawnIO 드라이버에 의존할 수 있으므로, `SystemResourceMonitor*.exe install-pawnio`와 릴리스 폴더의 `install_pawnio.bat`로 동봉 설치기를 실행할 수 있습니다.
-- `start_monitor.bat`는 수집기 실행 전에 `install-pawnio --check-only`로 PawnIO 설치 여부를 확인하고, 미설치 상태면 사용자에게 동봉 설치기를 실행할지 묻습니다. 사용자가 취소하면 수집은 계속 진행하고 OpenHardwareMonitor / Thermal Zone fallback 을 사용합니다.
+- `start_monitor.bat`는 수집기 실행 전에 `install-pawnio --check-only`로 PawnIO 설치 여부를 확인하고, 미설치 상태면 `install_pawnio.bat`, `pawnio-bundle/PawnIO_setup.exe`, `SystemResourceMonitor*.exe install-pawnio` 경로를 콘솔에 안내한 뒤 동봉 설치기를 실행할지 묻습니다. 사용자가 취소하면 수집은 계속 진행하고 OpenHardwareMonitor / Thermal Zone fallback 을 사용합니다.
 - 빌드 시 `scripts/prepare_lhm_bundle.py`가 LibreHardwareMonitor 번들을 `.artifacts/vendor/lhm-bundle/`로 준비하고, `scripts/prepare_pawnio_bundle.py`가 PawnIO 설치기를 `.artifacts/vendor/pawnio-bundle/`로 준비합니다. `monitor.spec`는 두 폴더를 각각 EXE 내부 `lhm-bundle/`, `pawnio-bundle/` 데이터로 포함합니다.
 - 빌드 전에는 `scripts/run_prebuild_regression.py`가 먼저 실행되어 단위 테스트, AOI CLI, 대시보드 스모크, 문서 동기화, MkDocs, headless Playwright 회귀를 모두 통과해야 합니다.
 - `scripts/verify_docs_sync.py`는 위 회귀들을 실행하는 스크립트가 아니라, Playwright 회귀 스크립트나 MCP 런처가 바뀌었을 때 관련 활성 문서가 같이 갱신됐는지만 판정합니다.

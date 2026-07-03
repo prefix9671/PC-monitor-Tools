@@ -81,6 +81,9 @@ class TestPackagingLayout(unittest.TestCase):
 
         self.assertIn("install-pawnio --check-only", contents)
         self.assertIn("Install bundled PawnIO now", contents)
+        self.assertIn("install_pawnio.bat", contents)
+        self.assertIn("pawnio-bundle\\PawnIO_setup.exe", contents)
+        self.assertNotIn("install-pawnio --check-only >nul", contents)
 
     def test_streamlit_upload_limit_is_pinned_to_one_gigabyte(self):
         config_contents = (REPO_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")

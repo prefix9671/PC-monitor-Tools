@@ -404,6 +404,22 @@ class TestCpuTemperatureCli(unittest.TestCase):
         self.assertIn("Source: LibreHardwareMonitor", buffer.getvalue())
         self.assertIn("Sensor: CPU Package", buffer.getvalue())
 
+    @patch("cli.find_local_pawnio_setup_path", return_value=Path("C:/release/pawnio-bundle/PawnIO_setup.exe"))
+    @patch("cli.read_pawnio_installed_version", return_value=None)
+    def test_install_pawnio_check_only_guides_bundle_install_when_missing(self, _installed, _setup_path):
+        buffer = io.StringIO()
+        with patch.object(sys, "argv", ["cli.py", "install-pawnio", "--check-only"]), redirect_stdout(buffer):
+            with self.assertRaises(SystemExit) as exit_context:
+                main()
+
+        self.assertEqual(2, exit_context.exception.code)
+        output = buffer.getvalue()
+        self.assertIn("PawnIO is not installed.", output)
+        self.assertIn("install_pawnio.bat", output)
+        self.assertIn("SystemResourceMonitor*.exe install-pawnio", output)
+        self.assertIn("pawnio-bundle", output)
+        self.assertIn("PawnIO_setup.exe", output)
+
 
 if __name__ == "__main__":
     unittest.main()

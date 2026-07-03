@@ -26,7 +26,7 @@ Status: Active
 - Dell 제어 PC라면 CPU 온도가 `5.x°C`처럼 비현실적으로 낮게 표시되지 않고, 실제 장비 상태에 맞는 값으로 보이는지 확인
 - PowerShell이 실행되지 않는 현장 PC라도 WMI provider 자체가 정상이면 Dell DCM, OpenHardwareMonitor, PerfRaw Thermal Zone, MSAcpi Thermal Zone fallback 이 `collectors/wmi_query.py` 경로로 계속 시도되는지 확인
 - 일반 PC라면 DCM 설치 시도를 건너뛰고 EXE에 동봉된 `lhm-bundle`을 우선 사용해 `pythonnet` 워커를 기동하는지 확인
-- 일반 PC라면 `.\venv\Scripts\python cli.py install-pawnio --check-only` 또는 패키징 EXE의 `install-pawnio --check-only`로 PawnIO 설치 상태를 확인하고, 미설치 상태에서는 `install_pawnio.bat` 또는 `SystemResourceMonitor*.exe install-pawnio`로 동봉 설치기가 실행되는지 확인
+- 일반 PC라면 `.\venv\Scripts\python cli.py install-pawnio --check-only` 또는 패키징 EXE의 `install-pawnio --check-only`로 PawnIO 설치 상태를 확인하고, 미설치 상태에서는 콘솔에 `install_pawnio.bat`, `SystemResourceMonitor*.exe install-pawnio`, `pawnio-bundle/PawnIO_setup.exe` 안내가 표시되는지와 동봉 설치기가 실행되는지 확인
 - 일반 PC라면 `probe-temp` 또는 상태 JSON 에서 `Source: LibreHardwareMonitorCoreMax`와 `CPU Core #n` 형태의 `Sensor` 문자열을 우선 확인
 - 일반 PC라면 워커가 30초 간격으로 JSON 상태 파일을 갱신하고, 동봉 번들이 없거나 실패할 때만 OpenHardwareMonitor, PerfRaw Thermal Zone, Thermal Zone fallback 으로 계속 동작하는지 확인
 - 앱 맨 아래 `CPU 온도 테스트 실행 및 로그 저장` 버튼을 눌렀을 때 `C:\SystemLogs\cpu_temp_diagnostic_*.log`와 `cpu_temp_diagnostic_latest.log`가 생성되고, force refresh 결과와 provider별 raw preview가 포함되는지 확인
