@@ -123,14 +123,14 @@ with st.sidebar:
             st.success(f"시스템 모니터 행 {len(df)}개를 불러왔습니다.")
 
     st.divider()
-    st.header("AOI / 인스펙터 로그")
+    st.header("AOI / SPI / 인스펙터 로그")
     uploaded_aoi_files = st.file_uploader(
-        "AOI / 인스펙터 로그 업로드",
-        type=["log", "txt"],
+        "AOI / SPI / 인스펙터 로그 업로드",
+        type=["log", "txt", "csv"],
         accept_multiple_files=True,
-        help="파일 탐색기에서 AOI / 인스펙터 TXT 또는 LOG 파일을 직접 선택합니다.",
+        help="파일 탐색기에서 AOI TXT/LOG, SPI CSV, ProcessResource LOG 파일을 직접 선택합니다.",
     )
-    st.caption("권장: Browse files로 AOI / 인스펙터 TXT 또는 LOG 파일을 직접 선택하세요. 업로드 제한은 1GB입니다.")
+    st.caption("권장: Browse files로 AOI TXT/LOG 또는 SPI CSV + ProcessResource LOG 파일을 직접 선택하세요. 업로드 제한은 1GB입니다.")
 
     aoi_frames = []
     default_aoi_payloads = load_inspector_log_payloads(DEFAULT_INSPECTOR_LOG_PATH)
@@ -158,10 +158,10 @@ with st.sidebar:
                 aoi_frames.append(uploaded_aoi_df)
                 loaded_aoi_sources.extend(uploaded_file.name for uploaded_file in uploaded_aoi_files)
                 st.success(
-                    f"업로드한 파일 {len(uploaded_aoi_files)}개에서 인스펙터 이벤트 {len(uploaded_aoi_df)}행을 불러왔습니다."
+                    f"업로드한 파일 {len(uploaded_aoi_files)}개에서 AOI/SPI 이벤트 {len(uploaded_aoi_df)}행을 불러왔습니다."
                 )
             else:
-                st.warning("파일은 읽었지만 InspTime / Working Set 라인을 찾지 못했습니다.")
+                st.warning("파일은 읽었지만 AOI InspTime, SPI tactTime, Working Set 라인을 찾지 못했습니다.")
         except Exception as exc:
             st.error(f"업로드한 AOI 로그를 불러오지 못했습니다: {exc}")
 
@@ -188,7 +188,7 @@ with st.sidebar:
             .reset_index(drop=True)
         )
         if loaded_aoi_sources:
-            st.caption(f"AOI 원본: {', '.join(dict.fromkeys(loaded_aoi_sources))}")
+            st.caption(f"AOI/SPI 원본: {', '.join(dict.fromkeys(loaded_aoi_sources))}")
 
     has_system_data = df is not None and not df.empty
     has_inspector_data = aoi_df is not None and not aoi_df.empty
@@ -333,7 +333,7 @@ with st.sidebar:
         if has_inspector_data:
             inspector_csv = aoi_df.to_csv(index=False).encode("utf-8-sig")
             st.download_button(
-                label="파싱된 인스펙터 로그 CSV 다운로드",
+                label="파싱된 AOI/SPI 로그 CSV 다운로드",
                 data=inspector_csv,
                 file_name=f"Inspector_Log_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                 mime="text/csv",
@@ -419,7 +419,7 @@ if has_system_data or has_inspector_data:
 else:
     st.info(
         f"시스템 모니터 CSV를 업로드하거나 {DEFAULT_LOG_DIR}에 로그가 있는지 확인하세요. "
-        "또는 AOI / 인스펙터 로그를 업로드해 주세요."
+        "또는 AOI / SPI / 인스펙터 로그를 업로드해 주세요."
     )
 
 st.markdown("---")

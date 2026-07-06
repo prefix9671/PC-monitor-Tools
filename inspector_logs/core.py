@@ -11,8 +11,11 @@ from typing import Iterable
 
 import pandas as pd
 
+from inspector_logs.spi_parser import parse_spi_rows
+from inspector_logs.text_utils import decode_text_lines
+
 INSPECTOR_PROCESS_LABEL = "인스펙터 앱 (로그)"
-SUPPORTED_LOG_SUFFIXES = (".log", ".txt")
+SUPPORTED_LOG_SUFFIXES = (".log", ".txt", ".csv")
 INSPECTOR_PARSE_CHUNK_LINE_COUNT = 250_000
 INSPECTOR_PARSE_MIN_LINE_COUNT_FOR_PARALLEL = 500_000
 INSPECTOR_PARSE_MAX_WORKERS = 8
@@ -38,6 +41,8 @@ INSPECTOR_COLUMNS = [
     "Timestamp",
     "SourceFile",
     "Inspector_Event_Type",
+    "Inspector_Source_Type",
+    "Inspector_Memory_Key",
     "Inspector_Model_Name",
     "Inspector_Frame_Sec",
     "Inspector_Total_Sec",
@@ -50,6 +55,7 @@ INSPECTOR_COLUMNS = [
 INSPECTION_RECORD_COLUMNS = [
     "Timestamp",
     "SourceFile",
+    "Inspector_Source_Type",
     "Inspection_No",
     "Inspector_Model_Name",
     "Inspector_Frame_Sec",
@@ -221,12 +227,7 @@ def _read_text_lines(path: Path) -> list[str]:
 
 
 def _decode_text_lines(raw_bytes: bytes) -> list[str]:
-    for encoding in ("utf-8-sig", "utf-8", "cp949", "euc-kr"):
-        try:
-            return raw_bytes.decode(encoding).splitlines()
-        except UnicodeDecodeError:
-            continue
-    return raw_bytes.decode("latin-1", errors="ignore").splitlines()
+    return decode_text_lines(raw_bytes)
 
 
 def _parse_line(line: str, source_file: str) -> dict[str, object] | None:
@@ -236,6 +237,8 @@ def _parse_line(line: str, source_file: str) -> dict[str, object] | None:
             "Timestamp": pd.to_datetime(model_match.group("stamp"), format="%Y%m%d_%H%M%S", errors="coerce"),
             "SourceFile": source_file,
             "Inspector_Event_Type": "model_open",
+            "Inspector_Source_Type": "AOI",
+            "Inspector_Memory_Key": source_file,
             "Inspector_Model_Name": model_match.group("model_name").strip().strip('"').strip("'"),
             "Inspector_Frame_Sec": pd.NA,
             "Inspector_Total_Sec": pd.NA,
@@ -251,6 +254,8 @@ def _parse_line(line: str, source_file: str) -> dict[str, object] | None:
             "Timestamp": pd.to_datetime(insp_match.group("stamp"), format="%Y%m%d_%H%M%S", errors="coerce"),
             "SourceFile": source_file,
             "Inspector_Event_Type": "insp_time",
+            "Inspector_Source_Type": "AOI",
+            "Inspector_Memory_Key": source_file,
             "Inspector_Model_Name": pd.NA,
             "Inspector_Frame_Sec": float(insp_match.group("frame_sec")),
             "Inspector_Total_Sec": float(insp_match.group("total_sec")),
@@ -267,6 +272,8 @@ def _parse_line(line: str, source_file: str) -> dict[str, object] | None:
             "Timestamp": pd.to_datetime(mem_match.group("stamp"), format="%Y%m%d_%H%M%S", errors="coerce"),
             "SourceFile": source_file,
             "Inspector_Event_Type": "working_set",
+            "Inspector_Source_Type": "AOI",
+            "Inspector_Memory_Key": source_file,
             "Inspector_Model_Name": pd.NA,
             "Inspector_Frame_Sec": pd.NA,
             "Inspector_Total_Sec": pd.NA,
@@ -313,18 +320,22 @@ def _load_rows_from_text_lines(
     if not lines:
         return []
 
+    rows: list[dict[str, object]] = []
+    rows.extend(parse_spi_rows(lines, source_file))
+
     if (
         not allow_parallel_chunks
         or len(lines) < INSPECTOR_PARSE_MIN_LINE_COUNT_FOR_PARALLEL
     ):
-        return _parse_lines_chunk(lines, source_file)
+        rows.extend(_parse_lines_chunk(lines, source_file))
+        return rows
 
     chunk_count = (len(lines) + INSPECTOR_PARSE_CHUNK_LINE_COUNT - 1) // INSPECTOR_PARSE_CHUNK_LINE_COUNT
     max_workers = _resolve_parse_worker_count(chunk_count)
     if chunk_count < 2 or max_workers < 2:
-        return _parse_lines_chunk(lines, source_file)
+        rows.extend(_parse_lines_chunk(lines, source_file))
+        return rows
 
-    rows: list[dict[str, object]] = []
     tasks = (
         (lines[index:index + INSPECTOR_PARSE_CHUNK_LINE_COUNT], source_file)
         for index in range(0, len(lines), INSPECTOR_PARSE_CHUNK_LINE_COUNT)
@@ -421,6 +432,8 @@ def _rows_to_dataframe(rows: list[dict[str, object]]) -> pd.DataFrame:
 
     df = pd.DataFrame(rows, columns=INSPECTOR_COLUMNS)
     df["Timestamp"] = _normalize_datetime_series(df["Timestamp"])
+    df["Inspector_Source_Type"] = df["Inspector_Source_Type"].fillna("AOI")
+    df["Inspector_Memory_Key"] = df["Inspector_Memory_Key"].fillna(df["SourceFile"])
     return (
         df.dropna(subset=["Timestamp"])
         .sort_values("Timestamp", kind="mergesort")
@@ -473,6 +486,9 @@ def build_inspection_records(inspector_df: pd.DataFrame, system_df: pd.DataFrame
         [
             "Timestamp",
             "SourceFile",
+            "Inspector_Source_Type",
+            "Inspector_Memory_Key",
+            "Inspector_Model_Name",
             "Inspector_Frame_Sec",
             "Inspector_Total_Sec",
             "Inspector_Total_Frames",
@@ -499,20 +515,27 @@ def build_inspection_records(inspector_df: pd.DataFrame, system_df: pd.DataFrame
         model_rows = model_rows.sort_values(["SourceFile", "Timestamp", "_EventOrder"], kind="mergesort")
         insp_rows = pd.merge_asof(
             insp_rows,
-            model_rows[["Timestamp", "SourceFile", "Inspector_Model_Name"]],
+            model_rows[["Timestamp", "SourceFile", "Inspector_Model_Name"]].rename(
+                columns={"Inspector_Model_Name": "_Merged_Model_Name"}
+            ),
             on="Timestamp",
             by="SourceFile",
             direction="backward",
             allow_exact_matches=True,
         )
+        insp_rows["Inspector_Model_Name"] = insp_rows["Inspector_Model_Name"].combine_first(
+            insp_rows["_Merged_Model_Name"]
+        )
+        insp_rows = insp_rows.drop(columns=["_Merged_Model_Name"])
     else:
-        insp_rows["Inspector_Model_Name"] = pd.NA
+        insp_rows["Inspector_Model_Name"] = insp_rows["Inspector_Model_Name"].fillna(pd.NA)
 
     memory_rows = events.loc[
         events["Inspector_Event_Type"] == "working_set",
         [
             "Timestamp",
             "SourceFile",
+            "Inspector_Memory_Key",
             "Inspector_WorkingSet_KB",
             "Inspector_WorkingSet_MB",
             "Inspector_WorkingSet_GB",
@@ -521,20 +544,21 @@ def build_inspection_records(inspector_df: pd.DataFrame, system_df: pd.DataFrame
     ].copy()
 
     if not memory_rows.empty:
-        memory_rows = memory_rows.sort_values(["SourceFile", "Timestamp", "_EventOrder"], kind="mergesort")
+        memory_rows = memory_rows.sort_values(["Inspector_Memory_Key", "Timestamp", "_EventOrder"], kind="mergesort")
+        insp_rows = insp_rows.sort_values(["Inspector_Memory_Key", "Timestamp", "_EventOrder"], kind="mergesort")
         insp_rows = pd.merge_asof(
             insp_rows,
             memory_rows[
                 [
                     "Timestamp",
-                    "SourceFile",
+                    "Inspector_Memory_Key",
                     "Inspector_WorkingSet_KB",
                     "Inspector_WorkingSet_MB",
                     "Inspector_WorkingSet_GB",
                 ]
             ],
             on="Timestamp",
-            by="SourceFile",
+            by="Inspector_Memory_Key",
             direction="backward",
             allow_exact_matches=True,
         )
@@ -837,6 +861,7 @@ def summarize_inspector_log_data(df: pd.DataFrame) -> dict[str, object]:
         "inspection_rows": 0,
         "time_range": None,
         "model_names": [],
+        "source_types": [],
         "active_model_name": None,
         "max_frame_sec": None,
         "max_total_sec": None,
@@ -850,6 +875,7 @@ def summarize_inspector_log_data(df: pd.DataFrame) -> dict[str, object]:
     memory_rows = df["Inspector_WorkingSet_GB"].notna()
     inspection_rows = build_inspection_records(df)
     model_names = _ordered_unique_non_empty(df.get("Inspector_Model_Name", []))
+    source_types = _ordered_unique_non_empty(df.get("Inspector_Source_Type", []))
 
     return {
         "rows": int(len(df)),
@@ -858,6 +884,7 @@ def summarize_inspector_log_data(df: pd.DataFrame) -> dict[str, object]:
         "inspection_rows": int(len(inspection_rows)),
         "time_range": (df["Timestamp"].min(), df["Timestamp"].max()),
         "model_names": model_names,
+        "source_types": source_types,
         "active_model_name": model_names[-1] if model_names else None,
         "max_frame_sec": float(df.loc[insp_rows, "Inspector_Frame_Sec"].max()) if insp_rows.any() else None,
         "max_total_sec": float(df.loc[insp_rows, "Inspector_Total_Sec"].max()) if insp_rows.any() else None,
@@ -869,6 +896,7 @@ def summarize_inspection_records(df: pd.DataFrame) -> dict[str, object]:
     empty_summary = {
         "rows": 0,
         "model_names": [],
+        "source_types": [],
         "primary_model_name": None,
         "no_range": None,
         "system_memory_matches": 0,
@@ -878,9 +906,11 @@ def summarize_inspection_records(df: pd.DataFrame) -> dict[str, object]:
         return empty_summary
 
     model_names = _ordered_unique_non_empty(df.get("Inspector_Model_Name", []))
+    source_types = _ordered_unique_non_empty(df.get("Inspector_Source_Type", []))
     return {
         "rows": int(len(df)),
         "model_names": model_names,
+        "source_types": source_types,
         "primary_model_name": model_names[-1] if model_names else None,
         "no_range": (
             int(pd.to_numeric(df["Inspection_No"], errors="coerce").min()),

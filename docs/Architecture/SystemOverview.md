@@ -1,6 +1,6 @@
 # System Overview
 
-Updated On: 2026-07-03
+Updated On: 2026-07-06
 Status: Active
 
 ## 시스템 개요
@@ -15,7 +15,7 @@ Status: Active
 4. 기록: `collectors.writers.OutputsWriter`
 5. 분석 UI: `app.py`
 6. 패키징된 단일 진입점: `run_app.py`
-7. AOI 로그 파싱 코어: `inspector_logs/core.py`
+7. AOI/SPI 로그 파싱 코어: `inspector_logs/core.py`
 8. AOI 로그 CLI 요약 / XLSX 내보내기 도구: `aoi_cli.py`
 9. 검사 결과 XLSX 메인 화면 패널: `dashboards/inspection_export.py`
 
@@ -39,14 +39,16 @@ Status: Active
 | 기록 | `collectors/writers.py` | 날짜별 CSV와 요약 로그 기록, 새 로그 컬럼 등장 시 헤더 재작성 |
 | 데이터 로딩 | `data_loader.py` | `resource_*.csv`와 `process_*.csv` 병합 |
 | 상단 시스템 요약 | `dashboards/system_summary.py` | 시간 필터 적용 후 시스템 로그 기준 CPU 사용량/온도와 RAM 사용률 평균/최고 요약 카드 계산 및 렌더 |
-| AOI 로그 코어 | `inspector_logs/core.py` | AOI / Inspector 로그 경로 해석, `Model Open` 파싱, 검사 NO 재구성, 시스템 메모리 역매칭, `merge_asof` 전 타임스탬프 정밀도 `datetime64[ns]` 정규화, 시간 필터 기준 검사 결과 뷰와 12시간 샘플 블록 생성 |
+| AOI/SPI 로그 코어 | `inspector_logs/core.py` | AOI / Inspector 로그 경로 해석, SPI 이벤트 흡수, 검사 NO 재구성, 시스템 메모리 역매칭, `merge_asof` 전 타임스탬프 정밀도 `datetime64[ns]` 정규화, 시간 필터 기준 검사 결과 뷰와 12시간 샘플 블록 생성 |
+| SPI 로그 파서 | `inspector_logs/spi_parser.py` | SPI `Log.CSV`의 `++++++++++++++++++++++++++++++++++++++++++++++++++` 구분 블록과 `ProcessResource_YYYYMMDD.log` WorkingSet 로그를 파싱해 공통 검사 이벤트 스키마로 변환 |
+| 로그 텍스트 디코더 | `inspector_logs/text_utils.py` | UTF-8, CP949/EUC-KR, BOM 없는 UTF-16 ProcessResource 로그를 공통 텍스트 라인으로 변환 |
 | AOI 로그 CLI | `aoi_cli.py` | AOI 로그 요약 확인과 검사 결과 XLSX export Smoke Test |
 | 검사 결과 Export UI | `dashboards/inspection_export.py` | 메인 화면에서 현재 시간 필터 기준 모델명, 검사 수, NO 범위, `NO/Frame/Total/메모리 (시스템)/메모리 (인스펙터)` 미리보기와 옵션형 XLSX 다운로드 제공 |
 | GUI 자동화 보조 | `tools/playwright-mcp/*` | 로컬 Playwright MCP 실행 래퍼와 WEB GUI 검증 Smoke Test |
 | 파싱 | `parsers.py` | Top 5 문자열 컬럼 파싱 |
 | 시각화 | `dashboards/*.py` | CPU, Memory, Storage, Custom 화면 렌더 |
 | 엑셀 내보내기 | `excel_exporter.py` | 선택 컬럼을 `.xlsx`로 생성 |
-| Streamlit 업로드 설정 | `.streamlit/config.toml` | 개발 환경 AOI / 인스펙터 업로드 한도를 1GB로 고정 |
+| Streamlit 업로드 설정 | `.streamlit/config.toml` | 개발 환경 AOI / SPI / 인스펙터 업로드 한도를 1GB로 고정 |
 | 기본 경로 설정 | `config.py` | 시스템 로그 경로와 AOI / 인스펙터 기본 경로 `C:\Inspector\shared\operation.txt`를 보관 |
 
 ## 현재 아키텍처 계약
@@ -63,7 +65,8 @@ Status: Active
 ```text
 LibreHardwareMonitor worker (30s core max) -> JSON state -> CpuTemperatureProbe -> Sampler (1s) -> WindowState accumulate -> Aggregator (5s max temp) -> resource/process CSV
 CSV files -> data_loader.load_data() -> merged DataFrame -> dashboards/*.py
-AOI log path -> inspector_logs.core.load_inspector_log_data() -> Inspector event DataFrame
+AOI/SPI log path -> inspector_logs.core.load_inspector_log_data() -> Inspector event DataFrame
+SPI Log.CSV + ProcessResource logs -> inspector_logs.spi_parser -> shared Inspector event schema
 Inspector event DataFrame + system monitor DataFrame -> inspector_logs.core.build_inspection_records() -> numbered inspection export rows
 numbered inspection export rows + current time filter -> inspector_logs.core.filter/build sample helpers -> Inspection_Results + Inspection_12h_Samples workbook
 Inspector event DataFrame -> memory dashboard
@@ -98,7 +101,9 @@ Inspector event DataFrame -> memory dashboard
 - `dashboards/inspection_export.py`는 메인 화면에서 AOI 검사 결과를 원본 `NO` 유지 기준으로 보여주고, 현재 시간 필터 범위 안에서 미리보기/XLSX를 계산합니다.
 - `load_inspector_log_data()`와 `load_inspector_log_data_from_uploads()`는 큰 단일 로그는 청크 단위, 여러 로그는 파일 단위 스레드 병렬화를 사용해 AOI 파싱 시간을 줄입니다.
 - Streamlit 대시보드 업로드 경로는 `.streamlit/config.toml`과 `run_app.py --server.maxUploadSize=1024`를 함께 사용해 개발/EXE 모두 1GB 업로드 한도를 유지합니다.
-- `app.py`는 사이드바 AOI 구역이 열릴 때 기본 경로 `C:\Inspector\shared\operation.txt`를 자동으로 확인해, 파일이 있으면 업로드 payload와 같은 경로로 자동 업로드 처리하고 없으면 조용히 대기합니다.
+- `app.py`는 사이드바 AOI/SPI 구역이 열릴 때 기본 경로 `C:\Inspector\shared\operation.txt`를 자동으로 확인해, 파일이 있으면 업로드 payload와 같은 경로로 자동 업로드 처리하고 없으면 조용히 대기합니다.
+- SPI `Log.CSV`는 CSV `Description`의 `검사 종료 [ 경과 시간 : ... 초 ]`를 검사 `Total`, `프레임당 검사 시간 : ... 초/프레임 ( ... 초 / ... 프레임 )`를 검사 `Frame`과 프레임 수로 사용합니다.
+- SPI `ProcessResource_YYYYMMDD.log`는 BOM 없는 UTF-16LE 형식도 처리하며, `[WorkingSet]=... KB` 값을 `메모리 (인스펙터)`로 변환해 SPI 검사 결과에 시간 기준 backward 매칭합니다.
 - 수동 AOI 경로 입력 UI는 제거되었고, 대신 `인스팩터 로그 다른 이름으로 저장` 버튼이 현재 불러온 원본 TXT / LOG를 그대로 다시 저장하게 합니다.
 - `inspector_logs/core.py`는 AOI 이벤트와 시스템 메모리 로그를 `merge_asof` 하기 전에 양쪽 `Timestamp`를 모두 `datetime64[ns]`로 맞춰, Python 3.13 / 최신 pandas 조합에서도 `datetime64[us]` 대 `datetime64[ns]` 타입 충돌 없이 동작하도록 유지합니다.
 - 검사 결과 XLSX는 기본 `Inspection_Results` 시트 외에 `Inspection_12h_Samples` 시트를 추가로 만들고, 시간 필터 시작 시각 기준 `+0h, +12h, ... +144h`마다 첫 10개를 블록형으로 적습니다.

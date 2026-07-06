@@ -102,7 +102,7 @@ class TestSwapMonitoring(unittest.TestCase):
 
         render_memory_dashboard(st, df, parse_process_column, extract_process_time_series, total_mem="16")
 
-        self.assertEqual("메모리 및 인스펙터 분석", st.subheaders[0])
+        self.assertEqual("메모리 및 AOI/SPI 분석", st.subheaders[0])
         self.assertTrue(any("현재 스왑된 메모리가 없습니다." in message for message in st.info_messages))
         self.assertEqual(1, len(st.plotly_figures))
 

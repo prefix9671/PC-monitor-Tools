@@ -213,14 +213,14 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
     inspector_mem_df = _get_inspector_mem_df(aoi_df)
     swap_summary = _summarize_swap_usage(df) if has_system_data else None
 
-    st.subheader("메모리 및 인스펙터 분석")
+    st.subheader("메모리 및 AOI/SPI 분석")
 
     if has_system_data and not insp_df.empty:
-        st.caption("OS 메모리 그래프는 5초 집계 기준이며, 인스펙터 지표는 AOI 로그에서 추출한 이벤트 시점 데이터입니다.")
+        st.caption("OS 메모리 그래프는 5초 집계 기준이며, 검사 지표는 AOI/SPI 로그에서 추출한 이벤트 시점 데이터입니다.")
     elif has_system_data:
         st.caption("현재 표시되는 메모리 그래프와 프로세스 사용량은 5초 단위 집계값(평균/피크)입니다.")
     elif not insp_df.empty or not inspector_mem_df.empty:
-        st.caption("시스템 모니터 CSV 없이 AOI / 인스펙터 로그 정보만 표시 중입니다.")
+        st.caption("시스템 모니터 CSV 없이 AOI / SPI / 인스펙터 로그 정보만 표시 중입니다.")
 
     if not insp_df.empty or not inspector_mem_df.empty:
         metric_cols = st.columns(3)
@@ -252,7 +252,7 @@ def render_memory_dashboard(st, df, parse_process_column, extract_process_time_s
         st.divider()
 
         if not insp_df.empty or not inspector_mem_df.empty:
-            st.caption("검사 시간/인스펙터 메모리 상세 시계열은 화면 아래 `검사 결과 XLSX 내보내기` 패널에서 확인할 수 있습니다.")
+            st.caption("검사 시간과 로그 메모리 상세 시계열은 화면 아래 `검사 결과 XLSX 내보내기` 패널에서 확인할 수 있습니다.")
 
     if has_system_data:
         fig_mem = go.Figure()

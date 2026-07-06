@@ -152,6 +152,44 @@ class TestInspectorLogs(unittest.TestCase):
         self.assertEqual(5, len(uploaded_df))
         self.assertIn("Inspector_WorkingSet_MB", uploaded_df.columns)
 
+    def test_parse_spi_csv_and_process_resource_uploads(self):
+        spi_csv = "\n".join(
+            [
+                "Time, Type, Description",
+                "2026-07-05 오후 7:49:20, 정보, 검사 종료 [ 경과 시간 : 23.411 초 ]",
+                "2026-07-05 오후 7:49:20, 정보, 프레임당 검사 시간 : 0.465 초/프레임 ( 22.775 초 / 49 프레임 )",
+                "2026-07-05 오후 7:49:20, 정보, ++++++++++++++++++++++++++++++++++++++++++++++++++",
+                "2026-07-05 오후 7:49:30, 정보, 검사 시작 [ 일련 번호 : 00016426 ]",
+                "2026-07-05 오후 7:49:53, 정보, 검사 종료 [ 경과 시간 : 23.534 초 ]",
+                "2026-07-05 오후 7:49:53, 정보, 프레임당 검사 시간 : 0.467 초/프레임 ( 22.897 초 / 49 프레임 )",
+                "2026-07-05 오후 7:49:53, 정보, ++++++++++++++++++++++++++++++++++++++++++++++++++",
+            ]
+        ).encode("utf-8-sig")
+        process_resource = "\n".join(
+            [
+                "[2026/07/05 19:49:00][[WorkingSet]=3041640 KB, [Private]=4421460 KB, [Pagefile]=4421460 KB, [PeakWorkingSet]=3078568 KB, [PeakPageFile]=4454368 KB, [Handles]=2325, [GDI Handles]=1127, [User Handles]=1343, [Threads]=219]",
+                "[2026/07/05 19:49:40][[WorkingSet]=3050000 KB, [Private]=4430000 KB, [Pagefile]=4430000 KB, [PeakWorkingSet]=3078568 KB, [PeakPageFile]=4454368 KB, [Handles]=2325, [GDI Handles]=1127, [User Handles]=1343, [Threads]=219]",
+            ]
+        ).encode("utf-16-le")
+
+        df = load_inspector_log_data_from_uploads(
+            [
+                ("Log.CSV", spi_csv),
+                ("ProcessResource_20260705.log", process_resource),
+            ]
+        )
+        records = build_inspection_records(df)
+
+        self.assertEqual(4, len(df))
+        self.assertEqual(["SPI"], df["Inspector_Source_Type"].dropna().unique().tolist())
+        self.assertEqual(2, len(records))
+        self.assertEqual(["SPI", "SPI"], records["Inspector_Source_Type"].tolist())
+        self.assertAlmostEqual(23.411, float(records.iloc[0]["Inspector_Total_Sec"]), places=3)
+        self.assertAlmostEqual(0.467, float(records.iloc[1]["Inspector_Frame_Sec"]), places=3)
+        self.assertEqual(49, int(records.iloc[1]["Inspector_Total_Frames"]))
+        self.assertAlmostEqual(3041640 / (1024.0 * 1024.0), float(records.iloc[0]["Inspector_WorkingSet_GB"]), places=3)
+        self.assertAlmostEqual(3050000 / (1024.0 * 1024.0), float(records.iloc[1]["Inspector_WorkingSet_GB"]), places=3)
+
     def test_load_inspector_log_payloads_reads_default_resolved_files(self):
         payloads = load_inspector_log_payloads(str(self.base_path))
 

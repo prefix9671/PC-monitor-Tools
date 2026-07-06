@@ -162,7 +162,7 @@ def _resolve_inspection_no_range_state(
 
 def _format_time_filter_caption(filter_start_time, filter_end_time) -> str:
     if filter_start_time is None or filter_end_time is None:
-        return "현재 로드된 AOI 로그 전체 범위를 기준으로 표시합니다."
+        return "현재 로드된 AOI/SPI 로그 전체 범위를 기준으로 표시합니다."
 
     start_label = pd.Timestamp(filter_start_time).strftime("%Y-%m-%d %H:%M:%S")
     end_label = pd.Timestamp(filter_end_time).strftime("%Y-%m-%d %H:%M:%S")
@@ -312,7 +312,7 @@ def render_inspection_export_panel(
         if filter_start_time is not None or filter_end_time is not None:
             st.info("현재 시간 필터 범위에는 번호화할 검사 결과가 없습니다.")
         else:
-            st.info("현재 불러온 AOI / 인스펙터 로그에는 번호화할 검사 결과가 없습니다.")
+            st.info("현재 불러온 AOI / SPI / 인스펙터 로그에는 번호화할 검사 결과가 없습니다.")
         return
 
     min_no, max_no = summary["no_range"]
@@ -326,18 +326,20 @@ def render_inspection_export_panel(
     )
 
     selected_model = summary["primary_model_name"] or "미확인"
+    source_label = ", ".join(summary.get("source_types") or []) or "미확인"
     system_match_count = summary["system_memory_matches"]
 
     metric_col1, metric_col2, metric_col3 = st.columns(3)
-    metric_col1.metric("모델명", selected_model)
+    metric_col1.metric("모델/장비", selected_model)
     metric_col2.metric("총 검사 수", f"{summary['rows']}건")
     metric_col3.metric("시스템 메모리 매칭", f"{system_match_count}건")
 
+    st.caption(f"감지된 로그 형식: {source_label}")
     if len(summary["model_names"]) > 1:
         st.caption(f"감지된 모델명: {', '.join(summary['model_names'])}")
 
     st.caption(_format_time_filter_caption(filter_start_time, filter_end_time))
-    st.caption("NO는 원본 AOI 로그 기준 번호를 유지하며, 현재 시간 필터에 포함된 검사 결과만 표시합니다.")
+    st.caption("NO는 원본 AOI/SPI 로그 기준 번호를 유지하며, 현재 시간 필터에 포함된 검사 결과만 표시합니다.")
 
     range_col1, range_col2 = st.columns(2)
     with range_col1:
@@ -378,7 +380,7 @@ def render_inspection_export_panel(
     if selected_records["System_Memory_Used_GB"].isna().any():
         st.warning("일부 검사 결과는 직전 시스템 메모리 샘플을 찾지 못해 `메모리 (시스템)` 값이 비어 있습니다.")
     if selected_records["Inspector_WorkingSet_GB"].isna().any():
-        st.warning("일부 검사 결과는 AOI 로그 Working Set 정보를 찾지 못해 `메모리 (인스펙터)` 값이 비어 있습니다.")
+        st.warning("일부 검사 결과는 AOI/SPI 로그 Working Set 정보를 찾지 못해 `메모리 (인스펙터)` 값이 비어 있습니다.")
 
     st.markdown("#### 표현 설정")
     style_col1, style_col2, style_col3 = st.columns(3)

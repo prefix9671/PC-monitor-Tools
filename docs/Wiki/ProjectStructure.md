@@ -1,6 +1,6 @@
 # Project Structure
 
-Updated On: 2026-07-03
+Updated On: 2026-07-06
 Status: Active
 
 ## 루트 구조
@@ -49,7 +49,7 @@ PC-monitor-Tools/
 
 | 파일 | 설명 |
 |---|---|
-| `.streamlit/config.toml` | 개발 환경 Streamlit 업로드 한도 설정. AOI / 인스펙터 로그 1GB 제한 유지 |
+| `.streamlit/config.toml` | 개발 환경 Streamlit 업로드 한도 설정. AOI / SPI / 인스펙터 로그 1GB 제한 유지 |
 | `app.py` | Streamlit 메인 앱 |
 | `collector_launcher.py` | `모니터링 시작` 버튼의 수집기 실행 요청. PowerShell 없이 Windows ShellExecute `runas` 또는 직접 Popen 경로 사용 |
 | `config.py` | 시스템 로그 경로, AOI 자동 로드 기본 경로 `C:\Inspector\shared\operation.txt`, 공용 색상/런타임 상수 |
@@ -82,7 +82,9 @@ PC-monitor-Tools/
 | `requirements.txt` | 런타임/빌드 의존성 목록. 일반 PC CPU 코어 온도 경로를 위해 `pythonnet` 포함 |
 | `dashboards/system_summary.py` | 시간 필터 적용 후의 시스템 로그 기준 `CPU 사용량 평균/최고`, `CPU 온도 평균/최고`, `RAM 사용량 평균/최대` 상단 요약 카드 |
 | `dashboards/inspection_export.py` | 메인 화면 AOI 검사 결과 미리보기와 인스펙터 메모리 옵션형 XLSX 다운로드. 현재 시간 필터 범위를 그대로 반영 |
-| `inspector_logs/` | AOI / Inspector 로그 경로 해석, 이벤트 파싱, 원본 로그 재저장 payload / ZIP 생성, 원본 NO 유지형 시간 필터링, `merge_asof`용 `datetime64[ns]` 정밀도 정규화, 12시간 샘플 블록 생성 코어 |
+| `inspector_logs/` | AOI / SPI / Inspector 로그 경로 해석, 이벤트 파싱, 원본 로그 재저장 payload / ZIP 생성, 원본 NO 유지형 시간 필터링, `merge_asof`용 `datetime64[ns]` 정밀도 정규화, 12시간 샘플 블록 생성 코어 |
+| `inspector_logs/spi_parser.py` | SPI `Log.CSV` tactTime 블록과 `ProcessResource_YYYYMMDD.log` WorkingSet 라인을 공통 검사 이벤트로 변환 |
+| `inspector_logs/text_utils.py` | AOI/SPI 텍스트 로그의 UTF-8, CP949/EUC-KR, UTF-16 계열 디코딩 공통 처리 |
 | `tools/playwright-mcp/` | Codex용 Playwright MCP 로컬 패키지와 실행/검증 스크립트 |
 | `parsers.py` | Top 5 문자열 파싱 |
 | `excel_exporter.py` | 엑셀 내보내기 |

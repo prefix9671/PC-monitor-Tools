@@ -1,7 +1,16 @@
 # Changelog
 
-Updated On: 2026-07-03
+Updated On: 2026-07-06
 Status: Active
+
+## [2026-07-06] - SPI tactTime 및 ProcessResource 로그 파싱 추가
+
+### 변경 사항
+
+- `AOI / SPI / 인스펙터 로그 업로드`에서 SPI `Log.CSV`와 `ProcessResource_YYYYMMDD.log`를 함께 선택할 수 있게 했습니다.
+- SPI `Log.CSV`는 `++++++++++++++++++++++++++++++++++++++++++++++++++` 구분자 기준으로 검사 블록을 만들고, `검사 종료 [ 경과 시간 : ... 초 ]`를 `Total`, `프레임당 검사 시간 : ... 초/프레임`을 `Frame`으로 표시합니다.
+- SPI `ProcessResource_YYYYMMDD.log`의 `[WorkingSet]=... KB` 값을 `메모리 (인스펙터)`로 변환하고, SPI 검사 종료 시각 이전의 가장 가까운 샘플과 매칭합니다.
+- BOM 없는 UTF-16LE ProcessResource 로그도 자동 디코딩하도록 공통 텍스트 디코더를 분리했습니다.
 
 ## [2026-07-03] - PawnIO 설치기 동봉과 설치 경로 추가
 
