@@ -114,6 +114,7 @@ Status: Active
 - `git cl` 오류를 확인해야 하면 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_git_cl.ps1`를 실행해, GitHub 원격에서의 비필수 경고인지 depot_tools 환경 누락인지 먼저 구분
 - `build.bat`를 실행해 로컬 release bundle 과 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\` 복사가 모두 완료되는지 확인
 - QA 공유 폴더 direct copy 가 실패하면 Windows Credential Manager 자격증명 입력 프롬프트가 뜨고, 이를 저장한 뒤 재시도되는지 확인
+- 자격증명 프롬프트 저장 후 `cmdkey /list`에서 `Domain:target=192.168.1.13`의 `User`가 실제 입력한 사용자명으로 보이는지 확인
 - QA 공유 폴더 루트에는 현재 빌드 폴더만 남고, 이전 버전 폴더가 `\\192.168.1.13\sqa\113_테스트 툴\old\` 아래로 이동하는지 확인
 - 관련 기능이 CLI 진입점과 연결된다면 최소 Smoke Test를 추가 수행
 - 일반 PC CPU 온도 워커 또는 PawnIO 패키징 경로를 변경했다면 개발 환경 또는 빌드 산출물에서 `cpu-temp-worker --once` 경로가 예외 없이 실행되고, 릴리스 폴더 또는 EXE 내부에 `lhm-bundle`과 `pawnio-bundle/PawnIO_setup.exe`가 포함되는지 확인

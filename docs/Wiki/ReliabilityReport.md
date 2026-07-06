@@ -58,6 +58,7 @@ Status: Active
 - `scripts/verify_docs_sync.py`는 Git이 한글 경로를 quoted path 또는 UTF-8로 출력하는 환경에서도 `bug/` 입력과 로컬 GUI 산출물을 비기준 변경으로 오인하지 않도록 유지해야 함
 - prebuild regression step마다 실패 조건과 STDOUT을 별도 로그/JSON으로 남겨 현장 재현이나 원격 디버깅에 유리함
 - 로컬 릴리스와 QA 공유 폴더 릴리스가 같은 `build.bat` 경로에서 동시에 생성되므로, QA 전달 누락을 packaging 단계에서 더 일찍 발견할 수 있음
+- QA 공유 폴더 자격증명 프롬프트는 Windows Credential Manager target `192.168.1.13`에 실제 입력 사용자명을 저장해 다음 빌드에서 재사용할 수 있음
 - QA 공유 폴더 루트에서 최신 릴리스만 남기고 이전 버전은 `old/`로 이동하므로, 현장에서 최신본을 찾는 시간이 줄어듦
 - AOI / 인스펙터 로그 업로드는 개발/패키징 모두 1GB로 고정되어, 장시간 운전 로그를 UI 업로드 경로로 재현하기 쉬움
 - AOI 파서는 큰 단일 로그는 청크 단위, 여러 로그는 파일 단위 스레드 병렬화를 사용해 장시간 로그 재검증의 체감 대기 시간을 줄임

@@ -117,7 +117,7 @@ function Save-WindowsCredential {
     $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Credential.Password)
     try {
         $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
-        $output = & cmdkey.exe /add:$TargetServer /user:$Credential.UserName /pass:$plainPassword 2>&1
+        $output = & cmdkey.exe /add:$TargetServer /user:$($Credential.UserName) /pass:$plainPassword 2>&1
         if ($LASTEXITCODE -ne 0) {
             throw ("cmdkey failed: {0}" -f (($output | Out-String).Trim()))
         }

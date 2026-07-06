@@ -37,6 +37,7 @@ Status: Active
 - AOI / SPI / 인스펙터 대용량 업로드와 멀티스레드 파싱 경로가 `main`에 유지되는지 확인
 - 패키징 흐름에서 실제 기준 파일이 무엇인지 문서에 명확히 유지
 - QA 공유 폴더 동시 배포가 기본 흐름으로 유지되는지, 자격증명 방식이 Windows Credential Manager 기준인지, 서버 루트 정리가 최신본 1개 + `old/` 아카이브 규칙을 지키는지 확인
+- QA 공유 폴더 자격증명은 Credential Manager target `192.168.1.13`에 실제 입력 사용자명으로 저장되는지 확인
 - Playwright MCP 기반 WEB 대시보드 검증은 stdio 호환 구성이 유지되는지 함께 확인
 - 최종 패키징 전 bug 입력 파일 기반 headless Playwright 회귀가 반복 가능하고, step별 STDOUT/실패 조건이 남는지 유지
 

@@ -80,7 +80,7 @@ Status: Active
 - 개발 환경은 `.streamlit/config.toml`, EXE 환경은 `run_app.py --server.maxUploadSize=1024`로 AOI / SPI / 인스펙터 로그 업로드 한도 1GB를 동일하게 유지합니다.
 - `build.bat`는 로컬 `.artifacts/releases/<빌드명>/` 생성 후 `scripts/publish_release_to_share.ps1`를 호출해 QA 공유 폴더 `\\192.168.1.13\sqa\113_테스트 툴\<빌드명>\`에도 같은 bundle 을 복사합니다.
 - QA 공유 폴더 복사는 먼저 Windows Credential Manager 또는 현재 Windows 세션 자격증명으로 직접 시도합니다.
-- direct copy 가 실패하면 `scripts/publish_release_to_share.ps1`가 사용자에게 한 번만 자격증명을 묻고, 이를 Windows Credential Manager에 저장한 뒤 다시 복사합니다. 기본 사용자 제안값은 `qa`입니다.
+- direct copy 가 실패하면 `scripts/publish_release_to_share.ps1`가 사용자에게 한 번만 자격증명을 묻고, 서버 이름 `192.168.1.13`을 Credential Manager target 으로 저장한 뒤 다시 복사합니다. 기본 사용자 제안값은 `qa`입니다.
 - 새 빌드 복사가 성공하면 QA 공유 폴더 루트에서는 현재 빌드와 `old/`를 제외한 이전 버전 폴더를 모두 `\\192.168.1.13\sqa\113_테스트 툴\old\` 아래로 이동해 최신본만 남깁니다.
 - 일반 PC CPU 온도 워커는 개발 환경에서는 `python -m collectors.cpu_temperature_worker`, 패키징 환경에서는 `SystemResourceMonitor*.exe cpu-temp-worker` 분기를 사용합니다.
 - LibreHardwareMonitor 0.9.6 계열에서 CPU 코어 센서가 PawnIO 드라이버에 의존할 수 있으므로, `SystemResourceMonitor*.exe install-pawnio`와 릴리스 폴더의 `install_pawnio.bat`로 동봉 설치기를 실행할 수 있습니다.

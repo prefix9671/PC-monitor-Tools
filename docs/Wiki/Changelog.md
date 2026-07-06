@@ -3,6 +3,13 @@
 Updated On: 2026-07-06
 Status: Active
 
+## [2026-07-06] - QA 공유 폴더 자격증명 저장 수정
+
+### 변경 사항
+
+- `scripts/publish_release_to_share.ps1`의 Windows Credential Manager 저장 경로에서 `PSCredential.UserName`이 실제 입력 사용자명으로 저장되도록 수정했습니다.
+- QA 공유 폴더 자격증명은 서버 이름 `192.168.1.13`을 target 으로 저장하고, `cmdkey /list`에서 입력 사용자명을 확인하는 검증 기준을 문서에 추가했습니다.
+
 ## [2026-07-06] - prebuild Playwright AOI/SPI 다운로드 회귀 보강
 
 ### 변경 사항
