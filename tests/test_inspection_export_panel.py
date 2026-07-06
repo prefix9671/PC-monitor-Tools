@@ -1,8 +1,11 @@
 import os
 import sys
 import unittest
+from datetime import datetime
+from io import BytesIO
 
 import pandas as pd
+from openpyxl import load_workbook
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -12,6 +15,8 @@ from dashboards.inspection_export import (
     INSPECTION_EXPORT_RANGE_SCOPE_KEY,
     INSPECTION_EXPORT_START_NO_KEY,
     _build_preview_chart,
+    _build_inspection_xlsx_download_payload,
+    _build_inspection_xlsx_download_key,
     _format_time_filter_caption,
     _hex_to_rgba,
     _make_inspection_export_scope,
@@ -128,6 +133,91 @@ class TestInspectionExportPanel(unittest.TestCase):
 
         self.assertEqual(3, start_no)
         self.assertEqual(4, end_no)
+
+    def test_xlsx_payload_includes_inspector_memory_when_checked(self):
+        records = pd.DataFrame(
+            {
+                "Timestamp": pd.to_datetime(["2026-07-06 14:00:01", "2026-07-06 14:00:31"]),
+                "Inspection_No": [1, 2],
+                "Inspector_Frame_Sec": [0.45, 0.47],
+                "Inspector_Total_Sec": [23.4, 23.5],
+                "System_Memory_Used_GB": [30.1, 30.2],
+                "Inspector_WorkingSet_GB": [2.901, 2.908],
+            }
+        )
+
+        payload = _build_inspection_xlsx_download_payload(
+            selected_records=records,
+            selected_model="SPI",
+            start_no=1,
+            end_no=2,
+            include_inspector_memory=True,
+            sample_records=records,
+            sample_start_time=pd.Timestamp("2026-07-06 14:00:00"),
+            sample_end_time=pd.Timestamp("2026-07-06 14:01:00"),
+            generated_at=datetime(2026, 7, 6, 14, 2, 3),
+        )
+
+        workbook = load_workbook(BytesIO(payload["data"]))
+        result_headers = [cell.value for cell in workbook["Inspection_Results"][1]]
+        sample_headers = [workbook["Inspection_12h_Samples"][f"{column}6"].value for column in "ABCDEF"]
+
+        self.assertEqual(
+            "Inspection_Results_SPI_NO0001-0002_20260706_140203.xlsx",
+            payload["file_name"],
+        )
+        self.assertIn("메모리 (인스펙터)", result_headers)
+        self.assertEqual(
+            ["Timestamp", "NO", "Frame", "Total", "메모리 (시스템)", "메모리 (인스펙터)"],
+            sample_headers,
+        )
+
+    def test_xlsx_payload_omits_inspector_memory_when_unchecked(self):
+        records = pd.DataFrame(
+            {
+                "Timestamp": pd.to_datetime(["2026-07-06 14:00:01"]),
+                "Inspection_No": [1],
+                "Inspector_Frame_Sec": [0.45],
+                "Inspector_Total_Sec": [23.4],
+                "System_Memory_Used_GB": [30.1],
+                "Inspector_WorkingSet_GB": [2.901],
+            }
+        )
+
+        payload = _build_inspection_xlsx_download_payload(
+            selected_records=records,
+            selected_model="SPI",
+            start_no=1,
+            end_no=1,
+            include_inspector_memory=False,
+            sample_records=records,
+            generated_at=datetime(2026, 7, 6, 14, 2, 3),
+        )
+
+        workbook = load_workbook(BytesIO(payload["data"]))
+        result_headers = [cell.value for cell in workbook["Inspection_Results"][1]]
+
+        self.assertNotIn("메모리 (인스펙터)", result_headers)
+
+    def test_xlsx_download_key_changes_with_inspector_memory_option(self):
+        unchecked_key = _build_inspection_xlsx_download_key(
+            start_no=1,
+            end_no=2,
+            selected_row_count=2,
+            filtered_row_count=10,
+            include_inspector_memory=False,
+        )
+        checked_key = _build_inspection_xlsx_download_key(
+            start_no=1,
+            end_no=2,
+            selected_row_count=2,
+            filtered_row_count=10,
+            include_inspector_memory=True,
+        )
+
+        self.assertNotEqual(unchecked_key, checked_key)
+        self.assertIn("without-inspector-memory", unchecked_key)
+        self.assertIn("with-inspector-memory", checked_key)
 
 
 if __name__ == "__main__":

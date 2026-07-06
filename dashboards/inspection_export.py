@@ -68,6 +68,7 @@ DEFAULT_TABLE_COLOR_LABEL = "스틸 블루"
 INSPECTION_EXPORT_RANGE_SCOPE_KEY = "inspection_export_range_scope"
 INSPECTION_EXPORT_START_NO_KEY = "inspection_export_selected_start_no"
 INSPECTION_EXPORT_END_NO_KEY = "inspection_export_selected_end_no"
+INSPECTION_XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 def _sanitize_file_token(value: str | None) -> str:
@@ -292,6 +293,55 @@ def _render_color_badges(st, metric_color_labels: dict[str, str], table_color_la
     st.markdown("".join(badge_parts), unsafe_allow_html=True)
 
 
+def _build_inspection_xlsx_download_payload(
+    selected_records,
+    selected_model: str | None,
+    start_no: int,
+    end_no: int,
+    include_inspector_memory: bool,
+    sample_records=None,
+    sample_start_time=None,
+    sample_end_time=None,
+    end_time_user_specified=False,
+    generated_at: datetime | None = None,
+) -> dict[str, object]:
+    generated_at = generated_at or datetime.now()
+    file_model_token = _sanitize_file_token(selected_model)
+    file_name = (
+        f"Inspection_Results_{file_model_token}_NO{start_no:04d}-{end_no:04d}_"
+        f"{generated_at.strftime('%Y%m%d_%H%M%S')}.xlsx"
+    )
+
+    return {
+        "data": generate_inspection_excel(
+            selected_records,
+            include_inspector_memory=include_inspector_memory,
+            sample_records=sample_records,
+            sample_start_time=sample_start_time,
+            sample_end_time=sample_end_time,
+            end_time_user_specified=end_time_user_specified,
+        ),
+        "file_name": file_name,
+        "mime": INSPECTION_XLSX_MIME,
+    }
+
+
+def _build_inspection_xlsx_download_key(
+    start_no: int,
+    end_no: int,
+    selected_row_count: int,
+    filtered_row_count: int,
+    include_inspector_memory: bool,
+) -> str:
+    memory_token = "with-inspector-memory" if include_inspector_memory else "without-inspector-memory"
+    return (
+        "inspection-xlsx-download-"
+        f"{int(start_no)}-{int(end_no)}-"
+        f"{int(selected_row_count)}-{int(filtered_row_count)}-"
+        f"{memory_token}"
+    )
+
+
 def render_inspection_export_panel(
     st,
     inspection_records,
@@ -444,22 +494,29 @@ def render_inspection_export_panel(
         help="체크하면 `메모리 (시스템)` 오른쪽에 `메모리 (인스펙터)` 컬럼을 추가합니다.",
     )
 
-    file_model_token = _sanitize_file_token(selected_model)
-    file_name = (
-        f"Inspection_Results_{file_model_token}_NO{start_no:04d}-{end_no:04d}_"
-        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    xlsx_payload = _build_inspection_xlsx_download_payload(
+        selected_records=selected_records,
+        selected_model=selected_model,
+        start_no=start_no,
+        end_no=end_no,
+        include_inspector_memory=include_inspector_memory_in_xlsx,
+        sample_records=filtered_records,
+        sample_start_time=filter_start_time,
+        sample_end_time=filter_end_time,
+        end_time_user_specified=filter_end_user_specified,
     )
 
     st.download_button(
         label="검사 결과 XLSX 다운로드",
-        data=generate_inspection_excel(
-            selected_records,
+        data=xlsx_payload["data"],
+        file_name=xlsx_payload["file_name"],
+        mime=xlsx_payload["mime"],
+        key=_build_inspection_xlsx_download_key(
+            start_no=start_no,
+            end_no=end_no,
+            selected_row_count=len(selected_records),
+            filtered_row_count=len(filtered_records),
             include_inspector_memory=include_inspector_memory_in_xlsx,
-            sample_records=filtered_records,
-            sample_start_time=filter_start_time,
-            sample_end_time=filter_end_time,
-            end_time_user_specified=filter_end_user_specified,
         ),
-        file_name=file_name,
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        on_click="ignore",
     )

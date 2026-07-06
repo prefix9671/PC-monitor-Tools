@@ -172,6 +172,7 @@ with st.sidebar:
         file_name=raw_download_artifact["file_name"] if raw_download_artifact else "operation.txt",
         mime=raw_download_artifact["mime"] if raw_download_artifact else "text/plain",
         disabled=raw_download_artifact is None,
+        on_click="ignore",
         use_container_width=True,
         help="현재 불러온 원본 인스팩터 로그를 그대로 다시 저장합니다.",
     )
@@ -328,6 +329,7 @@ with st.sidebar:
                 data=csv_data,
                 file_name=f"Merged_Log_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                 mime="text/csv",
+                on_click="ignore",
             )
 
         if has_inspector_data:
@@ -337,6 +339,7 @@ with st.sidebar:
                 data=inspector_csv,
                 file_name=f"Inspector_Log_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                 mime="text/csv",
+                on_click="ignore",
             )
 
         st.caption("2026 시스템 자원 모니터 - v1.2.0")
