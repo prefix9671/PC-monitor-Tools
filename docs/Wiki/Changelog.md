@@ -3,6 +3,14 @@
 Updated On: 2026-07-06
 Status: Active
 
+## [2026-07-06] - prebuild Playwright AOI/SPI 다운로드 회귀 보강
+
+### 변경 사항
+
+- `scripts/run_prebuild_regression.py`가 저장소 내 SPI fixture를 필수 입력으로 확인하고, headless Playwright 단계에 함께 넘기도록 했습니다.
+- `scripts/verify_playwright_prebuild_regression.js`는 AOI 업로드/시간 필터뿐 아니라 AOI 원본 로그 저장, 파싱 CSV, 검사 결과 XLSX 다운로드를 non-empty 파일로 검증합니다.
+- 같은 Playwright 회귀에서 SPI `Log.CSV` + `ProcessResource` 업로드 후 `Total`, `Frame`, SPI 로그 형식 표시를 확인하고, SPI 원본 ZIP, 파싱 CSV, 검사 결과 XLSX 다운로드까지 검증합니다.
+
 ## [2026-07-06] - SPI tactTime 및 ProcessResource 로그 파싱 추가
 
 ### 변경 사항

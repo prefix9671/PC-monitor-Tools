@@ -96,16 +96,16 @@ async function main() {
         const select = page.locator('[data-baseweb="select"]').nth(1);
         await select.click();
         await page.getByRole('option', { name: '메모리 + 인스펙터 대시보드' }).click();
-        await page.getByRole('heading', { name: '메모리 및 인스펙터 분석' }).waitFor({ timeout: 60000 });
+        await page.getByRole('heading', { name: '메모리 및 AOI/SPI 분석' }).waitFor({ timeout: 60000 });
         return {
-          heading: await page.getByRole('heading', { name: '메모리 및 인스펙터 분석' }).textContent(),
+          heading: await page.getByRole('heading', { name: '메모리 및 AOI/SPI 분석' }).textContent(),
           plotCount: await page.locator('.js-plotly-plot').count(),
           captionCount: await page.getByText('현재 표시되는 메모리 그래프와 프로세스 사용량은 5초 단위 집계값').count(),
         };
       }`,
     });
     const memoryText = textFromToolResult(memory);
-    assert(memoryText.includes('메모리 및 인스펙터 분석'), 'Memory dashboard heading not found');
+    assert(memoryText.includes('메모리 및 AOI/SPI 분석'), 'Memory dashboard heading not found');
     results.push({ dashboard: 'Memory+Inspector', details: memoryText });
     await callTool('browser_take_screenshot', {
       filename: '.artifacts/playwright-dashboard-test/03-memory.png',

@@ -22,6 +22,8 @@ PYTHON_EXE = Path(sys.executable)
 
 BUG_OPERATION_LOG = REPO_ROOT / "bug" / "operation_0319_north side grab.log"
 INSPECTOR_TIME_FILTER_FIXTURE_LOG = REPO_ROOT / "tests" / "fixtures" / "inspector_time_filter_range_regression.log"
+SPI_TACT_TIME_FIXTURE_CSV = REPO_ROOT / "tests" / "fixtures" / "spi_tact_time_regression.csv"
+SPI_PROCESS_RESOURCE_FIXTURE_LOG = REPO_ROOT / "tests" / "fixtures" / "spi_process_resource_regression.log"
 BUG_RESOURCE_CSV = REPO_ROOT / "bug" / "20260410-메모리 대시보드 버그" / "resource_20260410.csv"
 BUG_PROCESS_CSV = REPO_ROOT / "bug" / "20260410-메모리 대시보드 버그" / "process_20260410.csv"
 AOI_EXPORT_PATH = ARTIFACT_DIR / "inspection_export_prebuild.xlsx"
@@ -167,10 +169,13 @@ def _wait_for_streamlit_ready(url: str, timeout_seconds: int = 60) -> None:
 
 def _run_playwright_step(summary_steps: list[dict[str, object]]) -> None:
     name = "headless-playwright-regression"
-    description = "Headless Streamlit + Playwright regression verifies dashboard rendering and AOI upload/time filter flow."
+    description = (
+        "Headless Streamlit + Playwright regression verifies dashboard rendering plus "
+        "AOI/SPI upload, filter, and download flows."
+    )
     failure_condition = (
         "Streamlit server fails to start, Playwright cannot connect, any UI step returns non-zero, "
-        "or AOI time filter does not shrink the NO range."
+        "AOI time filter does not shrink the NO range, or AOI/SPI downloads are missing."
     )
     _print_step_header(name, description, failure_condition)
 
@@ -210,6 +215,8 @@ def _run_playwright_step(summary_steps: list[dict[str, object]]) -> None:
                 str(BUG_RESOURCE_CSV),
                 str(BUG_PROCESS_CSV),
                 str(BUG_OPERATION_LOG),
+                str(SPI_TACT_TIME_FIXTURE_CSV),
+                str(SPI_PROCESS_RESOURCE_FIXTURE_LOG),
             ],
             cwd=REPO_ROOT,
             check=False,
@@ -242,6 +249,8 @@ def _run_playwright_step(summary_steps: list[dict[str, object]]) -> None:
                     str(BUG_RESOURCE_CSV),
                     str(BUG_PROCESS_CSV),
                     str(BUG_OPERATION_LOG),
+                    str(SPI_TACT_TIME_FIXTURE_CSV),
+                    str(SPI_PROCESS_RESOURCE_FIXTURE_LOG),
                 ],
                 "returncode": completed.returncode,
                 "stdout_path": str(stdout_path),
@@ -270,7 +279,14 @@ def _run_playwright_step(summary_steps: list[dict[str, object]]) -> None:
 
 
 def _verify_inputs_exist() -> list[str]:
-    required_paths = [BUG_OPERATION_LOG, INSPECTOR_TIME_FILTER_FIXTURE_LOG, BUG_RESOURCE_CSV, BUG_PROCESS_CSV]
+    required_paths = [
+        BUG_OPERATION_LOG,
+        INSPECTOR_TIME_FILTER_FIXTURE_LOG,
+        SPI_TACT_TIME_FIXTURE_CSV,
+        SPI_PROCESS_RESOURCE_FIXTURE_LOG,
+        BUG_RESOURCE_CSV,
+        BUG_PROCESS_CSV,
+    ]
     missing = [str(path) for path in required_paths if not path.exists()]
     if missing:
         raise FileNotFoundError(f"Missing regression input files: {missing}")
@@ -350,8 +366,8 @@ def main() -> int:
         _run_python_check_step(
             summary_steps,
             name="preflight-inputs",
-            description="Repo-local regression inputs exist for system CSVs and AOI log.",
-            failure_condition="Any required file under bug/ is missing.",
+            description="Repo-local regression inputs exist for system CSVs, AOI log, and SPI logs.",
+            failure_condition="Any required regression fixture under bug/ or tests/fixtures/ is missing.",
             checker=_verify_inputs_exist,
         )
 

@@ -79,7 +79,7 @@ Status: Active
 - `scripts\run_prebuild_regression.py`는 repo-local bug 입력 파일 업로드 기준으로 headless Playwright 회귀를 수행하며, 각 step의 실패 조건과 STDOUT을 `.artifacts\prebuild-regression\`과 `.artifacts\playwright-prebuild-regression\`에 남김
 - `scripts\verify_docs_sync.py`는 `scripts\run_prebuild_regression.py`, `scripts\verify_playwright_dashboards.js`, `scripts\verify_playwright_prebuild_regression.js`, `tools\playwright-mcp\*.ps1` 변경 시 관련 활성 문서 갱신도 함께 요구
 - headless Playwright 회귀의 대표 실패 조건:
-  페이지 미기동, 시스템 CSV 업로드 후 차트 미렌더, AOI 업로드 후 NO input 미생성, 시간 필터 후 NO 범위 미축소
+  페이지 미기동, 시스템 CSV 업로드 후 차트 미렌더, AOI 업로드 후 NO input 미생성, 시간 필터 후 NO 범위 미축소, SPI `Log.CSV` + `ProcessResource` 업로드 후 SPI 값 미표시, AOI/SPI 원본/파싱 CSV/XLSX 다운로드 누락
 - 최근 로그를 읽어 `CPU`, `Memory`, `Storage`, `Custom Graph`가 모두 뜨는지 확인
 - 상단 `시스템 성능 요약` 카드가 시스템 로그만 있어도 표시되고, `CPU 사용량 평균/최고`, `CPU 온도 평균/최고`, `RAM 사용량 평균/최대`가 현재 시간 필터 범위 기준으로 다시 계산되는지 확인
 - `CPU 대시보드`에서 `CPU 사용률과 온도`, `CPU 온도 추이`가 함께 보이고, 온도가 5초 구간 최고값 기준으로 표시되는지 확인
@@ -92,7 +92,7 @@ Status: Active
 - 없는 시각을 입력했을 때 시작은 다음 샘플, 종료는 이전 샘플로 보정되는지 확인
 - Playwright MCP가 구성된 세션에서는 WEB 기반 GUI 검증을 우선하고, Codex용 `[mcp_servers.playwright]`는 `node.exe + @playwright/mcp cli.js` direct stdio 구성을 사용하며 `launch-playwright-mcp.ps1`는 포트/SSE 스모크 용도로만 확인
 - 현재 세션에서 `unknown MCP server 'playwright'` 또는 MCP initialize 실패가 보이면 Codex 앱 재실행 후 새 세션에서 다시 확인
-- 재실행 전에는 `verify_dashboards.py`, AOI CLI export Smoke Test, Streamlit 수동 확인 결과를 함께 남김
+- 재실행 전에는 `verify_dashboards.py`, AOI CLI export Smoke Test, SPI fixture 업로드/다운로드 결과, Streamlit 수동 확인 결과를 함께 남김
 - 사용자 흐름이 바뀌면 `Wiki/UserManual.md` 업데이트
 
 ## CI 또는 문서 자동화 변경

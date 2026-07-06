@@ -1,6 +1,6 @@
 # Reliability Report
 
-Updated On: 2026-07-03
+Updated On: 2026-07-06
 Status: Active
 
 ## 개요
@@ -51,8 +51,9 @@ Status: Active
 - PowerShell이 실행되지 않는 PC에서도 WMI provider 자체가 정상이라면 Dell/Advantech 온도 fallback과 디스크 문자 매핑을 계속 시도할 수 있음
 - Playwright MCP 브라우저 검증은 stdio 직결 구성으로 유지해 GUI 자동화에서 연결 실패 가능성을 낮출 수 있음
 - 작업 완료 후 `scripts/verify_playwright_dashboards.js`로 실제 Streamlit 대시보드 4종을 다시 열어 보고, 스크린샷과 콘솔 메시지를 아티팩트로 남길 수 있음
-- `scripts/run_prebuild_regression.py`는 bug 폴더의 고정 입력 로그와 headless Playwright를 묶어, 빌드 전에 같은 회귀 시나리오를 반복 실행할 수 있음
+- `scripts/run_prebuild_regression.py`는 bug 폴더의 고정 AOI 입력과 `tests\fixtures\spi_*_regression.*` SPI fixture, headless Playwright를 묶어, 빌드 전에 같은 AOI/SPI 회귀 시나리오를 반복 실행할 수 있음
 - 같은 prebuild 회귀 안에서 최소 fixture `tests\fixtures\inspector_time_filter_range_regression.log`의 `2026-05-13 15:00:00 -> 16:44:59` 필터 결과가 `NO 2 -> 4`, 3건으로 유지되는지 별도 확인해, 시간 필터 후 인스펙터 결과가 1건으로 접히는 UI 상태 회귀를 조기에 탐지할 수 있음
+- 같은 prebuild Playwright 회귀 안에서 AOI와 SPI 각각 원본 로그 재저장, 파싱된 AOI/SPI CSV, 검사 결과 XLSX 다운로드가 non-empty 파일로 저장되는지 확인해, 업로드 파싱과 내보내기 경로가 함께 깨지는 회귀를 조기에 탐지할 수 있음
 - `scripts/verify_docs_sync.py`는 Playwright 회귀를 직접 실행하지는 않지만, Playwright 회귀 스크립트와 MCP 런처가 바뀌었을 때 관련 활성 문서가 함께 갱신됐는지 자동으로 확인할 수 있음
 - `scripts/verify_docs_sync.py`는 Git이 한글 경로를 quoted path 또는 UTF-8로 출력하는 환경에서도 `bug/` 입력과 로컬 GUI 산출물을 비기준 변경으로 오인하지 않도록 유지해야 함
 - prebuild regression step마다 실패 조건과 STDOUT을 별도 로그/JSON으로 남겨 현장 재현이나 원격 디버깅에 유리함
@@ -72,7 +73,7 @@ Status: Active
 - 문서 동기화가 느슨해지면 운영 기준과 검증 절차가 실제 코드보다 뒤처질 수 있으므로 `scripts/verify_docs_sync.py`를 유지해야 합니다.
 - 이 문서는 런타임, 패키징, CI 변경에서 자동 요구 대상으로 취급하고, 그 외 작업에서는 선택 검토 문서로 유지합니다.
 - Playwright MCP를 PowerShell 래퍼 경유 stdio로 연결하면 stdin 전달 문제로 initialize 실패가 날 수 있으므로, Codex 구성은 Node CLI 직결 상태를 유지해야 합니다.
-- headless Playwright regression은 repo-local `bug/` 입력 파일과 Edge headless 채널을 전제로 하므로, 해당 입력이나 브라우저가 없으면 packaging 전에 실패하도록 두었습니다.
+- headless Playwright regression은 repo-local `bug/` 입력 파일, `tests\fixtures\spi_*_regression.*` 입력 파일, Edge headless 채널을 전제로 하므로, 해당 입력이나 브라우저가 없으면 packaging 전에 실패하도록 두었습니다.
 - QA 공유 폴더 복사는 먼저 현재 Windows 세션/Windows Credential Manager 자격증명을 사용하고, 실패 시 사용자 입력을 받아 Credential Manager에 저장한 뒤 재시도합니다. 따라서 네트워크 경로가 불가하거나 입력을 취소하면 빌드 마지막 단계가 실패할 수 있습니다.
 - QA 공유 폴더 복사 뒤에는 이전 버전 폴더를 `old/`로 이동하는 단계도 포함되므로, 공유 폴더 쓰기 권한뿐 아니라 move 권한도 필요합니다.
 
